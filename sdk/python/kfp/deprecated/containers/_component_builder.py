@@ -20,13 +20,9 @@ import shutil
 from collections import OrderedDict
 from typing import Callable, Dict, List, Optional
 
-from deprecated.sphinx import deprecated
-
-from ..components._components import _create_task_factory_from_component_spec
-from ..components._python_op import _func_to_component_spec
-from ._container_builder import ContainerBuilder
 from kfp.deprecated import components
 from kfp.deprecated import dsl
+from kfp.deprecated.components import _python_op
 from kfp.deprecated.components import _components
 from kfp.deprecated.components import _structures
 from kfp.deprecated.containers import entrypoint
@@ -292,7 +288,7 @@ def build_python_component(
     logging.info('Build an image that is based on ' + base_image +
                  ' and push the image to ' + target_image)
 
-    component_spec = _func_to_component_spec(
+    component_spec = _python_op._func_to_component_spec(
         component_func, base_image=base_image)
 
     if is_v2:
@@ -378,6 +374,8 @@ def build_python_component(
             add_files=add_files)
 
         logging.info('Building and pushing container image.')
+
+        from kfp.deprecated.containers._container_builder import ContainerBuilder
         container_builder = ContainerBuilder(staging_gcs_path, target_image,
                                              namespace)
         image_name_with_digest = container_builder.build(
@@ -391,42 +389,6 @@ def build_python_component(
     if target_component_file:
         component_spec.save(target_component_file)
 
-    task_factory_function = _create_task_factory_from_component_spec(
+    task_factory_function = _components._create_task_factory_from_component_spec(
         component_spec)
     return task_factory_function
-
-
-@deprecated(
-    version='0.1.32',
-    reason='`build_docker_image` is deprecated. Use `kfp.containers.build_image_from_working_dir` instead.'
-)
-def build_docker_image(staging_gcs_path,
-                       target_image,
-                       dockerfile_path,
-                       timeout=600,
-                       namespace=None):
-    """build_docker_image automatically builds a container image based on the
-    specification in the dockerfile and pushes to the target_image.
-
-    Args:
-      staging_gcs_path (str): GCS blob that can store temporary build files
-      target_image (str): gcr path to push the final image
-      dockerfile_path (str): local path to the dockerfile
-      timeout (int): the timeout for the image build(in secs), default is 600 seconds
-      namespace (str): the namespace within which to run the kubernetes kaniko job. Default is None. If the
-      job is running on GKE and value is None the underlying functions will use the default namespace from GKE.
-    """
-    _configure_logger(logging.getLogger())
-
-    with tempfile.TemporaryDirectory() as local_build_dir:
-        dockerfile_rel_path = 'Dockerfile'
-        dst_dockerfile_path = os.path.join(local_build_dir, dockerfile_rel_path)
-        shutil.copyfile(dockerfile_path, dst_dockerfile_path)
-
-        container_builder = ContainerBuilder(
-            staging_gcs_path, target_image, namespace=namespace)
-        image_name_with_digest = container_builder.build(
-            local_build_dir, dockerfile_rel_path, target_image, timeout)
-
-    logging.info('Build image complete.')
-    return image_name_with_digest

@@ -15,7 +15,6 @@
 from typing import NamedTuple
 from kfp.deprecated import components
 from kfp.deprecated.dsl import artifact
-from kfp.deprecated.dsl import ontology_artifacts
 
 
 def test_func(
@@ -26,7 +25,6 @@ def test_func(
     # In the associated test case, input artifact is produced by conventional
     # KFP components, thus no concrete artifact type can be determined.
     assert isinstance(test_artifact, artifact.Artifact)
-    assert isinstance(test_output1, ontology_artifacts.Model)
     assert test_output1.uri
     from collections import namedtuple
 
@@ -42,8 +40,6 @@ def test_func2(
     # In the associated test case, input artifact is produced by a new-styled
     # KFP components with metadata, thus it's expected to be deserialized to
     # Dataset object.
-    assert isinstance(test_artifact, ontology_artifacts.Dataset)
-    assert isinstance(test_output1, ontology_artifacts.Model)
     assert test_output1.uri
     from collections import namedtuple
 

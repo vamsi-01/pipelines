@@ -13,4 +13,4 @@
 # limitations under the License.
 
 from kfp.deprecated.compiler.compiler import Compiler
-from kfp.deprecated.containers._component_builder import build_python_component, build_docker_image, VersionedDependency
+from kfp.deprecated.containers._component_builder import build_python_component, VersionedDependency

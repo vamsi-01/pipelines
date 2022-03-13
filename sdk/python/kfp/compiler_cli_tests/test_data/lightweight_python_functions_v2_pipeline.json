@@ -75,6 +75,10 @@
           },
           "message": {
             "parameterType": "STRING"
+          },
+          "num_steps": {
+            "defaultValue": 100.0,
+            "parameterType": "NUMBER_INTEGER"
           }
         }
       },

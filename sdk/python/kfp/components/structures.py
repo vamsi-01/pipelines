@@ -21,7 +21,6 @@ from typing import Any, Dict, Mapping, Optional, Sequence, Union
 import pydantic
 import yaml
 from kfp.components import utils
-from kfp.components.types import type_utils
 from kfp.deprecated.components import _components
 from kfp.deprecated.components import structures as v1_structures
 
@@ -44,7 +43,7 @@ class InputSpec(BaseModel):
             an explicit default value.
     """
     type: Union[str, dict]
-    default: Optional[type_utils.PARAMETER_TYPES] = None
+    default: Optional[Any] = None
     description: Optional[str] = None
     _optional: bool = pydantic.PrivateAttr()
 

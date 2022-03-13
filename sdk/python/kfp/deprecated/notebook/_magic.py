@@ -14,5 +14,3 @@
 
 import os
 import tempfile
-
-from kfp.deprecated.compiler import build_docker_image

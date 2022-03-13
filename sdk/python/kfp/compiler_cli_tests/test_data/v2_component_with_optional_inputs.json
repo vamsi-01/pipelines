@@ -5,6 +5,7 @@
       "inputDefinitions": {
         "parameters": {
           "input1": {
+            "defaultValue": "default value",
             "parameterType": "STRING"
           },
           "input2": {
