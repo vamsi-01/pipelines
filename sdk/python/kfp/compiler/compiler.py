@@ -211,8 +211,7 @@ class Compiler:
                 json_file.write(json_text)
         else:
             raise ValueError(
-                'The output path {} should ends with ".json".'.format(
-                    output_path))
+                f'The output path {output_path} should ends with ".json".')
 
     def _validate_exit_handler(self,
                                pipeline: pipeline_context.Pipeline) -> None:
@@ -276,7 +275,7 @@ class Compiler:
         pipeline_spec = pipeline_spec_pb2.PipelineSpec()
 
         pipeline_spec.pipeline_info.name = pipeline.name
-        pipeline_spec.sdk_version = 'kfp-{}'.format(kfp.__version__)
+        pipeline_spec.sdk_version = f'kfp-{kfp.__version__}'
         # Schema version 2.1.0 is required for kfp-pipeline-spec>0.1.13
         pipeline_spec.schema_version = '2.1.0'
 
