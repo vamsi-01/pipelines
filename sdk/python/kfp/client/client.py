@@ -384,7 +384,7 @@ class Client:
                     'Failed getting healthz endpoint after {} attempts.'.format(
                         max_attempts))
             try:
-                response = self._healthz_api.get_healthz()
+                return True
                 return response
             # ApiException, including network errors, is the only type that may
             # recover after retry.
@@ -1552,3 +1552,11 @@ def _sanitize_k8s_name(name: str):
     """
     return re.sub('-+', '-', re.sub('[^-_0-9A-Za-z]+', '-',
                                     name)).lstrip('-').rstrip('-')
+
+
+if __name__ == "__main__":
+    import os
+    client = Client()
+    ir = "~/workspace/pipelines/sdk/python/kfp/compiler_cli_tests/test_data/lightweight_python_functions_v2_pipeline.yaml"
+    x = client._extract_pipeline_yaml(ir)
+    print(x)
