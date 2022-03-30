@@ -1,61 +1,91 @@
-# Copyright 2021 The Kubeflow Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+# pylint: disable=all
+from re import T
 from typing import Dict, List
 
-from kfp import compiler, dsl
-from kfp.dsl import component
+from kfp import compiler
+from kfp import dsl
 
 
-@component
-def args_generator_op() -> List[Dict[str, str]]:
-    return [{'A_a': '1', 'B_b': '2'}, {'A_a': '10', 'B_b': '20'}]
+@dsl.component
+def print_str(v: str) -> str:
+    print(v)
+    return v
 
 
-@component
-def print_text(msg: str):
-    print(msg)
+@dsl.component
+def print_int(v: int) -> int:
+    print(v)
+    return v
 
 
-@component
-def print_struct(struct: Dict):
-    print(struct)
+@dsl.component
+def print_float(v: float) -> float:
+    print(v)
+    return float(v)
 
 
-@dsl.pipeline(name='pipeline-with-loops')
-def my_pipeline(loop_parameter: List[str]):
+@dsl.component
+def concat_op(a: str, b: str) -> str:
+    print(a + b)
+    return a + b
 
-    # Loop argument is from a pipeline input
-    with dsl.ParallelFor(loop_parameter) as item:
-        print_text(msg=item)
 
-    # Loop argument is from a component output
-    args_generator = args_generator_op()
-    with dsl.ParallelFor(args_generator.output) as item:
-        print_struct(struct=item)
-        print_text(msg=item.A_a)
-        print_text(msg=item.B_b)
+@dsl.component
+def arg_generator_op() -> List[Dict[str, str]]:
+    return [{'a': '1', 'b': '2'}, {'a': '10', 'b': '20'}]
 
-    # Loop argument is a static value known at compile time
-    loop_args = [{'A_a': '1', 'B_b': '2'}, {'A_a': '10', 'B_b': '20'}]
-    with dsl.ParallelFor(loop_args) as item:
-        print_struct(struct=item)
-        print_text(msg=item.A_a)
-        print_text(msg=item.B_b)
+
+@dsl.pipeline(name='pipeline-with-loop-static')
+def my_pipeline(
+    greeting: str = 'this is a test for looping through parameters',):
+    dict_loop_args = [{'a': '1', 'b': '2'}, {'a': '10', 'b': '20'}]
+    with dsl.ParallelFor(dict_loop_args, "static") as item:
+        print_task = concat_op(a=item.a, b=item.b)
+
+    generated_args = arg_generator_op()
+    with dsl.ParallelFor(generated_args.output) as dynamic_item:
+        with dsl.Condition(dynamic_item.a == '1', name="cond2"):
+            print_str(v=dynamic_item.b)
+    # dict_loop_args = [{'a': '1', 'b': '2'}, {'a': '10', 'b': '20'}]
+    # with dsl.ParallelFor(dict_loop_args, "static") as item:
+    #     print_task = concat_op(a=item.a, b=item.b)
+
+    #     generated_args = arg_generator_op()
+    #     with dsl.ParallelFor(generated_args.output, "dynamic") as gen_item:
+    #         print_task = concat_op(a=gen_item.a, b=gen_item.b)
+
+    # with dsl.ParallelFor(dict_loop_args, "mixed_static_outer") as item:
+    #     print_task = concat_op(a=item.a, b=item.b)
+
+    #     generated_args = arg_generator_op()
+    #     with dsl.ParallelFor(generated_args, "mixed_dynamic_inner") as gen_item:
+    #         print_task = concat_op(a=gen_item.a, b=item.b)
+
+    # primitive element test cases to ensure more doesn't break
+    # string_loop_args = ["a", "b"]
+    # with dsl.ParallelFor(string_loop_args) as item:
+    #     print_task = print_str(v=item)
+
+    # int_loop_args = [1, 1]
+    # with dsl.ParallelFor(int_loop_args, "int") as item:
+    #     print_task = print_int(v=item)
+
+    # float_loop_args = [1.0, 1.0]
+    # with dsl.ParallelFor(float_loop_args, "float") as item:
+    #     print_task = print_float(v=item)
 
 
 if __name__ == '__main__':
+    import datetime
+
+    from google.cloud import aiplatform
+
+    ir_file = __file__.replace('.py', '.json')
     compiler.Compiler().compile(
-        pipeline_func=my_pipeline,
-        package_path=__file__.replace('.py', '.yaml'))
+        pipeline_func=my_pipeline, package_path=ir_file, type_check=True)
+    print(ir_file)
+    aiplatform.PipelineJob(
+        template_path=ir_file,
+        pipeline_root='gs://cjmccarthy-kfp-default-bucket',
+        display_name=str(datetime.datetime.now()),
+        enable_caching=False).submit()

@@ -1,0 +1,295 @@
+{
+  "pipelineInfo": {
+    "name": "pipeline-with-loop-static"
+  },
+  "sdkVersion": "kfp-2.0.0-alpha.1",
+  "schemaVersion": "2.1.0",
+  "deploymentSpec": {
+    "executors": {
+      "exec-arg-generator-op": {
+        "container": {
+          "image": "python:3.7",
+          "command": [
+            "sh",
+            "-c",
+            "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip || python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet     --no-warn-script-location 'kfp==2.0.0-alpha.1' && \"$0\" \"$@\"\n",
+            "sh",
+            "-ec",
+            "program_path=$(mktemp -d)\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\npython3 -m kfp.components.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
+            "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import *\n\ndef arg_generator_op() -> List[Dict[str, str]]:\n    return [{'a': '1', 'b': '2'}, {'a': '10', 'b': '20'}]\n\n"
+          ],
+          "args": [
+            "--executor_input",
+            "{{$}}",
+            "--function_to_execute",
+            "arg_generator_op"
+          ]
+        }
+      },
+      "exec-concat-op": {
+        "container": {
+          "image": "python:3.7",
+          "command": [
+            "sh",
+            "-c",
+            "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip || python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet     --no-warn-script-location 'kfp==2.0.0-alpha.1' && \"$0\" \"$@\"\n",
+            "sh",
+            "-ec",
+            "program_path=$(mktemp -d)\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\npython3 -m kfp.components.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
+            "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import *\n\ndef concat_op(a: str, b: str) -> str:\n    print(a + b)\n    return a + b\n\n"
+          ],
+          "args": [
+            "--executor_input",
+            "{{$}}",
+            "--function_to_execute",
+            "concat_op"
+          ]
+        }
+      },
+      "exec-print-str": {
+        "container": {
+          "image": "python:3.7",
+          "command": [
+            "sh",
+            "-c",
+            "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip || python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet     --no-warn-script-location 'kfp==2.0.0-alpha.1' && \"$0\" \"$@\"\n",
+            "sh",
+            "-ec",
+            "program_path=$(mktemp -d)\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\npython3 -m kfp.components.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
+            "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import *\n\ndef print_str(v: str) -> str:\n    print(v)\n    return v\n\n"
+          ],
+          "args": [
+            "--executor_input",
+            "{{$}}",
+            "--function_to_execute",
+            "print_str"
+          ]
+        }
+      }
+    }
+  },
+  "components": {
+    "comp-for-loop-2": {
+      "inputDefinitions": {
+        "parameters": {
+          "pipelinechannel--loop-item-param-1": {
+            "parameterType": "STRUCT"
+          }
+        }
+      },
+      "dag": {
+        "tasks": {
+          "concat-op": {
+            "taskInfo": {
+              "name": "concat-op"
+            },
+            "inputs": {
+              "parameters": {
+                "a": {
+                  "componentInputParameter": "pipelinechannel--loop-item-param-1",
+                  "parameterExpressionSelector": "parseJson(string_value)[\"a\"]"
+                },
+                "b": {
+                  "componentInputParameter": "pipelinechannel--loop-item-param-1",
+                  "parameterExpressionSelector": "parseJson(string_value)[\"b\"]"
+                }
+              }
+            },
+            "cachingOptions": {
+              "enableCache": true
+            },
+            "componentRef": {
+              "name": "comp-concat-op"
+            }
+          }
+        }
+      }
+    },
+    "comp-for-loop-3": {
+      "inputDefinitions": {
+        "parameters": {
+          "pipelinechannel--arg-generator-op-Output": {
+            "parameterType": "LIST"
+          },
+          "pipelinechannel--arg-generator-op-Output-loop-item": {
+            "parameterType": "STRUCT"
+          }
+        }
+      },
+      "dag": {
+        "tasks": {
+          "condition-4": {
+            "taskInfo": {
+              "name": "cond2"
+            },
+            "inputs": {
+              "parameters": {
+                "pipelinechannel--arg-generator-op-Output-loop-item": {
+                  "componentInputParameter": "pipelinechannel--arg-generator-op-Output-loop-item"
+                },
+                "pipelinechannel--arg-generator-op-Output-loop-item-subvar-a": {
+                  "componentInputParameter": "pipelinechannel--arg-generator-op-Output-loop-item",
+                  "parameterExpressionSelector": "parseJson(string_value)[\"a\"]"
+                }
+              }
+            },
+            "componentRef": {
+              "name": "comp-condition-4"
+            },
+            "triggerPolicy": {
+              "condition": "inputs.parameter_values['pipelinechannel--arg-generator-op-Output-loop-item-subvar-a'] == '1'"
+            }
+          }
+        }
+      }
+    },
+    "comp-arg-generator-op": {
+      "outputDefinitions": {
+        "parameters": {
+          "Output": {
+            "parameterType": "LIST"
+          }
+        }
+      },
+      "executorLabel": "exec-arg-generator-op"
+    },
+    "comp-concat-op": {
+      "inputDefinitions": {
+        "parameters": {
+          "a": {
+            "parameterType": "STRING"
+          },
+          "b": {
+            "parameterType": "STRING"
+          }
+        }
+      },
+      "outputDefinitions": {
+        "parameters": {
+          "Output": {
+            "parameterType": "STRING"
+          }
+        }
+      },
+      "executorLabel": "exec-concat-op"
+    },
+    "comp-condition-4": {
+      "inputDefinitions": {
+        "parameters": {
+          "pipelinechannel--arg-generator-op-Output-loop-item": {
+            "parameterType": "STRUCT"
+          },
+          "pipelinechannel--arg-generator-op-Output-loop-item-subvar-a": {
+            "parameterType": "STRING"
+          }
+        }
+      },
+      "dag": {
+        "tasks": {
+          "print-str": {
+            "taskInfo": {
+              "name": "print-str"
+            },
+            "inputs": {
+              "parameters": {
+                "v": {
+                  "componentInputParameter": "pipelinechannel--arg-generator-op-Output-loop-item",
+                  "parameterExpressionSelector": "parseJson(string_value)[\"b\"]"
+                }
+              }
+            },
+            "cachingOptions": {
+              "enableCache": true
+            },
+            "componentRef": {
+              "name": "comp-print-str"
+            }
+          }
+        }
+      }
+    },
+    "comp-print-str": {
+      "inputDefinitions": {
+        "parameters": {
+          "v": {
+            "parameterType": "STRING"
+          }
+        }
+      },
+      "outputDefinitions": {
+        "parameters": {
+          "Output": {
+            "parameterType": "STRING"
+          }
+        }
+      },
+      "executorLabel": "exec-print-str"
+    }
+  },
+  "root": {
+    "inputDefinitions": {
+      "parameters": {
+        "greeting": {
+          "parameterType": "STRING",
+          "defaultValue": "this is a test for looping through parameters"
+        }
+      }
+    },
+    "dag": {
+      "tasks": {
+        "for-loop-2": {
+          "taskInfo": {
+            "name": "static"
+          },
+          "componentRef": {
+            "name": "comp-for-loop-2"
+          },
+          "parameterIterator": {
+            "items": {
+              "raw": "[{\"a\": \"1\", \"b\": \"2\"}, {\"a\": \"10\", \"b\": \"20\"}]"
+            },
+            "itemInput": "pipelinechannel--loop-item-param-1"
+          }
+        },
+        "for-loop-3": {
+          "taskInfo": {
+            "name": "for-loop-3"
+          },
+          "inputs": {
+            "parameters": {
+              "pipelinechannel--arg-generator-op-Output": {
+                "taskOutputParameter": {
+                  "producerTask": "arg-generator-op",
+                  "outputParameterKey": "Output"
+                }
+              }
+            }
+          },
+          "dependentTasks": [
+            "arg-generator-op"
+          ],
+          "componentRef": {
+            "name": "comp-for-loop-3"
+          },
+          "parameterIterator": {
+            "items": {
+              "inputParameter": "pipelinechannel--arg-generator-op-Output"
+            },
+            "itemInput": "pipelinechannel--arg-generator-op-Output-loop-item"
+          }
+        },
+        "arg-generator-op": {
+          "taskInfo": {
+            "name": "arg-generator-op"
+          },
+          "cachingOptions": {
+            "enableCache": true
+          },
+          "componentRef": {
+            "name": "comp-arg-generator-op"
+          }
+        }
+      }
+    }
+  }
+}

@@ -14,7 +14,8 @@
 
 from typing import Optional
 
-from kfp import compiler, dsl
+from kfp import compiler
+from kfp import dsl
 from kfp.dsl import component
 
 
@@ -109,6 +110,12 @@ def my_pipeline(
 
 
 if __name__ == '__main__':
-    compiler.Compiler().compile(
-        pipeline_func=my_pipeline,
-        package_path=__file__.replace('.py', '.yaml'))
+    import datetime
+
+    from google.cloud import aiplatform
+    ir_file = __file__.replace('.py', '2.json')
+    compiler.Compiler().compile(pipeline_func=my_pipeline, package_path=ir_file)
+    aiplatform.PipelineJob(
+        template_path=ir_file,
+        pipeline_root='gs://cjmccarthy-kfp-default-bucket',
+        display_name=str(datetime.datetime.now())).submit()
