@@ -9,13 +9,17 @@
 * Add ImporterSpec v2 [\#6917](https://github.com/kubeflow/pipelines/pull/6917)
 * Add add set_env_variable for Pipeline task [\#6919](https://github.com/kubeflow/pipelines/pull/6919)
 * Add metadata field for importer [\#7112](https://github.com/kubeflow/pipelines/pull/7112)
-* Enable pip installation from custom PyPI repository [\#7453](https://github.com/kubeflow/pipelines/pull/7453)
+* Add in filter to list_pipeline_versions SDK method [\#7223](https://github.com/kubeflow/pipelines/pull/7223)
+* Add `enable_job` method to client [\#7239](https://github.com/kubeflow/pipelines/pull/7239)
+* Support getting pipeline status in exit handler. [\#7309](https://github.com/kubeflow/pipelines/pull/7309)
 
 ## Breaking Changes
 
 * Remove sdk/python/kfp/v2/google directory for v2, including google client and custom job [\#6886](https://github.com/kubeflow/pipelines/pull/6886)
 * APIs imported from the v1 namespace are no longer supported by the v2 compiler. [\#6890](https://github.com/kubeflow/pipelines/pull/6890)
 * Deprecate v2 compatible mode in v1 compiler. [\#6958](https://github.com/kubeflow/pipelines/pull/6958)
+* Drop support for python 3.6 [\#7303](https://github.com/kubeflow/pipelines/pull/7303)
+* Deprecate v1 code to deprecated folder [\#7291](https://github.com/kubeflow/pipelines/pull/7291)
 
 ### For Pipeline Authors
 
@@ -35,7 +39,10 @@
 * Fix bug for resourceSpec [\#6979](https://github.com/kubeflow/pipelines/pull/6979)
 * Fix regression on nested loops [\#6990](https://github.com/kubeflow/pipelines/pull/6990)
 * Fix bug for input/outputspec and positional arguments [\#6980](https://github.com/kubeflow/pipelines/pull/6980)
-* Fix bug that required KFP API server for `kfp components build` command to work [\#7410](https://github.com/kubeflow/pipelines/pull/7410)
+* Fix importer not using correct output artifact type [\#7235](https://github.com/kubeflow/pipelines/pull/7235)
+* Add verify_ssl for Kubeflow client [\#7174](https://github.com/kubeflow/pipelines/pull/7174)
+* Depends on `typing-extensions>=3.7.4,<5; python_version<"3.9"` [\#7288](https://github.com/kubeflow/pipelines/pull/7288)
+* Depends on `google-api-core>=1.31.5, >=2.3.2` [\#7377](https://github.com/kubeflow/pipelines/pull/7377)
 
 ## Documentation Updates
 
@@ -163,7 +170,7 @@
 ## Major Features and Improvements
 
 * Add optional support to specify description for pipeline version [\#6472](https://github.com/kubeflow/pipelines/issues/6472).
-* New v2 experimental compiler. [\#6803](https://github.com/kubeflow/pipelines/pull/6803)
+* New v2 experimental compiler [\#6803](https://github.com/kubeflow/pipelines/pull/6803).
 
 ## Breaking Changes
 
@@ -458,7 +465,7 @@
 
 ## Breaking Changes
 
-* `kfp.v2.components`no longer imports everything from `kfp.components`. For instance, `load_component_from_*` methods are available only from `kfp.components`, but not from `kfp.v2.components`.
+* `kfp.components`no longer imports everything from `kfp.components`. For instance, `load_component_from_*` methods are available only from `kfp.components`, but not from `kfp.components`.
 * No more ['_path' suffix striping](https://github.com/kubeflow/pipelines/issues/5279) from v2 components.
 
 ### For Pipeline Authors
