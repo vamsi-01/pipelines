@@ -82,6 +82,13 @@ def _is_inner_loop_argument_variable(
                       pipeline_channel.PipelineChannel) and is_inner_loop
 
 
+def _construct_parameter_expression_selector(
+        loop_argument_variable: for_loop.LoopArgumentVariable) -> str:
+    return f'parseJson(string_value)["{loop_argument_variable.subvar_name}"]' if _is_inner_loop_argument_variable(
+        loop_argument_variable
+    ) else f'struct_value["{loop_argument_variable.subvar_name}"]'
+
+
 def build_task_spec_for_task(
     task: pipeline_task.PipelineTask,
     parent_component_inputs: pipeline_spec_pb2.ComponentInputsSpec,
@@ -212,11 +219,9 @@ def build_task_spec_for_task(
             pipeline_task_spec.inputs.parameters[
                 input_name].component_input_parameter = (
                     component_input_parameter)
-
-            parameter_expression_selector = f'parseJson(string_value)["{input_value.subvar_name}"]' if _is_inner_loop_argument_variable(
-                input_value) else f'struct_value["{input_value.subvar_name}"]'
             pipeline_task_spec.inputs.parameters[
-                input_name].parameter_expression_selector = parameter_expression_selector
+                input_name].parameter_expression_selector = _construct_parameter_expression_selector(
+                    input_value)
 
         elif isinstance(input_value, str):
 
@@ -537,6 +542,10 @@ def _pop_input_from_task_spec(
         task_spec.ClearField('inputs')
 
 
+from autologging import traced
+
+
+@traced
 def _update_task_spec_for_loop_group(
     group: tasks_group.ParallelFor,
     pipeline_task_spec: pipeline_spec_pb2.PipelineTaskSpec,
@@ -565,11 +574,9 @@ def _update_task_spec_for_loop_group(
         # If the loop items itself is a loop arguments variable, handle the
         # subvar name.
         if isinstance(loop_items_channel, for_loop.LoopArgumentVariable):
-            parameter_expression_selector = f'parseJson(string_value)["{loop_items_channel.subvar_name}"]' if _is_inner_loop_argument_variable(
-                loop_items_channel
-            ) else f'struct_value["{loop_items_channel.subvar_name}"]'
             pipeline_task_spec.inputs.parameters[
-                input_parameter_name].parameter_expression_selector = parameter_expression_selector
+                input_parameter_name].parameter_expression_selector = _construct_parameter_expression_selector(
+                    loop_items_channel)
             pipeline_task_spec.inputs.parameters[
                 input_parameter_name].component_input_parameter = (
                     _additional_input_name_for_pipeline_channel(
@@ -789,18 +796,14 @@ def build_task_spec_for_group(
     for channel in pipeline_channels:
 
         channel_full_name = channel.full_name
-        subvar_name = None
+        input_name = _additional_input_name_for_pipeline_channel(channel)
+        channel_name = channel.name
+
         if isinstance(channel, for_loop.LoopArgumentVariable):
             channel_full_name = channel.loop_argument.full_name
-            subvar_name = channel.subvar_name
-
-        input_name = _additional_input_name_for_pipeline_channel(channel)
-
-        channel_name = channel.name
-        if subvar_name:
             pipeline_task_spec.inputs.parameters[
-                input_name].parameter_expression_selector = (
-                    f'struct_value["{subvar_name}"]')
+                input_name].parameter_expression_selector = _construct_parameter_expression_selector(
+                    channel)
             if not channel.is_with_items_loop_argument:
                 channel_name = channel.items_or_pipeline_channel.name
 
