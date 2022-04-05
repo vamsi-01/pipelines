@@ -39,6 +39,28 @@ def _get_loop_item_type(type_name: str) -> Optional[str]:
     Returns:
         The collection item type or None if no match found.
     """
+    # if isinstance(argument_value, pipeline_channel.PipelineChannel):
+    #     argument_type = argument_value.channel_type
+    # elif isinstance(argument_value, str):
+    #     argument_type = 'String'
+    # elif isinstance(argument_value, bool):
+    #     argument_type = 'Boolean'
+    # elif isinstance(argument_value, int):
+    #     argument_type = 'Integer'
+    # elif isinstance(argument_value, float):
+    #     argument_type = 'Float'
+    # elif isinstance(argument_value, dict):
+    #     argument_type = 'Dict'
+    # elif isinstance(argument_value, list):
+    #     argument_type = 'List'
+    # else:
+    #     raise ValueError(
+    #         'Input argument supports only the following types: '
+    #         'str, int, float, bool, dict, and list. Got: '
+    #         f'"{argument_value}" of type "{type(argument_value)}".')
+    type_map = {"bool": "Boolean"}
+    if type_name in type_map:
+        return type_map[type_name]
     match = re.match('(typing\.)?(?:\w+)(?:\[(?P<item_type>.+)\])', type_name)
     if match:
         return match.group('item_type').lstrip().rstrip()
@@ -61,6 +83,10 @@ def _get_subvar_type(type_name: str) -> Optional[str]:
     Returns:
         The dictionary value type or None if no match found.
     """
+    print("YAOI", type_name)
+    type_map = {"Boolean": "Boolean"}
+    if type_name in type_map:
+        return type_map[type_name]
     match = re.match(
         '(typing\.)?(?:\w+)(?:\[\s*(?:\w+)\s*,\s*(?P<value_type>.+)\])',
         type_name)

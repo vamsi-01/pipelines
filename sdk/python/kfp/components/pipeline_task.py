@@ -94,13 +94,13 @@ class PipelineTask:
                     'str, int, float, bool, dict, and list. Got: '
                     f'"{argument_value}" of type "{type(argument_value)}".')
 
-            type_utils.verify_type_compatibility(
-                given_type=argument_type,
-                expected_type=input_type,
-                error_message_prefix=(
-                    'Incompatible argument passed to the input '
-                    f'"{input_name}" of component "{component_spec.name}": '),
-            )
+            # type_utils.verify_type_compatibility(
+            #     given_type=argument_type,
+            #     expected_type=input_type,
+            #     error_message_prefix=(
+            #         'Incompatible argument passed to the input '
+            #         f'"{input_name}" of component "{component_spec.name}": '),
+            # )
 
         self.component_spec = component_spec
 
