@@ -353,7 +353,7 @@ class Client:
         config.refresh_api_key_hook(config)
         return config
 
-    def set_user_namespace(self, namespace: str):
+    def set_user_namespace(self, namespace: str) -> None:
         """Set user namespace into local context setting file.
 
         This function should only be used when Kubeflow Pipelines is in the
@@ -361,6 +361,9 @@ class Client:
 
         Args:
             namespace: kubernetes namespace the user has access to.
+
+        Returns:
+            None
         """
         self._context_setting['namespace'] = namespace
         if not os.path.exists(os.path.dirname(Client.LOCAL_KFP_CONTEXT)):
@@ -590,6 +593,12 @@ class Client:
 
         Args:
             experiment_id: id of the experiment.
+
+        Returns:
+            None
+
+        Raises:
+            kfp_server_api.ApiException: If experiment is not found.
         """
         self._experiment_api.archive_experiment(id=experiment_id)
 
@@ -598,22 +607,28 @@ class Client:
 
         Args:
             experiment_id: id of the experiment.
+
+        Returns:
+            None
+
+        Raises:
+            kfp_server_api.ApiException: If experiment is not found.
         """
         self._experiment_api.unarchive_experiment(id=experiment_id)
 
-    def delete_experiment(self, experiment_id):
+    def delete_experiment(self, experiment_id) -> None:
         """Delete experiment.
 
         Args:
             experiment_id: id of the experiment.
 
         Returns:
-            If the method is called asynchronously, returns the request thread.
+            None
 
         Raises:
             kfp_server_api.ApiException: If experiment is not found.
         """
-        return self._experiment_api.delete_experiment(id=experiment_id)
+        self._experiment_api.delete_experiment(id=experiment_id)
 
     def _extract_pipeline_yaml(self, package_file):
 
@@ -764,6 +779,48 @@ class Client:
                 % (self._get_url_prefix(), response.run.id))
             IPython.display.display(IPython.display.HTML(html))
         return response.run
+
+    def archive_run(self, run_id: str) -> None:
+        """Archives a run.
+
+        Args:
+            run_id: id of the run.
+
+        Returns:
+            None
+
+        Raises:
+            kfp_server_api.ApiException: If the run is not found.
+        """
+        self._run_api.archive_run(id=run_id)
+
+    def unarchive_run(self, run_id: str) -> None:
+        """Restores an archived run.
+
+        Args:
+            run_id: id of the run.
+
+        Returns:
+            None
+
+        Raises:
+            kfp_server_api.ApiException: If the run is not found.
+        """
+        self._run_api.unarchive_run(id=run_id)
+
+    def delete_run(self, run_id: str) -> None:
+        """Deletes a run.
+
+        Args:
+            run_id: id of the run.
+
+        Returns:
+            None
+
+        Raises:
+            kfp_server_api.ApiException: If the run is not found.
+        """
+        self._run_api.delete_run(id=run_id)
 
     def create_recurring_run(
         self,
@@ -1091,30 +1148,25 @@ class Client:
         )
         return RunPipelineResult(self, run_info)
 
-    def delete_job(self, job_id: str):
+    def delete_job(self, job_id: str) -> None:
         """Deletes a job.
 
         Args:
             job_id: id of the job.
 
         Returns:
-            Object. If the method is called asynchronously, returns the request
-            thread.
+            None
 
         Raises:
             kfp_server_api.ApiException: If the job is not found.
         """
-        return self._job_api.delete_job(id=job_id)
+        self._job_api.delete_job(id=job_id)
 
     def disable_job(self, job_id: str):
         """Disables a job.
 
         Args:
             job_id: id of the job.
-
-        Returns:
-            Object. If the method is called asynchronously, returns the request
-            thread.
 
         Raises:
             kfp_server_api.ApiException: If the job is not found.
@@ -1126,10 +1178,6 @@ class Client:
 
         Args:
            job_id: id of the job.
-
-        Returns:
-           Object. If the method is called asynchronously, returns the request
-           thread.
 
         Raises:
             kfp_server_api.ApiException: If the job is not found.
@@ -1429,20 +1477,19 @@ class Client:
         """
         return self._pipelines_api.get_pipeline(id=pipeline_id)
 
-    def delete_pipeline(self, pipeline_id):
+    def delete_pipeline(self, pipeline_id) -> None:
         """Deletes a pipeline.
 
         Args:
             pipeline_id: id of the pipeline.
 
         Returns:
-            Object. If the method is called asynchronously, returns the request
-            thread.
+            None
 
         Raises:
             kfp_server_api.ApiException: If pipeline is not found.
         """
-        return self._pipelines_api.delete_pipeline(id=pipeline_id)
+        self._pipelines_api.delete_pipeline(id=pipeline_id)
 
     def list_pipeline_versions(
         self,
@@ -1508,21 +1555,19 @@ class Client:
         """
         return self._pipelines_api.get_pipeline_version(version_id=version_id)
 
-    def delete_pipeline_version(self, version_id: str):
+    def delete_pipeline_version(self, version_id: str) -> None:
         """Deletes a pipeline version.
 
         Args:
             version_id: id of the pipeline version.
 
         Returns:
-            Object. If the method is called asynchronously, returns the request
-            thread.
+            None
 
         Raises:
             kfp_server_api.ApiException: If pipeline is not found.
         """
-        return self._pipelines_api.delete_pipeline_version(
-            version_id=version_id)
+        self._pipelines_api.delete_pipeline_version(version_id=version_id)
 
 
 def _add_generated_apis(target_struct, api_module, api_client):
