@@ -17,8 +17,13 @@ import sys
 
 import click
 import typer
-from kfp.cli import (cli, components, diagnose_me_cli, experiment, pipeline,
-                     recurring_run, run)
+from kfp.cli import cli
+from kfp.cli import components
+from kfp.cli import diagnose_me_cli
+from kfp.cli import experiment
+from kfp.cli import pipeline
+from kfp.cli import recurring_run
+from kfp.cli import run
 
 
 def main():
@@ -28,7 +33,7 @@ def main():
     cli.cli.add_command(pipeline.pipeline)
     cli.cli.add_command(diagnose_me_cli.diagnose_me)
     cli.cli.add_command(experiment.experiment)
-    cli.cli.add_command(typer.main.get_command(components.app))
+    # cli.cli.add_command(typer.main.get_command(components.app))
     try:
         cli.cli(obj={}, auto_envvar_prefix='KFP')
     except Exception as e:
