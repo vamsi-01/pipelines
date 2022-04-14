@@ -1,9 +1,24 @@
+# Copyright 2019-2022 The Kubeflow Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import json
 from typing import List
 
 import click
 import kfp_server_api
-from kfp.cli.output import OutputFormat, print_output
+from kfp.cli.output import OutputFormat
+from kfp.cli.output import print_output
 from kfp_server_api.models.api_experiment import ApiExperiment
 
 
@@ -142,3 +157,29 @@ def archive(ctx: click.Context, experiment_id: str, experiment_name: str):
         experiment_id = experiment.id
 
     client.archive_experiment(experiment_id=experiment_id)
+
+
+@experiment.command()
+@click.option(
+    "--experiment-id",
+    default=None,
+    help="The ID of the experiment to unarchive, can only supply either an experiment ID or name."
+)
+@click.option(
+    "--experiment-name",
+    default=None,
+    help="The name of the experiment to unarchive, can only supply either an experiment ID or name."
+)
+@click.pass_context
+def unarchive(ctx: click.Context, experiment_id: str, experiment_name: str):
+    """Unarchive an experiment."""
+    client = ctx.obj["client"]
+
+    if (experiment_id is None) == (experiment_name is None):
+        raise ValueError('Either experiment_id or experiment_name is required')
+
+    if not experiment_id:
+        experiment = client.get_experiment(experiment_name=experiment_name)
+        experiment_id = experiment.id
+
+    client.unarchive_experiment(experiment_id=experiment_id)

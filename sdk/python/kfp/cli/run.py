@@ -1,4 +1,4 @@
-# Copyright 2018 The Kubeflow Authors
+# Copyright 2018-2022 The Kubeflow Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,7 +22,8 @@ from typing import List
 import click
 import kfp_server_api
 from kfp import client
-from kfp.cli.output import OutputFormat, print_output
+from kfp.cli.output import OutputFormat
+from kfp.cli.output import print_output
 
 
 @click.group()
@@ -157,6 +158,39 @@ def get(ctx: click.Context, watch: bool, detail: bool, run_id: str):
     output_format = ctx.obj['output']
 
     _display_run(client, namespace, run_id, watch, output_format, detail)
+
+
+@run.command()
+@click.argument('run-id')
+@click.pass_context
+def archive(ctx: click.Context, run_id: str):
+    """Unarchive a KFP run."""
+    client = ctx.obj['client']
+    namespace = ctx.obj['namespace']
+    output_format = ctx.obj['output']
+    client.archive_run(run_id=run_id)
+
+
+@run.command()
+@click.argument('run-id')
+@click.pass_context
+def unarchive(ctx: click.Context, run_id: str):
+    """Delete a KFP run."""
+    client = ctx.obj['client']
+    namespace = ctx.obj['namespace']
+    output_format = ctx.obj['output']
+    client.unarchive_run(run_id=run_id)
+
+
+@run.command()
+@click.argument('run-id')
+@click.pass_context
+def delete(ctx: click.Context, run_id: str):
+    """Archive a KFP run."""
+    client = ctx.obj['client']
+    namespace = ctx.obj['namespace']
+    output_format = ctx.obj['output']
+    client.delete_run(run_id=run_id)
 
 
 def _display_run(client: client.Client,

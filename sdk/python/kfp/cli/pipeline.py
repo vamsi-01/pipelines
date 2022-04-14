@@ -1,4 +1,4 @@
-# Copyright 2019 The Kubeflow Authors
+# Copyright 2019-2022 The Kubeflow Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,8 @@ from typing import Any, Dict, List, Optional, Union
 
 import click
 import kfp_server_api
-from kfp.cli.output import OutputFormat, print_output
+from kfp.cli.output import OutputFormat
+from kfp.cli.output import print_output
 
 
 @click.group()
@@ -184,6 +185,18 @@ def get(ctx: click.Context, pipeline_id: str):
     output_format = ctx.obj["output"]
 
     pipeline = client.get_pipeline(pipeline_id)
+    _display_pipeline(pipeline, output_format)
+
+
+@pipeline.command()
+@click.argument("version-id")
+@click.pass_context
+def get_version(ctx: click.Context, version_id: str):
+    """Get detailed information about a KFP pipeline version."""
+    client = ctx.obj["client"]
+    output_format = ctx.obj["output"]
+
+    pipeline = client.get_pipeline_version(version_id)
     _display_pipeline(pipeline, output_format)
 
 

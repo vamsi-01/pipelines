@@ -1,4 +1,4 @@
-# Copyright 2021 The Kubeflow Authors
+# Copyright 2021-2022 The Kubeflow Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,8 @@ from typing import Any, Dict, List, Optional
 
 import click
 import kfp_server_api
-from kfp.cli.output import OutputFormat, print_output
+from kfp.cli.output import OutputFormat
+from kfp.cli.output import print_output
 
 
 @click.group()
@@ -193,6 +194,24 @@ def delete(ctx: click.Context, job_id: str):
     """Delete a recurring run."""
     client = ctx.obj["client"]
     client.delete_job(job_id)
+
+
+@recurring_run.command()
+@click.argument("job-id")
+@click.pass_context
+def enable(ctx: click.Context, job_id: str):
+    """Enable a recurring run."""
+    client = ctx.obj["client"]
+    client.enable_job(job_id=job_id)
+
+
+@recurring_run.command()
+@click.argument("job-id")
+@click.pass_context
+def disable(ctx: click.Context, job_id: str):
+    """Disable a recurring run."""
+    client = ctx.obj["client"]
+    client.disable_job(job_id=job_id)
 
 
 def _display_recurring_runs(recurring_runs: List[kfp_server_api.ApiJob],
