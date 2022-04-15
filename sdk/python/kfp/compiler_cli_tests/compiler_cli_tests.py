@@ -32,12 +32,14 @@ def _ignore_kfp_version_helper(spec):
 
     if 'executors' in pipeline_spec['deploymentSpec']:
         for executor in pipeline_spec['deploymentSpec']['executors']:
-            pipeline_spec['deploymentSpec']['executors'][executor] = yaml.load(
-                re.sub(
-                    "'kfp==(\d+).(\d+).(\d+)(-[a-z]+.\d+)?'", 'kfp',
-                    yaml.dump(
-                        pipeline_spec['deploymentSpec']['executors'][executor],
-                        sort_keys=True)))
+            pipeline_spec['deploymentSpec']['executors'][
+                executor] = yaml.safe_load(
+                    re.sub(
+                        "'kfp==(\d+).(\d+).(\d+)(-[a-z]+.\d+)?'", 'kfp',
+                        yaml.dump(
+                            pipeline_spec['deploymentSpec']['executors']
+                            [executor],
+                            sort_keys=True)))
     return spec
 
 
@@ -63,13 +65,12 @@ class CompilerCliTests(unittest.TestCase):
 
         def _compile(target_output_file: str):
             subprocess.check_call([
-                'dsl-compile', '--py', py_file, '--output',
-                target_output_file
+                'dsl-compile', '--py', py_file, '--output', target_output_file
             ] + additional_arguments)
 
         def _load_compiled_file(filename: str):
             with open(filename, 'r') as f:
-                contents = yaml.load(f)
+                contents = yaml.safe_load(f)
                 # Correct the sdkVersion
                 pipeline_spec = contents[
                     'pipelineSpec'] if 'pipelineSpec' in contents else contents
