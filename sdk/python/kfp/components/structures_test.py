@@ -80,7 +80,7 @@ V2_COMPONENT_SPEC_IF_PLACEHOLDER = structures.ComponentSpec(
     },
 )
 
-V1_YAML_CONCAT_PLACEHOLDER = textwrap.dedent("""\
+V1_YAML_CONCAT_PLACEHOLDER = textwrap.dedent("""
     name: component_concat
     implementation:
       container:
@@ -91,7 +91,7 @@ V1_YAML_CONCAT_PLACEHOLDER = textwrap.dedent("""\
     - {name: input_prefix, type: String}
     """)
 
-V2_YAML_CONCAT_PLACEHOLDER = textwrap.dedent("""\
+V2_YAML_CONCAT_PLACEHOLDER = textwrap.dedent("""
     implementation:
       container:
         args:
