@@ -32,7 +32,9 @@ except ImportError:
     _DOCKER_IS_PRESENT = False
 
 import kfp as kfp
-from kfp.components import component_factory, kfp_config, utils
+from kfp.components import component_factory
+from kfp.components import kfp_config
+from kfp.components import utils
 
 _REQUIREMENTS_TXT = 'requirements.txt'
 
@@ -329,12 +331,12 @@ class ComponentBuilder():
 
 
 @click.group()
-def components():
+def component():
     """Builds shareable, containerized components."""
     pass
 
 
-@components.command()
+@component.command()
 @click.argument(
     "components_directory",
     type=pathlib.Path,
