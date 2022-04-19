@@ -758,6 +758,12 @@ class TestWriteToFileTypes(parameterized.TestCase):
         finally:
             shutil.rmtree(tmpdir)
 
+    def test_compile_fails_with_bad_pipeline_func(self):
+        with self.assertRaisesRegex(ValueError,
+                                    r'Unsupported pipeline_func type'):
+            compiler.Compiler().compile(
+                pipeline_func=None, package_path='/tmp/pipeline.yaml')
+
 
 class TestCompileComponent(parameterized.TestCase):
 
