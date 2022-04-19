@@ -18,15 +18,12 @@ https://docs.google.com/document/d/1PUDuSQ8vmeKSBloli53mp7GIvzekaY7sggg6ywy35Dk/
 """
 import collections
 import inspect
-import json
 import re
 import uuid
-import warnings
 from typing import (Any, Callable, Dict, List, Mapping, Optional, Set, Tuple,
                     Union)
 
 import kfp
-import yaml
 from google.protobuf import json_format
 from kfp import dsl
 from kfp.compiler import pipeline_spec_builder as builder
@@ -124,9 +121,6 @@ class Compiler:
         # Assign type information to the PipelineChannel
         pipeline_meta = component_factory.extract_component_interface(
             pipeline_func)
-        pipeline_name = pipeline_name or pipeline_meta.name
-
-        pipeline_root = getattr(pipeline_func, 'pipeline_root', None)
 
         args_list = []
         signature = inspect.signature(pipeline_func)
@@ -144,6 +138,8 @@ class Compiler:
             args_list.append(
                 dsl.PipelineParameterChannel(
                     name=arg_name, channel_type=arg_type))
+
+        pipeline_name = pipeline_name or pipeline_meta.name
 
         with pipeline_context.Pipeline(pipeline_name) as dsl_pipeline:
             pipeline_func(*args_list)
@@ -176,14 +172,14 @@ class Compiler:
 
         # Making the pipeline group name unique to prevent name clashes with
         # templates
-        pipeline_group = dsl_pipeline.groups[0]
-        pipeline_group.name = uuid.uuid4().hex
+        dsl_pipeline.groups[0].name = uuid.uuid4().hex
 
         pipeline_spec = self._create_pipeline_spec(
             pipeline_args=args_list_with_defaults,
             pipeline=dsl_pipeline,
         )
 
+        pipeline_root = getattr(pipeline_func, 'pipeline_root', None)
         if pipeline_root:
             pipeline_spec.default_pipeline_root = pipeline_root
 
@@ -258,13 +254,11 @@ class Compiler:
             A PipelineSpec proto representing the compiled pipeline.
 
         Raises:
-            ValueError if the argument is of unsupported types.
+            ValueError: If the argument is of unsupported types.
         """
         self._validate_pipeline_name(pipeline.name)
 
-        deployment_config = pipeline_spec_pb2.PipelineDeploymentConfig()
         pipeline_spec = pipeline_spec_pb2.PipelineSpec()
-
         pipeline_spec.pipeline_info.name = pipeline.name
         pipeline_spec.sdk_version = 'kfp-{}'.format(kfp.__version__)
         # Schema version 2.1.0 is required for kfp-pipeline-spec>0.1.13
@@ -276,6 +270,7 @@ class Compiler:
                 is_root_group=True,
             ))
 
+        deployment_config = pipeline_spec_pb2.PipelineDeploymentConfig()
         root_group = pipeline.groups[0]
 
         all_groups = self._get_all_groups(root_group)
