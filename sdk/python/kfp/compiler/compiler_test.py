@@ -252,6 +252,7 @@ class TestCompilePipeline(parameterized.TestCase):
 
     def test_compile_pipeline_with_invalid_name_should_raise_error(self):
 
+        @dsl.pipeline(name='')
         def my_pipeline():
             VALID_PRODUCER_COMPONENT_SAMPLE(input_param='input')
 

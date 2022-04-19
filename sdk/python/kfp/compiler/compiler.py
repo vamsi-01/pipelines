@@ -88,8 +88,7 @@ class Compiler:
             type_check: Optional; whether to enable the type check or not.
                 Default is True.
         """
-
-        with type_utils.TypeCheckManager(enable=type_check):
+        with type_utils.TypeCheckManager(enable=True):
             if isinstance(pipeline_func, python_component.PythonComponent):
                 pipeline_spec = self._create_pipeline_for_component(
                     component=pipeline_func,
@@ -105,8 +104,8 @@ class Compiler:
             else:
                 raise ValueError(('Unsupported pipeline_func type. Expected '
                                   '`python_component.PythonComponent` or '
-                                  '`Callable` type. '
-                                  f'Got: {type(pipeline_func)}'))
+                                  '`Callable` constructed with @dsl.pipeline '
+                                  f'decorator. Got: {type(pipeline_func)}'))
             self._write_pipeline_spec_file(
                 pipeline_spec=pipeline_spec, package_path=package_path)
 

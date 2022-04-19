@@ -51,6 +51,7 @@ def pipeline(name: Optional[str] = None,
     """
 
     def _pipeline(func: Callable):
+        func._is_pipeline = True
         if name:
             func._component_human_name = name
         if description:
