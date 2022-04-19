@@ -14,11 +14,11 @@
 """Definition for TasksGroup."""
 
 import enum
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 from kfp.components import for_loop
-from kfp.components import pipeline_context
 from kfp.components import pipeline_channel
+from kfp.components import pipeline_context
 from kfp.components import pipeline_task
 
 
@@ -50,7 +50,7 @@ class TasksGroup:
         self,
         group_type: TasksGroupType,
         name: Optional[str] = None,
-    ):
+    ) -> None:
         """Create a new instance of TasksGroup.
 
         Args:
@@ -58,12 +58,13 @@ class TasksGroup:
           name: Optional; the name of the group. Used as display name in UI.
         """
         self.group_type = group_type
-        self.tasks = list()
-        self.groups = list()
+        self.tasks: List[pipeline_task.PipelineTask] = []
+        self.groups: List[TasksGroup] = []
         self.display_name = name
-        self.dependencies = []
+        self.dependencies: List[Union[pipeline_task.PipelineTask,
+                                      TasksGroup]] = []
 
-    def __enter__(self):
+    def __enter__(self) -> "TasksGroup":
         if not pipeline_context.Pipeline.get_default_pipeline():
             raise ValueError('Default pipeline not defined.')
 
@@ -72,10 +73,10 @@ class TasksGroup:
         pipeline_context.Pipeline.get_default_pipeline().push_tasks_group(self)
         return self
 
-    def __exit__(self, *unused_args):
+    def __exit__(self, *unused_args) -> None:
         pipeline_context.Pipeline.get_default_pipeline().pop_tasks_group()
 
-    def _make_name_unique(self):
+    def _make_name_unique(self) -> None:
         """Generates a unique TasksGroup name in the pipeline."""
         if not pipeline_context.Pipeline.get_default_pipeline():
             raise ValueError('Default pipeline not defined.')
@@ -85,7 +86,7 @@ class TasksGroup:
         self.name = f'{self.group_type}-{group_id}'
         self.name = self.name.replace('_', '-')
 
-    def remove_task_recursive(self, task: pipeline_task.PipelineTask):
+    def remove_task_recursive(self, task: pipeline_task.PipelineTask) -> None:
         """Removes a task from the group recursively."""
         if self.tasks and task in self.tasks:
             self.tasks.remove(task)
@@ -113,7 +114,7 @@ class ExitHandler(TasksGroup):
         self,
         exit_task: pipeline_task.PipelineTask,
         name: Optional[str] = None,
-    ):
+    ) -> None:
         """Initializes a Condition task group.
 
         Args:
@@ -156,7 +157,7 @@ class Condition(TasksGroup):
         self,
         condition: pipeline_channel.ConditionOperator,
         name: Optional[str] = None,
-    ):
+    ) -> None:
         """Initializes a conditional task group.
 
         Args:
@@ -191,7 +192,7 @@ class ParallelFor(TasksGroup):
         self,
         items: Union[for_loop.ItemList, pipeline_channel.PipelineChannel],
         name: Optional[str] = None,
-    ):
+    ) -> None:
         """Initializes a for loop task group.
 
         Args:
@@ -213,6 +214,6 @@ class ParallelFor(TasksGroup):
             )
             self.items_is_pipeline_channel = False
 
-    def __enter__(self) -> for_loop.LoopArgument:
+    def __enter__(self) -> for_loop.LoopArgument:  # type: ignore
         super().__enter__()
         return self.loop_argument
