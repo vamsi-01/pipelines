@@ -17,15 +17,15 @@ import itertools
 import pathlib
 import re
 import textwrap
-from typing import Callable, List, Optional, Tuple
 import warnings
+from typing import Callable, List, Optional, Tuple
 
 import docstring_parser
-
 from kfp.components import placeholders
 from kfp.components import python_component
 from kfp.components import structures
-from kfp.components.types import artifact_types, type_annotations 
+from kfp.components.types import artifact_types
+from kfp.components.types import type_annotations
 from kfp.components.types import type_utils
 
 _DEFAULT_BASE_IMAGE = 'python:3.7'
@@ -436,8 +436,11 @@ def create_component_from_func(func: Callable,
     if REGISTERED_MODULES is not None:
         REGISTERED_MODULES[component_name] = component_info
 
-    if output_component_file:
-        component_spec.save_to_component_yaml(output_component_file)
-
-    return python_component.PythonComponent(
+    python_component_instance = python_component.PythonComponent(
         component_spec=component_spec, python_func=func)
+
+    if output_component_file:  # deprecated
+        from kfp import compiler
+        compiler.Compiler().compile(python_component_instance,
+                                    output_component_file)
+    return python_component_instance

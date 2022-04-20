@@ -583,11 +583,31 @@ class ComponentSpec(BaseModel):
         """
 
         json_component = yaml.safe_load(component_yaml)
+        print("HERE:", json_component)
         try:
             return ComponentSpec.parse_obj(json_component)
         except (pydantic.ValidationError, AttributeError):
             v1_component = v1_components._load_component_spec_from_component_text(
                 component_yaml)
+            return cls.from_v1_component_spec(v1_component)
+
+    @classmethod
+    def _load_from_component_ir(self, component_ir: str) -> 'ComponentSpec':
+        """Loads component IR into ComponentSpec.
+
+        Args:
+            component_ir: the component ir in string format.
+
+        Returns:
+            Component spec in the form of V2 ComponentSpec.
+        """
+        json_component = yaml.safe_load(component_ir)
+        print(json_component)
+        try:
+            return ComponentSpec.parse_obj(json_component)
+        except (pydantic.ValidationError, AttributeError):
+            v1_component = v1_components._load_component_spec_from_component_text(
+                component_ir)
             return cls.from_v1_component_spec(v1_component)
 
     def save_to_component_yaml(self, output_file: str) -> None:
@@ -596,4 +616,5 @@ class ComponentSpec(BaseModel):
         Args:
             output_file: File path to store the component yaml.
         """
+        # Compiler().compile()
         ir_utils._write_ir_to_file(self.dict(), output_file)

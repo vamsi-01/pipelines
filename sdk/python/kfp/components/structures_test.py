@@ -13,12 +13,15 @@
 # limitations under the License.
 """Tests for kfp.components.structures."""
 
+import os
+import tempfile
 import textwrap
 import unittest
 from unittest import mock
 
 import pydantic
 from absl.testing import parameterized
+from kfp import compiler
 from kfp.components import structures
 
 V1_YAML_IF_PLACEHOLDER = textwrap.dedent("""\
@@ -471,6 +474,67 @@ class StructuresTest(parameterized.TestCase):
             })
 
         self.assertEqual(generated_spec, expected_spec)
+
+    def test_load_from_component_ir(self):
+        from kfp import dsl
+        from kfp.components import structures
+
+        @dsl.component()
+        def print_op(my_string: str) -> str:
+            print(my_string)
+            return my_string
+
+        with tempfile.TemporaryDirectory() as temp:
+            output_path = os.path.join(temp, 'output.yaml')
+            compiler.Compiler().compile(print_op, output_path)
+            import yaml
+            from rich.console import Console
+            c = Console()
+            with open(output_path, "r") as f:
+                res = yaml.safe_load(f.read())
+
+            c.print(res, style='blue')
+
+            c.print(print_op.component_spec)
+
+            tasks = res['root']['dag']['tasks']
+            assert len(tasks.keys()) == 1  # only one task
+            task_name = list(tasks.keys())[0]
+            task = tasks[task_name]
+            c.print(task_name, style='red')
+
+            comp_name = f'comp-{task_name}'
+            component = res['components'][comp_name]
+            c.print(component, style='green')
+
+            exec_name = f'exec-{task_name}'
+            exec_spec = res['deploymentSpec']['executors'][exec_name]
+            c.print(exec_spec, style='green')
+            component_args = {
+                "name":
+                    "",
+                "description":
+                    None,
+                "inputs": {
+                    "": structures.InputSpec()
+                },  # from component definition
+                "outputs": {
+                    "": structures.OutputSpec()
+                },  # from component definition
+                "implementation":
+                    structures.Implementation(
+                        container=structures.ContainerSpec(),
+                        command=[],
+                        graph=None,
+                        importer=None),  # from executor definition
+            }
+            structures.ComponentSpec()
+
+            # ComponentSpec()
+            # actual = structures.ComponentSpec.load_from_component_yaml(
+            #     output_path)
+
+        # self.assertEqual(print_op.component_spec, actual)
 
 
 if __name__ == '__main__':
