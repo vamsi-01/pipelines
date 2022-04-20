@@ -16,7 +16,8 @@
 import dataclasses
 import itertools
 import json
-from typing import Any, Dict, Mapping, Optional, Sequence, Union
+from typing import (Any, Dict, List, Mapping, Optional, Sequence, Type,
+                    TypeVar, Union)
 
 import pydantic
 import yaml
@@ -25,12 +26,65 @@ from kfp.components import v1_components
 from kfp.components import v1_structures
 from kfp.utils import ir_utils
 
+T = TypeVar("T")
 
-class BaseModel(pydantic.BaseModel):
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
+def _snake_case_to_camel_case(string: str) -> str:
+    if "_" not in string:
+        return string
+
+    prev_space = False
+    chars = []
+    for char in chars:
+        if char == "_":
+            prev_space = True
+            continue
+        elif prev_space:
+            chars.append(char.upper())
+        else:
+            chars.append(char.lower())
+        prev_space = False
+    return "".join(chars)
+
+
+class BaseModel:
+
+    def __init_subclass__(self: T) -> T:
+        return dataclasses.dataclass(self)
+
+    def __post_init__(self):
+        self._recurisvely_validate_types()
+        if hasattr(self, "validate") and callable(self.validate):
+            self.validate()
+
+    def to_dict(self) -> Dict[str, Any]:
+        dictionary = {}
+        for field in self.fields:
+            field = _snake_case_to_camel_case(field)
+            value = getattr(self, field)
+            dictionary[field] = value.to_dict() if isinstance(
+                value, BaseModel) else value
+        return dictionary
+
+    def __dict__(self) -> Dict[str, Any]:
+        return dataclasses.asdict(self)
+
+    @property
+    def types(self) -> Dict[str, type]:
+        return {field.name: field.type for field in dataclasses.fields(self)}
+
+    @property
+    def fields(self) -> List[str]:
+        return [field.name for field in dataclasses.fields(self)]
+
+    def _recurisvely_validate_types(self) -> None:
+        pass
+        for field in self.fields:
+            value = getattr(self, field)
+            type_ann = self.types[field]
+            if not isinstance(value, type_ann):
+                raise TypeError(
+                    f"{field} is not of type {self.types[field]}: {value}")
 
 
 class InputSpec(BaseModel):
@@ -46,7 +100,6 @@ class InputSpec(BaseModel):
     type: Union[str, dict]
     default: Optional[Any] = None
     description: Optional[str] = None
-    _optional: bool = pydantic.PrivateAttr()
 
     def __init__(self, **data):
         super().__init__(**data)
@@ -81,7 +134,7 @@ class InputValuePlaceholder(BasePlaceholder):
     Attributes:
         input_name: name of the input.
     """
-    input_name: str = pydantic.Field(alias='inputValue')
+    input_name: str
 
 
 class InputPathPlaceholder(BasePlaceholder):
@@ -90,7 +143,7 @@ class InputPathPlaceholder(BasePlaceholder):
     Attributes:
         input_name: name of the input.
     """
-    input_name: str = pydantic.Field(alias='inputPath')
+    input_name: str
 
 
 class InputUriPlaceholder(BasePlaceholder):
@@ -99,7 +152,8 @@ class InputUriPlaceholder(BasePlaceholder):
     Attributes:
         input_name: name of the input.
     """
-    input_name: str = pydantic.Field(alias='inputUri')
+    # TODO: input_name: str = pydantic.Field(alias='inputUri')
+    input_name: str
 
 
 class OutputPathPlaceholder(BasePlaceholder):
@@ -108,7 +162,8 @@ class OutputPathPlaceholder(BasePlaceholder):
     Attributes:
         output_name: name of the output.
     """
-    output_name: str = pydantic.Field(alias='outputPath')
+    # TODO: output_name: str = pydantic.Field(alias='outputPath')
+    output_name: str
 
 
 class OutputUriPlaceholder(BasePlaceholder):
@@ -117,7 +172,8 @@ class OutputUriPlaceholder(BasePlaceholder):
     Attributes:
         output_name: name of the output.
     """
-    output_name: str = pydantic.Field(alias='outputUri')
+    # TODO: output_name: str = pydantic.Field(alias='outputUri')
+    output_name: str
 
 
 ValidCommandArgs = Union[str, InputValuePlaceholder, InputPathPlaceholder,
@@ -132,7 +188,8 @@ class ConcatPlaceholder(BasePlaceholder):
     Attributes:
         items: string or ValidCommandArgs for concatenation.
     """
-    items: Sequence[ValidCommandArgs] = pydantic.Field(alias='concat')
+    # TODO: items: Sequence[ValidCommandArgs] = pydantic.Field(alias='concat')
+    items: Sequence[ValidCommandArgs]
 
 
 class IfPresentPlaceholderStructure(BaseModel):
@@ -147,16 +204,18 @@ class IfPresentPlaceholderStructure(BaseModel):
             the command-line argument will be replaced at run-time by the
             expanded value of otherwise.
     """
-    input_name: str = pydantic.Field(alias='inputName')
+    input_name: str
     then: Sequence[ValidCommandArgs]
-    otherwise: Optional[Sequence[ValidCommandArgs]] = pydantic.Field(
-        None, alias='else')
+    # TODO: otherwise: Optional[Sequence[ValidCommandArgs]] = pydantic.Field(
+    #     None, alias='else')
+    otherwise: Optional[Sequence[ValidCommandArgs]]
 
-    @pydantic.validator('otherwise', allow_reuse=True)
-    def empty_otherwise_sequence(cls, v):
-        if v == []:
-            return None
-        return v
+    # TODO
+    # @pydantic.validator('otherwise', allow_reuse=True)
+    # def empty_otherwise_sequence(cls, v):
+    #     if v == []:
+    #         return None
+    #     return v
 
 
 class IfPresentPlaceholder(BasePlaceholder):
@@ -165,13 +224,13 @@ class IfPresentPlaceholder(BasePlaceholder):
     Attributes:
         if_present (ifPresent): holds structure for conditional cases.
     """
-    if_structure: IfPresentPlaceholderStructure = pydantic.Field(
-        alias='ifPresent')
+    # TODO:
+    if_structure: IfPresentPlaceholderStructure
 
 
-IfPresentPlaceholderStructure.update_forward_refs()
-IfPresentPlaceholder.update_forward_refs()
-ConcatPlaceholder.update_forward_refs()
+# IfPresentPlaceholderStructure.update_forward_refs()
+# IfPresentPlaceholder.update_forward_refs()
+# ConcatPlaceholder.update_forward_refs()
 
 
 @dataclasses.dataclass
@@ -207,17 +266,17 @@ class ContainerSpec(BaseModel):
     env: Optional[Mapping[str, ValidCommandArgs]] = None
     resources: Optional[ResourceSpec] = None
 
-    @pydantic.validator('command', 'args', allow_reuse=True)
-    def empty_sequence(cls, v):
-        if v == []:
-            return None
-        return v
+    # @pydantic.validator('command', 'args', allow_reuse=True)
+    # def empty_sequence(cls, v):
+    #     if v == []:
+    #         return None
+    #     return v
 
-    @pydantic.validator('env', allow_reuse=True)
-    def empty_map(cls, v):
-        if v == {}:
-            return None
-        return v
+    # @pydantic.validator('env', allow_reuse=True)
+    # def empty_map(cls, v):
+    #     if v == {}:
+    #         return None
+    #     return v
 
 
 class TaskSpec(BaseModel):
@@ -307,39 +366,39 @@ class ComponentSpec(BaseModel):
             (container, importer) or a DAG consists of other components.
     """
     name: str
+    implementation: Implementation
     description: Optional[str] = None
     inputs: Optional[Dict[str, InputSpec]] = None
     outputs: Optional[Dict[str, OutputSpec]] = None
-    implementation: Implementation
 
-    @pydantic.validator('inputs', 'outputs', allow_reuse=True)
-    def empty_map(cls, v):
-        if v == {}:
-            return None
-        return v
+    # @pydantic.validator('inputs', 'outputs', allow_reuse=True)
+    # def empty_map(cls, v):
+    #     if v == {}:
+    #         return None
+    #     return v
 
-    @pydantic.root_validator(allow_reuse=True)
-    def validate_placeholders(cls, values):
-        if values.get('implementation').container is None:
-            return values
-        containerSpec: ContainerSpec = values.get('implementation').container
+    # @pydantic.root_validator(allow_reuse=True)
+    # def validate_placeholders(cls, values):
+    #     if values.get('implementation').container is None:
+    #         return values
+    #     containerSpec: ContainerSpec = values.get('implementation').container
 
-        try:
-            valid_inputs = values.get('inputs').keys()
-        except AttributeError:
-            valid_inputs = []
+    #     try:
+    #         valid_inputs = values.get('inputs').keys()
+    #     except AttributeError:
+    #         valid_inputs = []
 
-        try:
-            valid_outputs = values.get('outputs').keys()
-        except AttributeError:
-            valid_outputs = []
+    #     try:
+    #         valid_outputs = values.get('outputs').keys()
+    #     except AttributeError:
+    #         valid_outputs = []
 
-        for arg in itertools.chain((containerSpec.command or []),
-                                   (containerSpec.args or [])):
-            cls._check_valid_placeholder_reference(valid_inputs, valid_outputs,
-                                                   arg)
+    #     for arg in itertools.chain((containerSpec.command or []),
+    #                                (containerSpec.args or [])):
+    #         cls._check_valid_placeholder_reference(valid_inputs, valid_outputs,
+    #                                                arg)
 
-        return values
+    #     return values
 
     @classmethod
     def _check_valid_placeholder_reference(cls, valid_inputs: Sequence[str],
