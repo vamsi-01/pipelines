@@ -247,8 +247,8 @@ class Test(unittest.TestCase):
                 str(self._working_dir), '--component-filepattern=train/*'
             ],
         )
-        print("OUTPUT", result.output)
-        print("DONE")
+        print('OUTPUT', result.output)
+        print('DONE')
         print(result.exc_info)
         import traceback
         traceback.print_tb(result.exc_info[2])
@@ -329,7 +329,7 @@ class Test(unittest.TestCase):
             func_name='train', target_image='custom-image')
         _write_components('components.py', component)
         with self.assertWarnsRegex(DeprecationWarning,
-                                   r"The --engine option is deprecated"):
+                                   r'The --engine option is deprecated'):
             result = self.runner.invoke(
                 self.cli,
                 ['build', str(self._working_dir), '--engine=kaniko'],
@@ -344,7 +344,7 @@ class Test(unittest.TestCase):
         _write_components('components.py', component)
 
         with self.assertWarnsRegex(DeprecationWarning,
-                                   r"The --engine option is deprecated"):
+                                   r'The --engine option is deprecated'):
             result = self.runner.invoke(
                 self.cli,
                 ['build',
