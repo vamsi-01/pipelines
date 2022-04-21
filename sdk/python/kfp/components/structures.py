@@ -20,6 +20,7 @@ from typing import Any, Dict, Mapping, Optional, Sequence, Union
 
 import pydantic
 import yaml
+from kfp.components import base_model
 from kfp.components import utils
 from kfp.components import v1_components
 from kfp.components import v1_structures
@@ -45,16 +46,11 @@ class InputSpec(BaseModel):
     type: Union[str, dict]
     default: Optional[Any] = None
     description: Optional[str] = None
-    _optional: bool = pydantic.PrivateAttr()
-
-    def __init__(self, **data):
-        super().__init__(**data)
-        # An input is optional if a default value is explicitly specified.
-        self._optional = 'default' in data
 
     @property
     def optional(self) -> bool:
-        return self._optional
+        none_is_permitted = str(self.type).startswith('Optional')
+        return self.default is not None or none_is_permitted
 
 
 class OutputSpec(BaseModel):

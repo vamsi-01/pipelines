@@ -19,6 +19,8 @@ from typing import (Any, Dict, Iterable, Mapping, MutableMapping,
                     MutableSequence, Optional, OrderedDict, Sequence, Tuple,
                     Type, TypeVar, Union)
 
+import pydantic
+
 # TODO: implement in structures
 # TODO: accumulate errors on typecasting
 # TODO: support for future annotations
@@ -122,6 +124,15 @@ class BaseModel:
         args = _get_args_py37(type_) or [Any, Any]
         for arg in args:
             cls._recursively_validate_type_is_supported(arg)
+
+    def __post_init__(self) -> None:
+        """Calls all methods prefixed with `validate`."""
+        validate_methods = [
+            method for method in dir(self) if method.startswith('validate') and
+            callable(getattr(self, method))
+        ]
+        for method in validate_methods:
+            getattr(self, method)()
 
 
 def convert_object_to_dict(obj: Any) -> Dict[str, Any]:

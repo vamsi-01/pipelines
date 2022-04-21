@@ -422,7 +422,7 @@ class StructuresTest(parameterized.TestCase):
                 'output_1': structures.OutputSpec(type='Artifact'),
                 'output_2': structures.OutputSpec(type='Artifact'),
             })
-
+        print(generated_spec.dict())
         self.assertEqual(generated_spec, expected_spec)
 
 

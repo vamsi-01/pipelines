@@ -229,6 +229,40 @@ class TestBaseModel(unittest.TestCase):
             class MyClass(base_model.BaseModel):
                 a: OtherClass
 
+    def test_base_model_validation(self):
+
+        # test exception thrown
+        class MyClass(base_model.BaseModel):
+            x: int
+
+            def validate_x(self) -> None:
+                if self.x < 2:
+                    raise ValueError('x must be greater than 2')
+
+        with self.assertRaisesRegex(ValueError, 'x must be greater than 2'):
+            mc = MyClass(x=1)
+
+        # test value modified same type
+        class MyClass(base_model.BaseModel):
+            x: int
+
+            def validate_x(self) -> None:
+                self.x = max(self.x, 2)
+
+        mc = MyClass(x=1)
+        self.assertEqual(mc.x, 2)
+
+        # test value modified new type
+        class MyClass(base_model.BaseModel):
+            x: Optional[List[int]] = None
+
+            def validate_x(self) -> None:
+                if isinstance(self.x, list) and not self.x:
+                    self.x = None
+
+        mc = MyClass(x=[])
+        self.assertEqual(mc.x, None)
+
 
 class TestIsBaseModel(unittest.TestCase):
 

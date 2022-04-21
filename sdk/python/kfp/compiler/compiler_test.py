@@ -746,7 +746,7 @@ class TestWriteToFileTypes(parameterized.TestCase):
 
             @dsl.pipeline(name='test-pipeline')
             def simple_pipeline():
-                producer = producer_op(location="1")
+                producer = producer_op(location="1", nodefault="a_string")
 
             target_json_file = os.path.join(tmpdir, 'result.json')
             compiler.Compiler().compile(
@@ -758,6 +758,7 @@ class TestWriteToFileTypes(parameterized.TestCase):
                 pass
         finally:
             shutil.rmtree(tmpdir)
+
 
 if __name__ == '__main__':
     unittest.main()
