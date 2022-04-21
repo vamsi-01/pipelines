@@ -79,7 +79,7 @@ class BaseModel:
     def __init_subclass__(self) -> None:
         class_instance = dataclasses.dataclass(self)
         for field in dataclasses.fields(class_instance):
-            self._recursively_check_type_is_supported(field.type)
+            self._recursively_validate_type_is_supported(field.type)
 
     def to_dict(self) -> Dict[str, Any]:
         """Recursively convert to dictionary."""
@@ -102,7 +102,7 @@ class BaseModel:
         return dataclasses.fields(cls)
 
     @classmethod
-    def _recursively_check_type_is_supported(cls, type_: type) -> None:
+    def _recursively_validate_type_is_supported(cls, type_: type) -> None:
         """Walks the type (generic and subtypes) and checks if it is supported.
 
         Args:
@@ -121,10 +121,7 @@ class BaseModel:
 
         args = _get_args_py37(type_) or [Any, Any]
         for arg in args:
-            cls._recursively_check_type_is_supported(arg)
-
-
-AType = Union[Type, BaseModel, Any]
+            cls._recursively_validate_type_is_supported(arg)
 
 
 def convert_object_to_dict(obj: Any) -> Dict[str, Any]:
