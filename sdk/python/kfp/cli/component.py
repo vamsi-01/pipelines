@@ -1,4 +1,4 @@
-# Copyright 2021 The Kubeflow Authors
+# Copyright 2021-2022 The Kubeflow Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -96,8 +96,7 @@ class ComponentBuilder():
         self._context_directory = context_directory
         self._dockerfile = self._context_directory / _DOCKERFILE
         self._component_filepattern = component_filepattern
-        self._components: List[
-            component_factory.component_factory.ComponentInfo] = []
+        self._components: List[component_factory.ComponentInfo] = []
 
         # This is only set if we need to install KFP from local copy.
         self._maybe_copy_kfp_package = ''
@@ -400,3 +399,4 @@ def build(components_directory: pathlib.Path, component_filepattern: str,
     builder.maybe_generate_dockerignore()
     builder.maybe_generate_dockerfile(overwrite_dockerfile=overwrite_dockerfile)
     builder.build_image(push_image=push_image)
+    click.echo('Successfully built component container.')

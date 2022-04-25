@@ -128,7 +128,7 @@ def dsl_compile(
                 pipeline_parameters) if pipeline_parameters is not None else {}
         except json.JSONDecodeError as e:
             logging.error(
-                f"Failed to parse --pipeline-parameters argument: {pipeline_parameters}"
+                f'Failed to parse --pipeline-parameters argument: {pipeline_parameters}'
             )
             raise e
         _compile_pipeline_function(
@@ -140,6 +140,7 @@ def dsl_compile(
         )
     finally:
         del sys.path[0]
+    click.echo(f'Pipeline compiled to {output}.')
 
 
 def main():
