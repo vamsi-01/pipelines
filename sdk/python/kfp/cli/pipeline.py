@@ -97,9 +97,10 @@ def upload_version(ctx: click.Context,
         if pipeline_id is None:
             raise ValueError(
                 f"Can't find a pipeline with name: {pipeline_name}")
-    # TODO: this is broken
-    version = client.pipeline_uploads.upload_pipeline_version(
-        package_file, name=pipeline_version, pipelineid=pipeline_id)
+    version = client.upload_pipeline_version(
+        pipeline_package_path=package_file,
+        pipeline_version_name=pipeline_version,
+        pipeline_id=pipeline_id)
     _display_pipeline_version(version, output_format)
 
 
