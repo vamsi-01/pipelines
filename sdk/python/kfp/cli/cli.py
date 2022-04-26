@@ -25,6 +25,7 @@ from kfp.cli import recurring_run
 from kfp.cli import run
 from kfp.cli.output import OutputFormat
 from kfp.cli.utils import aliased_plurals_group
+from kfp.cli.utils import parsing
 from kfp.client import Client
 
 COMMANDS = {
@@ -59,7 +60,8 @@ def _install_completion(shell: str) -> None:
     name=PROGRAM_NAME,
     cls=aliased_plurals_group.AliasedPluralsGroup,  # type: ignore
     commands=list(chain.from_iterable(COMMANDS.values())),  # type: ignore
-    invoke_without_command=True)
+    invoke_without_command=True,
+    context_settings={'show_default': True})
 @click.option(
     '--show-completion',
     type=click.Choice(list(SHELL_FILES.keys())),
@@ -68,25 +70,24 @@ def _install_completion(shell: str) -> None:
     '--install-completion',
     type=click.Choice(list(SHELL_FILES.keys())),
     default=None)
-@click.option('--endpoint', help='Endpoint of the KFP API service to connect.')
-@click.option('--iap-client-id', help='Client ID for IAP protected endpoint.')
+@click.option('--endpoint', help=parsing.get_param_descr(Client, 'host'))
+@click.option(
+    '--iap-client-id', help=parsing.get_param_descr(Client, 'client_id'))
 @click.option(
     '-n',
     '--namespace',
     default='kubeflow',
-    show_default=True,
-    help='Kubernetes namespace to connect to the KFP API.')
+    help=parsing.get_param_descr(Client, 'namespace'))
 @click.option(
     '--other-client-id',
-    help='Client ID for IAP protected endpoint to obtain the refresh token.')
+    help=parsing.get_param_descr(Client, 'other_client_id'))
 @click.option(
     '--other-client-secret',
-    help='Client ID for IAP protected endpoint to obtain the refresh token.')
+    help=parsing.get_param_descr(Client, 'other_client_secret'))
 @click.option(
     '--output',
     type=click.Choice(list(map(lambda x: x.name, OutputFormat))),
     default=OutputFormat.table.name,
-    show_default=True,
     help='The formatting style for command output.')
 @click.pass_context
 @click.version_option(version=kfp.__version__, message='%(prog)s %(version)s')
