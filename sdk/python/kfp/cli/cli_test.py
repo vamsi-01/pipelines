@@ -132,8 +132,6 @@ class TestSmokeTestAllCommandsWithHelp(parameterized.TestCase):
     def setUpClass(cls):
         cls.runner = testing.CliRunner()
 
-        cls.vals = [('run', 'list')]
-
     @parameterized.parameters(*noun_verb_list)
     def test(self, noun: str, verb: str):
         with mock.patch('kfp.cli.cli.client.Client'):

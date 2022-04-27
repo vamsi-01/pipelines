@@ -46,6 +46,7 @@ def run():
     '-m',
     '--max-size',
     default=100,
+    type=int,
     help=parsing.get_param_descr(client.Client.list_runs, 'page_size'))
 @click.option(
     '--sort-by',
@@ -110,8 +111,8 @@ def list(ctx: click.Context, experiment_id: str, page_token: str, max_size: int,
     '-t',
     '--timeout',
     default=0,
-    help='Wait for a run to complete until timeout in seconds.',
-    type=int)
+    type=int,
+    help='Wait for a run to complete until timeout in seconds.')
 @click.argument('args', nargs=-1)
 @click.pass_context
 def submit(ctx: click.Context, experiment_name: str, run_name: str,
@@ -161,7 +162,7 @@ def submit(ctx: click.Context, experiment_name: str, run_name: str,
     '--detail',
     is_flag=True,
     default=False,
-    help='Get detailed information of the run in json format.')
+    help='Get detailed information of the run in JSON format.')
 @click.argument('run-id')
 @click.pass_context
 def get(ctx: click.Context, watch: bool, detail: bool, run_id: str):

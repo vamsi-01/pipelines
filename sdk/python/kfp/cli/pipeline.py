@@ -97,9 +97,10 @@ def upload_version(ctx: click.Context,
         if pipeline_id is None:
             raise ValueError(
                 f"Can't find a pipeline with name: {pipeline_name}")
-    # TODO: this is broken
-    version = client.pipeline_uploads.upload_pipeline_version(
-        package_file, name=pipeline_version, pipelineid=pipeline_id)
+    version = client.upload_pipeline_version(
+        pipeline_package_path=package_file,
+        pipeline_version_name=pipeline_version,
+        pipeline_id=pipeline_id)
     _display_pipeline_version(version, output_format)
 
 
@@ -112,6 +113,7 @@ def upload_version(ctx: click.Context,
     '-m',
     '--max-size',
     default=100,
+    type=int,
     help=parsing.get_param_descr(client.Client.list_pipelines, 'page_size'))
 @click.option(
     '--sort-by',
@@ -191,17 +193,7 @@ def list_versions(ctx: click.Context, pipeline_id: str, page_token: str,
 @click.argument('version-id')
 @click.pass_context
 def delete_version(ctx: click.Context, version_id: str):
-    """Delete a version of a pipeline.
-
-    Args:
-      version_id: id of the pipeline version.
-
-    Returns:
-      Object. If the method is called asynchronously, returns the request thread.
-
-    Throws:
-      Exception if pipeline version is not found.
-    """
+    """Delete a version of a pipeline."""
     confirmation = f'Are you sure you want to delete pipeline version {version_id}?'
     if not click.confirm(confirmation):
         return

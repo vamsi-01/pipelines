@@ -678,7 +678,7 @@ class Client:
         Args:
             page_token: Token for starting of the page.
             page_size: Size of the page.
-            sort_by: one of 'field_name', 'field_name desc'. For example,
+            sort_by: One of 'field_name', 'field_name desc'. For example,
                 'name desc'.
             filter: A url-encoded, JSON-serialized Filter protocol buffer
                 (see [filter.proto](https://github.com/kubeflow/pipelines/blob/master/backend/api/filter.proto)).
@@ -1019,7 +1019,7 @@ class Client:
             pipeline_func: A function that describes a pipeline by calling
                 components and composing them into execution graph.
             arguments: Arguments to the pipeline function provided as a dict.
-            run_name (Optional): Name of the run to be shown in the UI.
+            run_name (Optional): Name of the run.
             experiment_name (Optional): Name of the experiment to add the run to.
             namespace: Kubernetes namespace where the pipeline runs are created.
                 For single user deployment, leave it as None;
@@ -1076,7 +1076,7 @@ class Client:
         Args:
             pipeline_file: A compiled pipeline package file.
             arguments: Arguments to the pipeline function provided as a dict.
-            run_name (Optional):  Name of the run to be shown in the UI.
+            run_name (Optional):  Name of the run.
             experiment_name (Optional): Name of the experiment to add the run to.
             namespace (Optional): Kubernetes namespace where the pipeline runs are created.
               For single user deployment, leave it as None;
@@ -1385,9 +1385,8 @@ class Client:
 
         Args:
             pipeline_package_path: Local path to the pipeline package.
-            pipeline_name (Optional): Name of the pipeline to be shown in the UI.
-            description (Optional): Description of the pipeline to be shown in
-                the UI.
+            pipeline_name (Optional): Name of the pipeline.
+            description (Optional): Description of the pipeline..
 
         Returns:
             Server response object containing pipleine id and other information.
@@ -1414,12 +1413,10 @@ class Client:
 
         Args:
             pipeline_package_path: Local path to the pipeline package.
-            pipeline_version_name:  Name of the pipeline version to be shown in
-                the UI.
+            pipeline_version_name:  Name of the pipeline version.
             pipeline_id (Optional): Id of the pipeline.
             pipeline_name (Optional): Name of the pipeline.
-            description (Optional): Description of the pipeline version to be
-                shown in the UI.
+            description (Optional): Description of the pipeline version.
 
         Returns:
             Server response object containing pipleine id and other information.

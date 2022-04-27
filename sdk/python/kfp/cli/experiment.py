@@ -43,6 +43,7 @@ def create(ctx: click.Context, description: str, name: str):
     '-m',
     '--max-size',
     default=100,
+    type=int,
     help=parsing.get_param_descr(client.Client.list_experiments, 'page_size'))
 @click.option(
     '--sort-by',
@@ -147,8 +148,7 @@ def archive(ctx: click.Context, experiment_id: str, experiment_name: str):
     client = ctx.obj['client']
 
     if (experiment_id is None) == (experiment_name is None):
-        raise ValueError(
-            'Either --experiment-id or --experiment-name is required.')
+        raise ValueError(either_option_required)
 
     if not experiment_id:
         experiment = client.get_experiment(experiment_name=experiment_name)
@@ -175,8 +175,7 @@ def unarchive(ctx: click.Context, experiment_id: str, experiment_name: str):
     client = ctx.obj['client']
 
     if (experiment_id is None) == (experiment_name is None):
-        raise ValueError(
-            'Either --expriment-id or --experiment-name is required.')
+        raise ValueError(either_option_required)
 
     if not experiment_id:
         experiment = client.get_experiment(experiment_name=experiment_name)

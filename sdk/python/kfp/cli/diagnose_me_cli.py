@@ -24,12 +24,10 @@ ResultsType = Dict[Union[gcp.Commands, dev_env.Commands,
 @click.option(
     '-p',
     '--project-id',
-    type=Text,
     help='Target project id. It will use environment default if not specified.')
 @click.option(
     '-n',
     '--namespace',
-    type=Text,
     help='Namespace to use for Kubernetes cluster.all-namespaces is used if not specified.'
 )
 @click.pass_context

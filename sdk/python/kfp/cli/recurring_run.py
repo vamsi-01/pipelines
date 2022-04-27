@@ -76,6 +76,7 @@ either_option_required = 'Either --experiment-id or --experiment-name is require
                                  'job_name'))
 @click.option(
     '--interval-second',
+    type=int,
     help=parsing.get_param_descr(client.Client.create_recurring_run,
                                  'interval_second'))
 @click.option(
@@ -97,7 +98,10 @@ either_option_required = 'Either --experiment-id or --experiment-name is require
     '--start-time',
     help=parsing.get_param_descr(client.Client.create_recurring_run,
                                  'start_time'))
-@click.option('--version-id', help='The id of a pipeline version.')
+@click.option(
+    '--version-id',
+    help=parsing.get_param_descr(client.Client.create_recurring_run,
+                                 'version_id'))
 @click.argument('args', nargs=-1)
 @click.pass_context
 def create(ctx: click.Context,
@@ -165,6 +169,7 @@ def create(ctx: click.Context,
     '-m',
     '--max-size',
     default=100,
+    type=int,
     help=parsing.get_param_descr(client.Client.list_recurring_runs,
                                  'page_size'))
 @click.option(
