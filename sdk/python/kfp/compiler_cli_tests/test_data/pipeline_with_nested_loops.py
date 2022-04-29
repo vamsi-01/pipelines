@@ -14,7 +14,8 @@
 
 from typing import Optional
 
-from kfp import compiler, dsl
+from kfp import compiler
+from kfp import dsl
 from kfp.dsl import component
 
 
@@ -53,6 +54,9 @@ def my_pipeline(loop_parameter: list = [
         with dsl.ParallelFor(['100', '200', '300']) as inner_item:
             print_op(msg=outter_item, msg2=inner_item)
 
+
+print(print_op.component_spec.inputs['msg2'].type)
+print(print_op.component_spec.inputs['msg2']._optional)
 
 if __name__ == '__main__':
     compiler.Compiler().compile(

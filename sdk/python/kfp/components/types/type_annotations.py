@@ -110,6 +110,20 @@ def get_io_artifact_annotation(typ):
     return typ.__metadata__[0]
 
 
+def none_permitted(annotation: T) -> bool:
+    """Returns whether None is a permitted value for this type.
+
+    Args:
+      annotation: The original type annotation which may or may not has
+        `Optional`.
+
+    Returns:
+      bool: Whether None is a permitted value for this type.
+    """
+    return getattr(annotation, '__origin__',
+                   None) is Union and type(None) in annotation.__args__
+
+
 def maybe_strip_optional_from_annotation(annotation: T) -> T:
     """Strips 'Optional' from 'Optional[<type>]' if applicable.
 

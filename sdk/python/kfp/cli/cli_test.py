@@ -179,11 +179,11 @@ COMPILER_CLI_TEST_DATA_DIR = os.path.join(
 
 SPECIAL_TEST_PY_FILES = {'two_step_pipeline.py'}
 
-TEST_PY_FILES = {
+TEST_PY_FILES = sorted([
     file.split('.')[0]
     for file in os.listdir(COMPILER_CLI_TEST_DATA_DIR)
     if ".py" in file and file not in SPECIAL_TEST_PY_FILES
-}
+])
 
 
 class TestDslCompile(parameterized.TestCase):

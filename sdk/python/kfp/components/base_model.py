@@ -62,7 +62,8 @@ class BaseModel:
     # this quiets the mypy "Unexpected keyword argument..." errors on subclass construction
     # TODO: find a way to propogate type info to subclasses
     def __init__(self, *args, **kwargs):
-        pass
+        self._args = args
+        self._kwargs = kwargs
 
     def __init_subclass__(cls) -> None:
         """Hook called at subclass definition time and at instance construction
@@ -72,7 +73,6 @@ class BaseModel:
         definition time are supported by BaseModel.
         """
         cls = dataclasses.dataclass(cls)
-        # print(inspect.signature(cls.__init__))
         for field in dataclasses.fields(cls):
             cls._recursively_validate_type_is_supported(field.type)
 
@@ -413,8 +413,8 @@ def _load_basemodel_helper(type_: Any, data: Any, by_alias: bool) -> Any:
                 if field.default is dataclasses.MISSING and field.default_factory is dataclasses.MISSING:
                     raise ValueError(
                         f'Missing required field: {data_field_name}')
-                value = field.default if field.default is not dataclasses.MISSING else field.default_factory(
-                )
+                value = field.default_factory(
+                ) if field.default is dataclasses.MISSING else field.default
             else:
                 value = _load_basemodel_helper(
                     field.type, value, by_alias=by_alias)
