@@ -13,10 +13,13 @@
 # limitations under the License.
 """Definitions for component spec."""
 
+import abc
 import ast
 import collections
+import dataclasses
 import functools
 import itertools
+import re
 import uuid
 from typing import Any, Dict, List, Mapping, Optional, Union
 
@@ -27,6 +30,7 @@ from kfp.components import base_model
 from kfp.components import utils
 from kfp.components import v1_components
 from kfp.components import v1_structures
+from kfp.components.types import type_utils
 from kfp.pipeline_spec import pipeline_spec_pb2
 from kfp.utils import ir_utils
 
@@ -62,6 +66,26 @@ class InputSpec(InputSpec_, base_model.BaseModel):
         super().__init__(*args, **kwargs)
         self._optional = 'default' in kwargs
 
+    @classmethod
+    def from_ir_parameter_dict(
+            cls, ir_parameter_dict: Dict[str, Any]) -> 'InputSpec':
+        type_ = type_utils.IR_TYPE_TO_IN_MEMORY_SPEC_TYPE.get(
+            ir_parameter_dict['parameterType'])
+        # TODO: cast default type? -> test int and string
+        default = ir_parameter_dict.get('defaultValue')
+        # TODO: is description is always None?
+        return InputSpec(type=type_, default=default, description=None)
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, InputSpec):
+            return type_utils.get_canonical_name_for_outer_generic(
+                self.type
+            ) == type_utils.get_canonical_name_for_outer_generic(
+                other.type
+            ) and self.default == other.default and self.description == other.description
+        else:
+            return False
+
 
 class OutputSpec(base_model.BaseModel):
     """Component output definitions.
@@ -73,8 +97,69 @@ class OutputSpec(base_model.BaseModel):
     type: Union[str, dict]
     description: Optional[str] = None
 
+    @classmethod
+    def from_ir_component_dict(
+            cls, ir_parameter_dict: Dict[str, Any]) -> 'OutputSpec':
+        type_string = ir_parameter_dict[
+            'parameterType'] if 'parameterType' in ir_parameter_dict else ir_parameter_dict[
+                'artifactType']['schemaTitle']
 
-class InputValuePlaceholder(base_model.BaseModel):
+        type_ = type_utils.IR_TYPE_TO_IN_MEMORY_SPEC_TYPE.get(type_string)
+        # TODO: is description is always None?
+        return OutputSpec(type=type_, description=None)
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, OutputSpec):
+            return type_utils.get_canonical_name_for_outer_generic(
+                self.type) == type_utils.get_canonical_name_for_outer_generic(
+                    other.type) and self.description == other.description
+        else:
+            return False
+
+
+class PlaceholderSerializationMixin(abc.ABC):
+    _FROM_PLACEHOLDER_REGEX: Union[str, type(NotImplemented)] = NotImplemented
+    _TO_PLACEHOLDER_TEMPLATE_STRING: Union[
+        str, type(NotImplemented)] = NotImplemented
+
+    @classmethod
+    def _is_input_placeholder(cls) -> bool:
+        field_names = {field.name for field in dataclasses.fields(cls)}
+        return "input_name" in field_names
+
+    @classmethod
+    def is_match(cls, placeholder: str) -> bool:
+        return re.match(cls._FROM_PLACEHOLDER_REGEX, placeholder) is not None
+
+    @classmethod
+    def from_placeholder(cls, placeholder: str) -> Any:
+        if cls._FROM_PLACEHOLDER_REGEX == NotImplemented:
+            raise NotImplementedError(
+                f'{cls.__name__} does not support placeholder parsing.')
+
+        matches = re.search(cls._FROM_PLACEHOLDER_REGEX, placeholder)
+        if matches is None:
+            raise ValueError(
+                f'Could not parse placeholder: {placeholder} into {cls.__name__}'
+            )
+        if cls._is_input_placeholder():
+            return cls(input_name=matches[1])
+        else:
+            return cls(output_name=matches[1])
+
+    def to_placeholder(self) -> str:
+        if self._TO_PLACEHOLDER_TEMPLATE_STRING == NotImplemented:
+            raise NotImplementedError(
+                f'{self.__class__.__name__} does not support creating placeholder strings.'
+            )
+        attr_name = 'input_name' if self._is_input_placeholder(
+        ) else 'output_name'
+        value = getattr(self, attr_name)
+        return self._TO_PLACEHOLDER_TEMPLATE_STRING.format(value)
+
+
+class InputValuePlaceholder(base_model.BaseModel,
+                            PlaceholderSerializationMixin):
     """Class that holds input value for conditional cases.
 
     Attributes:
@@ -82,9 +167,11 @@ class InputValuePlaceholder(base_model.BaseModel):
     """
     input_name: str
     _aliases = {'input_name': 'inputValue'}
+    _TO_PLACEHOLDER_TEMPLATE_STRING = "{{{{$.inputs.parameters['{}']}}}}"
+    _FROM_PLACEHOLDER_REGEX = r"\{\{\$\.inputs\.parameters\[(?:''|'|\")(.+?)(?:''|'|\")]\}\}"
 
 
-class InputPathPlaceholder(base_model.BaseModel):
+class InputPathPlaceholder(base_model.BaseModel, PlaceholderSerializationMixin):
     """Class that holds input path for conditional cases.
 
     Attributes:
@@ -92,9 +179,11 @@ class InputPathPlaceholder(base_model.BaseModel):
     """
     input_name: str
     _aliases = {'input_name': 'inputPath'}
+    _TO_PLACEHOLDER_TEMPLATE_STRING = "{{{{$.inputs.artifacts['{}'].path}}}}"
+    _FROM_PLACEHOLDER_REGEX = r"\{\{\$\.inputs\.artifacts\[(?:''|'|\")(.+?)(?:''|'|\")]\.path\}\}"
 
 
-class InputUriPlaceholder(base_model.BaseModel):
+class InputUriPlaceholder(base_model.BaseModel, PlaceholderSerializationMixin):
     """Class that holds input uri for conditional cases.
 
     Attributes:
@@ -102,9 +191,12 @@ class InputUriPlaceholder(base_model.BaseModel):
     """
     input_name: str
     _aliases = {'input_name': 'inputUri'}
+    _TO_PLACEHOLDER_TEMPLATE_STRING = "{{{{$.inputs.artifacts['{}'].uri}}}}"
+    _FROM_PLACEHOLDER_REGEX = r"\{\{\$\.inputs\.artifacts\[(?:''|'|\")(.+?)(?:''|'|\")]\.uri\}\}"
 
 
-class OutputPathPlaceholder(base_model.BaseModel):
+class OutputValuePlaceholder(base_model.BaseModel,
+                             PlaceholderSerializationMixin):
     """Class that holds output path for conditional cases.
 
     Attributes:
@@ -112,9 +204,24 @@ class OutputPathPlaceholder(base_model.BaseModel):
     """
     output_name: str
     _aliases = {'output_name': 'outputPath'}
+    _TO_PLACEHOLDER_TEMPLATE_STRING = "{{{{$.outputs.parameters['{}'].output_file}}}}"
+    _FROM_PLACEHOLDER_REGEX = r"\{\{\$\.outputs\.parameters\[(?:''|'|\")(.+?)(?:''|'|\")]\.output_file\}\}"
 
 
-class OutputUriPlaceholder(base_model.BaseModel):
+class OutputPathPlaceholder(base_model.BaseModel,
+                            PlaceholderSerializationMixin):
+    """Class that holds output path for conditional cases.
+
+    Attributes:
+        output_name: name of the output.
+    """
+    output_name: str
+    _aliases = {'output_name': 'outputPath'}
+    _TO_PLACEHOLDER_TEMPLATE_STRING = "{{{{$.outputs.artifacts['{}'].path}}}}"
+    _FROM_PLACEHOLDER_REGEX = r"\{\{\$\.outputs\.artifacts\[(?:''|'|\")(.+?)(?:''|'|\")]\.path\}\}"
+
+
+class OutputUriPlaceholder(base_model.BaseModel, PlaceholderSerializationMixin):
     """Class that holds output uri for conditional cases.
 
     Attributes:
@@ -122,12 +229,14 @@ class OutputUriPlaceholder(base_model.BaseModel):
     """
     output_name: str
     _aliases = {'output_name': 'outputUri'}
+    _TO_PLACEHOLDER_TEMPLATE_STRING = "{{{{$.outputs.artifacts['{}'].uri}}}}"
+    _FROM_PLACEHOLDER_REGEX = r"\{\{\$\.outputs\.artifacts\[(?:''|'|\")(.+?)(?:''|'|\")]\.uri\}\}"
 
 
 ValidCommandArgs = Union[str, InputValuePlaceholder, InputPathPlaceholder,
                          InputUriPlaceholder, OutputPathPlaceholder,
-                         OutputUriPlaceholder, 'IfPresentPlaceholder',
-                         'ConcatPlaceholder']
+                         OutputUriPlaceholder, OutputValuePlaceholder,
+                         'IfPresentPlaceholder', 'ConcatPlaceholder']
 
 
 class ConcatPlaceholder(base_model.BaseModel):
@@ -138,6 +247,14 @@ class ConcatPlaceholder(base_model.BaseModel):
     """
     items: List[ValidCommandArgs]
     _aliases = {'items': 'concat'}
+
+    @classmethod
+    def from_concat_string(cls, concat_string: str) -> 'ConcatPlaceholder':
+        items = []
+        for a in concat_string.split('+'):
+            items.extend([maybe_convert_command_arg_to_placeholder(a), '+'])
+        del items[-1]
+        return ConcatPlaceholder(items=items)
 
 
 class IfPresentPlaceholderStructure(base_model.BaseModel):
@@ -216,6 +333,52 @@ class ContainerSpec(base_model.BaseModel):
         """Use None instead of empty dict for env."""
         self.env = None if self.env == {} else self.env
 
+    @classmethod
+    def from_container_dict(cls, container_dict: Dict[str,
+                                                      Any]) -> 'ContainerSpec':
+
+        args = container_dict.get('args')
+        if args is not None:
+            args = [
+                maybe_convert_command_arg_to_placeholder(arg) for arg in args
+            ]
+        command = container_dict.get('command')
+        if command is not None:
+            command = [
+                maybe_convert_command_arg_to_placeholder(c) for c in command
+            ]
+        return ContainerSpec(
+            image=container_dict['image'],
+            command=command,
+            args=args,
+            env=None,  # can only be set on tasks
+            resources=None)  # can only be set on tasks
+
+
+def maybe_convert_command_arg_to_placeholder(arg: str) -> ValidCommandArgs:
+    # short path to avoid checking all regexs
+    if not arg.startswith('{{$'):
+        return arg
+
+    # handle concat placeholder
+    # TODO: change when support for concat is added to IR
+    if '}}+{{' in arg:
+        return ConcatPlaceholder.from_concat_string(arg)
+
+    placeholders = {
+        InputValuePlaceholder,
+        InputPathPlaceholder,
+        InputUriPlaceholder,
+        OutputPathPlaceholder,
+        OutputUriPlaceholder,
+        OutputValuePlaceholder,
+    }
+    for placeholder_struct in placeholders:
+        if placeholder_struct.is_match(arg):
+            return placeholder_struct.from_placeholder(arg)
+
+    return arg
+
 
 class TaskSpec(base_model.BaseModel):
     """The spec of a pipeline task.
@@ -289,6 +452,14 @@ class Implementation(base_model.BaseModel):
     container: Optional[ContainerSpec] = None
     graph: Optional[DagSpec] = None
     importer: Optional[ImporterSpec] = None
+
+    @classmethod
+    def from_deployment_spec_dict(cls, deployment_spec_dict: Dict[str, Any],
+                                  component_name: str) -> 'Implementation':
+        executor_key = utils._EXECUTOR_LABEL_PREFIX + component_name
+        container = deployment_spec_dict['executors'][executor_key]['container']
+        container_spec = ContainerSpec.from_container_dict(container)
+        return Implementation(container=container_spec)
 
 
 def try_to_get_dict_from_string(element: str) -> Union[dict, str]:
@@ -410,7 +581,9 @@ def _check_valid_placeholder_reference(valid_inputs: List[str],
         if placeholder.input_name not in valid_inputs:
             raise ValueError(
                 f'Argument "{placeholder}" references non-existing input.')
-    elif isinstance(placeholder, (OutputPathPlaceholder, OutputUriPlaceholder)):
+    elif isinstance(
+            placeholder,
+        (OutputValuePlaceholder, OutputPathPlaceholder, OutputUriPlaceholder)):
         if placeholder.output_name not in valid_outputs:
             raise ValueError(
                 f'Argument "{placeholder}" references non-existing output.')
@@ -601,6 +774,75 @@ class ComponentSpec(base_model.BaseModel):
             })
 
     @classmethod
+    def from_pipeline_spec(cls, component_yaml: str) -> 'ComponentSpec':
+        json_component = yaml.safe_load(component_yaml)
+        # from google.protobuf import json_format
+        # import json
+        # pipeline_spec = json_format.Parse(
+        #     json.dumps(json_component), pipeline_spec_pb2.PipelineSpec())
+        # print(pipeline_spec)
+
+        raw_name = json_component['pipelineInfo']['name']
+
+        implementation = Implementation.from_deployment_spec_dict(
+            json_component['deploymentSpec'], raw_name)
+
+        def inputs_dict_from_components_dict(
+                components_dict: Dict[str, Any],
+                component_name: str) -> Dict[str, InputSpec]:
+            component_key = utils._COMPONENT_NAME_PREFIX + component_name
+            parameters = components_dict[component_key].get(
+                'inputDefinitions', {}).get('parameters', {})
+            return {
+                name: InputSpec.from_ir_parameter_dict(parameter_dict)
+                for name, parameter_dict in parameters.items()
+            }
+
+        def outputs_dict_from_components_dict(
+                components_dict: Dict[str, Any],
+                component_name: str) -> Dict[str, OutputSpec]:
+            component_key = utils._COMPONENT_NAME_PREFIX + component_name
+            parameters = components_dict[component_key].get(
+                'outputDefinitions', {}).get('parameters', {})
+            artifacts = components_dict[component_key].get(
+                'outputDefinitions', {}).get('artifacts', {})
+            all_outputs = {**parameters, **artifacts}
+            return {
+                name: OutputSpec.from_ir_component_dict(parameter_dict)
+                for name, parameter_dict in all_outputs.items()
+            }
+
+        def extract_description_from_command(commands: List[str]) -> str:
+            for command in commands:
+                if isinstance(command, str) and 'import kfp' in command:
+                    for node in ast.walk(ast.parse(command)):
+                        if isinstance(
+                                node,
+                            (ast.FunctionDef, ast.ClassDef, ast.Module)):
+                            docstring = ast.get_docstring(node)
+                            if docstring:
+                                return docstring
+            return ''
+
+        inputs = inputs_dict_from_components_dict(json_component['components'],
+                                                  raw_name)
+        outputs = outputs_dict_from_components_dict(
+            json_component['components'], raw_name)
+
+        # def convert_raw_name_to_readable_name(raw_name: str) -> str:
+        #     return raw_name.replace('-', ' ').capitalize()
+
+        # # name = convert_raw_name_to_readable_name(raw_name)
+        description = extract_description_from_command(
+            implementation.container.command) or None
+        return ComponentSpec(
+            name=raw_name,
+            implementation=implementation,
+            description=description,
+            inputs=inputs,
+            outputs=outputs)
+
+    @classmethod
     def load_from_component_yaml(cls, component_yaml: str) -> 'ComponentSpec':
         """Loads V1 or V2 component yaml into ComponentSpec.
 
@@ -610,13 +852,15 @@ class ComponentSpec(base_model.BaseModel):
         Returns:
             Component spec in the form of V2 ComponentSpec.
         """
+
         json_component = yaml.safe_load(component_yaml)
-        try:
-            return ComponentSpec.from_dict(json_component, by_alias=True)
-        except AttributeError:
+        is_v1 = 'implementation' in set(json_component.keys())
+        if is_v1:
             v1_component = v1_components._load_component_spec_from_component_text(
                 component_yaml)
             return cls.from_v1_component_spec(v1_component)
+        else:
+            return ComponentSpec.from_pipeline_spec(component_yaml)
 
     def save_to_component_yaml(self, output_file: str) -> None:
         """Saves ComponentSpec into YAML file.

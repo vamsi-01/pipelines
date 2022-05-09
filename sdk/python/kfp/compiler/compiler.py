@@ -28,6 +28,7 @@ from kfp import dsl
 from kfp.compiler import helpers as compiler_helpers
 from kfp.compiler import pipeline_spec_builder as builder
 from kfp.compiler.helpers import GroupOrTaskType
+from kfp.components import base_component
 from kfp.components import component_factory
 from kfp.components import for_loop
 from kfp.components import pipeline_context
@@ -68,8 +69,7 @@ class Compiler:
 
     def compile(
         self,
-        pipeline_func: Union[Callable[..., Any],
-                             python_component.PythonComponent],
+        pipeline_func: Union[Callable[..., Any], base_component.BaseComponent],
         package_path: str,
         pipeline_name: Optional[str] = None,
         pipeline_parameters: Optional[Mapping[str, Any]] = None,
@@ -90,7 +90,7 @@ class Compiler:
         """
 
         with type_utils.TypeCheckManager(enable=type_check):
-            if isinstance(pipeline_func, python_component.PythonComponent):
+            if isinstance(pipeline_func, base_component.BaseComponent):
                 component_spec = compiler_helpers.modify_component_spec_for_compile(
                     component_spec=pipeline_func.component_spec,
                     pipeline_name=pipeline_name,

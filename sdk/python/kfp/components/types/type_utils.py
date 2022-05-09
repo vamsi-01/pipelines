@@ -337,3 +337,42 @@ class TypeCheckManager:
 
     def __exit__(self, *unused_args) -> None:
         kfp.TYPE_CHECK = self._prev
+
+
+IR_TYPE_TO_IN_MEMORY_SPEC_TYPE = {
+    'STRING':
+        'String',
+    'NUMBER_INTEGER':
+        'Integer',
+    'NUMBER_DOUBLE':
+        'Float',
+    'LIST':
+        'List',
+    'STRUCT':
+        'Dict',
+    'BOOLEAN':
+        'Boolean',
+    artifact_types.Artifact.TYPE_NAME:
+        'Artifact',
+    artifact_types.Model.TYPE_NAME:
+        'Model',
+    artifact_types.Dataset.TYPE_NAME:
+        'Dataset',
+    artifact_types.Metrics.TYPE_NAME:
+        'Metrics',
+    artifact_types.ClassificationMetrics.TYPE_NAME:
+        'ClassificationMetrics',
+    artifact_types.SlicedClassificationMetrics.TYPE_NAME:
+        'SlicedClassificationMetrics',
+    artifact_types.HTML.TYPE_NAME:
+        'HTML',
+    artifact_types.Markdown.TYPE_NAME:
+        'Markdown',
+}
+
+
+def get_canonical_name_for_outer_generic(type_name: str) -> str:
+    if not type_name.startswith('typing.'):
+        return type_name
+
+    return type_name.lstrip('typing.').split('[')[0]
