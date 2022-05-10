@@ -28,7 +28,6 @@ from kfp.components import utils
 from kfp.components import v1_components
 from kfp.components import v1_structures
 from kfp.pipeline_spec import pipeline_spec_pb2
-from kfp.utils import ir_utils
 
 
 class InputSpec_(base_model.BaseModel):
@@ -614,21 +613,21 @@ class ComponentSpec(base_model.BaseModel):
         Returns:
             Component spec in the form of V2 ComponentSpec.
         """
-        json_component = yaml.safe_load(component_yaml)
-        try:
-            return ComponentSpec.from_dict(json_component, by_alias=True)
-        except AttributeError:
-            v1_component = v1_components._load_component_spec_from_component_text(
-                component_yaml)
-            return cls.from_v1_component_spec(v1_component)
+        # json_component = yaml.safe_load(component_yaml)
+        v1_component = v1_components._load_component_spec_from_component_text(
+            component_yaml)
+        return cls.from_v1_component_spec(v1_component)
 
     def save_to_component_yaml(self, output_file: str) -> None:
-        """Saves ComponentSpec into YAML file.
+        """Saves ComponentSpec into IR YAML file.
 
         Args:
             output_file: File path to store the component yaml.
         """
-        ir_utils._write_ir_to_file(self.to_dict(by_alias=True), output_file)
+        from kfp.compiler import helpers
+
+        pipeline_spec = self.to_pipeline_spec()
+        helpers.write_pipeline_spec_to_file(pipeline_spec, output_file)
 
     def to_pipeline_spec(self) -> pipeline_spec_pb2.PipelineSpec:
         """Creates a pipeline instance and constructs the pipeline spec for a

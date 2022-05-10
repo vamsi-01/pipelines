@@ -222,37 +222,6 @@ class StructuresTest(parameterized.TestCase):
                 outputs={'output1': structures.OutputSpec(type='String')},
             )
 
-    def test_simple_component_spec_save_to_component_yaml(self):
-        # tests writing old style (less verbose) and reading in new style (more verbose)
-        with tempfile.TemporaryDirectory() as tempdir:
-            output_path = os.path.join(tempdir, 'component.yaml')
-            original_component_spec = structures.ComponentSpec(
-                name='component_1',
-                implementation=structures.Implementation(
-                    container=structures.ContainerSpec(
-                        image='alpine',
-                        command=[
-                            'sh',
-                            '-c',
-                            'set -ex\necho "$0" > "$1"',
-                            structures.InputValuePlaceholder(
-                                input_name='input1'),
-                            structures.OutputPathPlaceholder(
-                                output_name='output1'),
-                        ],
-                    )),
-                inputs={'input1': structures.InputSpec(type='String')},
-                outputs={'output1': structures.OutputSpec(type='String')},
-            )
-            original_component_spec.save_to_component_yaml(output_path)
-
-            # test that it can be read back correctly
-            with open(output_path, 'r') as f:
-                new_component_spec = structures.ComponentSpec.load_from_component_yaml(
-                    f.read())
-
-        self.assertEqual(original_component_spec, new_component_spec)
-
     @parameterized.parameters(
         {
             'expected_yaml': V2_YAML_IF_PLACEHOLDER,
