@@ -131,7 +131,7 @@ class TestCliAutocomplete(parameterized.TestCase):
                 result = self.invoke(args=['--install-completion', shell])
                 expected = cli._create_completion(shell)
 
-                with open(temp_path) as f:
+                with open(temp_path, 'r') as f:
                     last_line = f.readlines()[-1]
                 self.assertEqual(expected + '\n', last_line)
                 self.assertEqual(result.exit_code, 0)
@@ -146,8 +146,8 @@ class TestCliAutocomplete(parameterized.TestCase):
                 os.makedirs(os.path.dirname(temp_path), exist_ok=True)
 
                 existing_file_contents = [
-                    "something\n",
-                    "something else" + ('\n' if has_trailing_newline else ''),
+                    'something\n',
+                    'something else' + ('\n' if has_trailing_newline else ''),
                 ]
                 with open(temp_path, 'w') as f:
                     f.writelines(existing_file_contents)
@@ -155,7 +155,7 @@ class TestCliAutocomplete(parameterized.TestCase):
                 result = self.invoke(args=['--install-completion', shell])
                 expected = cli._create_completion(shell)
 
-                with open(temp_path) as f:
+                with open(temp_path, 'r') as f:
                     last_line = f.readlines()[-1]
                 self.assertEqual(expected + '\n', last_line)
                 self.assertEqual(result.exit_code, 0)
@@ -184,28 +184,155 @@ SPECIAL_TEST_PY_FILES = {'two_step_pipeline.py'}
 TEST_PY_FILES = {
     file.split('.')[0]
     for file in os.listdir(COMPILER_CLI_TEST_DATA_DIR)
-    if ".py" in file and file not in SPECIAL_TEST_PY_FILES
+    if '.py' in file and file not in SPECIAL_TEST_PY_FILES
 }
+
+SUPPORTED_COMPONENTS_COMPILE_TEST_CASES = [
+    {
+        'file': 'pipeline_with_importer',
+        'component_name': 'pass_through_op'
+    },
+    {
+        'file': 'pipeline_with_env',
+        'component_name': 'print_env_op'
+    },
+    {
+        'file': 'pipeline_with_loops',
+        'component_name': 'args_generator_op'
+    },
+    {
+        'file': 'pipeline_with_loops',
+        'component_name': 'print_struct'
+    },
+    {
+        'file': 'pipeline_with_loops',
+        'component_name': 'print_text'
+    },
+    {
+        'file': 'v2_component_with_pip_index_urls',
+        'component_name': 'component_op'
+    },
+    {
+        'file': 'pipeline_with_condition',
+        'component_name': 'flip_coin_op'
+    },
+    {
+        'file': 'pipeline_with_condition',
+        'component_name': 'print_op'
+    },
+    {
+        'file': 'pipeline_with_task_final_status',
+        'component_name': 'fail_op'
+    },
+    {
+        'file': 'pipeline_with_task_final_status',
+        'component_name': 'print_op'
+    },
+    {
+        'file': 'pipeline_with_loops_and_conditions',
+        'component_name': 'args_generator_op'
+    },
+    {
+        'file': 'pipeline_with_loops_and_conditions',
+        'component_name': 'flip_coin_op'
+    },
+    {
+        'file': 'pipeline_with_loops_and_conditions',
+        'component_name': 'print_struct'
+    },
+    {
+        'file': 'pipeline_with_loops_and_conditions',
+        'component_name': 'print_text'
+    },
+    {
+        'file': 'v2_component_with_optional_inputs',
+        'component_name': 'component_op'
+    },
+    {
+        'file': 'lightweight_python_functions_v2_with_outputs',
+        'component_name': 'add_numbers'
+    },
+    {
+        'file': 'lightweight_python_functions_v2_with_outputs',
+        'component_name': 'concat_message'
+    },
+    {
+        'file': 'lightweight_python_functions_v2_with_outputs',
+        'component_name': 'output_artifact'
+    },
+    {
+        'file': 'pipeline_with_nested_loops',
+        'component_name': 'print_op'
+    },
+    {
+        'file': 'pipeline_with_nested_conditions',
+        'component_name': 'flip_coin_op'
+    },
+    {
+        'file': 'pipeline_with_nested_conditions',
+        'component_name': 'print_op'
+    },
+    {
+        'file': 'pipeline_with_params_containing_format',
+        'component_name': 'print_op'
+    },
+    {
+        'file': 'pipeline_with_params_containing_format',
+        'component_name': 'print_op2'
+    },
+    {
+        'file': 'pipeline_with_exit_handler',
+        'component_name': 'fail_op'
+    },
+    {
+        'file': 'pipeline_with_exit_handler',
+        'component_name': 'print_op'
+    },
+    {
+        'file': 'pipeline_with_placeholders',
+        'component_name': 'print_op'
+    },
+    {
+        'file': 'pipeline_with_metrics_outputs',
+        'component_name': 'output_metrics'
+    },
+    {
+        'file': 'lightweight_python_functions_v2_pipeline',
+        'component_name': 'preprocess'
+    },
+]
+
+UNSUPPORTED_COMPONENTS_COMPILE_TEST_CASES = [
+    {
+        'file': 'lightweight_python_functions_v2_with_outputs',
+        'component_name': 'output_named_tuple'
+    },
+    {
+        'file': 'lightweight_python_functions_v2_pipeline',
+        'component_name': 'train'
+    },
+    {
+        'file': 'pipeline_with_importer',
+        'component_name': 'train'
+    },
+    {
+        'file': 'pipeline_with_gcpc_types',
+        'component_name': 'consumer_op'
+    },
+    {
+        'file': 'pipeline_with_task_final_status',
+        'component_name': 'exit_op'
+    },
+]
 
 
 class TestDslCompile(parameterized.TestCase):
 
-    def invoke(self, args: List[str]) -> testing.Result:
-        starting_args = ['dsl', 'compile']
-        args = starting_args + args
-        runner = testing.CliRunner()
-        return runner.invoke(
-            cli=cli.cli, args=args, catch_exceptions=False, obj={})
+    @classmethod
+    def setUpClass(cls):
+        cls.runner = testing.CliRunner()
 
-    def invoke_deprecated(self, args: List[str]) -> testing.Result:
-        runner = testing.CliRunner()
-        return runner.invoke(
-            cli=dsl_compile.dsl_compile,
-            args=args,
-            catch_exceptions=False,
-            obj={})
-
-    def _test_compile_py_to_yaml(
+    def _test_compile_pipeline_to_yaml(
             self,
             file_base_name: str,
             additional_arguments: Optional[List[str]] = None) -> None:
@@ -222,9 +349,47 @@ class TestDslCompile(parameterized.TestCase):
             generated_compiled_file = os.path.join(
                 tmpdir, f'{file_base_name}-pipeline.yaml')
 
-            result = self.invoke(
-                ['--py', py_file, '--output', generated_compiled_file] +
-                additional_arguments)
+            result = self.runner.invoke(
+                cli=cli.cli,
+                args=[
+                    'dsl', 'compile', '--py', py_file, '--output',
+                    generated_compiled_file
+                ] + additional_arguments,
+                catch_exceptions=False)
+            self.assertEqual(result.exit_code, 0)
+
+            compiled = load_compiled_file(generated_compiled_file)
+
+        golden = load_compiled_file(golden_compiled_file)
+        self.assertEqual(golden, compiled)
+
+    def _test_compile_component_to_yaml(
+            self,
+            file_base_name: str,
+            component_name: str,
+            additional_arguments: Optional[List[str]] = None) -> None:
+        py_file = os.path.join(COMPILER_CLI_TEST_DATA_DIR,
+                               f'{file_base_name}.py')
+
+        golden_compiled_file = os.path.join(
+            COMPILER_CLI_TEST_DATA_DIR,
+            f'{file_base_name}-{component_name}.yaml')
+
+        if additional_arguments is None:
+            additional_arguments = []
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            generated_compiled_file = os.path.join(
+                tmpdir, f'{file_base_name}-{component_name}-component.yaml')
+
+            result = self.runner.invoke(
+                cli=cli.cli,
+                args=[
+                    'dsl', 'compile', '--py', py_file, '--output',
+                    generated_compiled_file, '--function', component_name
+                ] + additional_arguments,
+                obj={},
+                catch_exceptions=False)
 
             self.assertEqual(result.exit_code, 0)
 
@@ -234,33 +399,68 @@ class TestDslCompile(parameterized.TestCase):
         self.assertEqual(golden, compiled)
 
     def test_two_step_pipeline(self):
-        self._test_compile_py_to_yaml(
+        self._test_compile_pipeline_to_yaml(
             'two_step_pipeline',
             ['--pipeline-parameters', '{"text":"Hello KFP!"}'])
 
     def test_two_step_pipeline_failure_parameter_parse(self):
         with self.assertRaisesRegex(json.decoder.JSONDecodeError,
-                                    r"Unterminated string starting at:"):
-            self._test_compile_py_to_yaml(
+                                    r'Unterminated string starting at:'):
+            self._test_compile_pipeline_to_yaml(
                 'two_step_pipeline',
                 ['--pipeline-parameters', '{"text":"Hello KFP!}'])
 
     @parameterized.parameters(TEST_PY_FILES)
     def test_compile_pipelines(self, file: str):
 
-        # To update all golden snapshots:
-        # for f in test_data/*.py ; do python3 "$f" ; done
+        # To update pipeline golden snapshots:
+        # python sdk/python/kfp/compiler_cli_tests/update_golden_snapshots.py --pipelines
 
-        self._test_compile_py_to_yaml(file)
+        self._test_compile_pipeline_to_yaml(file)
 
     def test_deprecated_command_is_found(self):
-        result = self.invoke_deprecated(['--help'])
+        result = self.runner.invoke(
+            cli=dsl_compile.dsl_compile,
+            args=['--help'],
+            catch_exceptions=False)
         self.assertEqual(result.exit_code, 0)
 
     def test_deprecation_warning(self):
         res = subprocess.run(['dsl-compile', '--help'], capture_output=True)
         self.assertIn('Deprecated. Please use `kfp dsl compile` instead.)',
                       res.stdout.decode('utf-8'))
+
+    def test_compile_components_not_found(self):
+        with self.assertRaisesRegex(
+                ValueError,
+                r'Pipeline function or component "step1" not found in module two_step_pipeline\.py\.'
+        ):
+            self._test_compile_component_to_yaml('two_step_pipeline', 'step1')
+
+    @parameterized.parameters(SUPPORTED_COMPONENTS_COMPILE_TEST_CASES)
+    def test_compile_components(self, file: str, component_name: str):
+
+        # To update components golden snapshots:
+        # python sdk/python/kfp/compiler_cli_tests/update_golden_snapshots.py --components
+
+        self._test_compile_component_to_yaml(file, component_name)
+
+    @parameterized.parameters(UNSUPPORTED_COMPONENTS_COMPILE_TEST_CASES)
+    def test_compile_components_raises_input_exceptions(self, file: str,
+                                                        component_name: str):
+
+        # To update components golden snapshots:
+        # python sdk/python/kfp/compiler_cli_tests/update_golden_snapshots.py --components
+
+        with self.assertRaisesRegex(TypeError, r'is not a valid input'):
+            py_path = os.path.join(COMPILER_CLI_TEST_DATA_DIR, f'{file}.py')
+            self.runner.invoke(
+                cli=cli.cli,
+                args=[
+                    'dsl', 'compile', '--py', py_path, '--output',
+                    'anything.yaml', '--function', component_name
+                ],
+                catch_exceptions=False)
 
 
 info_dict = cli.cli.to_info_dict(ctx=click.Context(cli.cli))
