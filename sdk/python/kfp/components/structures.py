@@ -32,7 +32,6 @@ from kfp.components import v1_components
 from kfp.components import v1_structures
 from kfp.components.types import type_utils
 from kfp.pipeline_spec import pipeline_spec_pb2
-from kfp.utils import ir_utils
 
 
 class InputSpec_(base_model.BaseModel):
@@ -996,12 +995,15 @@ class ComponentSpec(base_model.BaseModel):
             return ComponentSpec.from_pipeline_spec_dict(json_component)
 
     def save_to_component_yaml(self, output_file: str) -> None:
-        """Saves ComponentSpec into YAML file.
+        """Saves ComponentSpec into IR YAML file.
 
         Args:
             output_file: File path to store the component yaml.
         """
-        ir_utils._write_ir_to_file(self.to_dict(by_alias=True), output_file)
+        from kfp.compiler import helpers
+
+        pipeline_spec = self.to_pipeline_spec()
+        helpers.write_pipeline_spec_to_file(pipeline_spec, output_file)
 
     def to_pipeline_spec(self) -> pipeline_spec_pb2.PipelineSpec:
         """Creates a pipeline instance and constructs the pipeline spec for a
