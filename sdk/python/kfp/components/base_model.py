@@ -411,7 +411,8 @@ def _load_basemodel_helper(type_: Any, data: Any, by_alias: bool) -> Any:
             if value is None:
                 if field.default is dataclasses.MISSING and field.default_factory is dataclasses.MISSING:
                     raise ValueError(
-                        f'Missing required field: {data_field_name}')
+                        f'Missing required field: {data_field_name} for class {type_.__name__}.'
+                    )
                 value = field.default if field.default is not dataclasses.MISSING else field.default_factory(
                 )
             else:

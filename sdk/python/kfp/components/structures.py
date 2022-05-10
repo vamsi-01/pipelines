@@ -32,7 +32,6 @@ from kfp.components import v1_components
 from kfp.components import v1_structures
 from kfp.components.types import type_utils
 from kfp.pipeline_spec import pipeline_spec_pb2
-from kfp.utils import ir_utils
 
 
 class InputSpec_(base_model.BaseModel):

@@ -38,7 +38,6 @@ from kfp.components import tasks_group
 from kfp.components import utils as component_utils
 from kfp.components.types import type_utils
 from kfp.pipeline_spec import pipeline_spec_pb2
-from kfp.utils import ir_utils
 
 
 class Compiler:
@@ -108,7 +107,7 @@ class Compiler:
                     'subclass of `base_component.BaseComponent` or '
                     '`Callable` constructed with @dsl.pipeline '
                     f'decorator. Got: {type(pipeline_func)}')
-            self._write_pipeline_spec_file(
+            compiler_helpers.write_pipeline_spec_to_file(
                 pipeline_spec=pipeline_spec, package_path=package_path)
 
     def _create_pipeline(
@@ -245,21 +244,6 @@ class Compiler:
             pipeline_args=args_list_with_defaults,
             task_group=group,
         )
-
-    def _write_pipeline_spec_file(
-        self,
-        pipeline_spec: pipeline_spec_pb2.PipelineSpec,
-        package_path: str,
-    ) -> None:
-        """Writes pipeline spec into a YAML or JSON (deprecated) file.
-
-        Args:
-            pipeline_spec: IR pipeline spec.
-            package_path: The file path to be written.
-        """
-
-        json_dict = json_format.MessageToDict(pipeline_spec)
-        ir_utils._write_ir_to_file(json_dict, package_path)
 
     def _validate_exit_handler(self,
                                pipeline: pipeline_context.Pipeline) -> None:
