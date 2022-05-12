@@ -86,25 +86,33 @@ either_option_required = 'Either --pipeline-id or --pipeline-name is required.'
     required=True,
 )
 @click.argument('package-file', type=click.Path(exists=True, dir_okay=False))
+@click.option(
+    '-d',
+    '--description',
+    help=parsing.get_param_descr(client.Client.upload_pipeline_version,
+                                 'description'))
 @click.pass_context
 def create_version(ctx: click.Context,
                    package_file: str,
                    pipeline_version: str,
                    pipeline_id: Optional[str] = None,
-                   pipeline_name: Optional[str] = None):
+                   pipeline_name: Optional[str] = None,
+                   description: str = None):
     """Upload a version of a pipeline."""
-    client = ctx.obj['client']
+    client_obj: client.Client = ctx.obj['client']
     output_format = ctx.obj['output']
     if bool(pipeline_id) == bool(pipeline_name):
         raise ValueError(either_option_required)
     if pipeline_name is not None:
-        pipeline_id = client.get_pipeline_id(name=pipeline_name)
+        pipeline_id = client_obj.get_pipeline_id(name=pipeline_name)
         if pipeline_id is None:
             raise ValueError(
                 f"Can't find a pipeline with name: {pipeline_name}")
-    # TODO: this is broken
-    version = client.pipeline_uploads.upload_pipeline_version(
-        package_file, name=pipeline_version, pipelineid=pipeline_id)
+    version = client_obj.upload_pipeline_version(
+        pipeline_package_path=package_file,
+        pipeline_version_name=pipeline_version,
+        pipeline_id=pipeline_id,
+        description=description)
     _display_pipeline_version(version, output_format)
     click.echo(f'Created pipeline version {version.id}.')
 
