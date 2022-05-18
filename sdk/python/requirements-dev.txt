@@ -1,5 +1,7 @@
 docformatter==1.4
+isort==5.10.1
 mypy==0.941
+pre-commit==2.19.0
 pylint==2.12.2
 types-protobuf==3.19.15
 types-PyYAML==6.0.5
