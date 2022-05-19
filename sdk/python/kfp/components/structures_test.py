@@ -118,6 +118,30 @@ V2_COMPONENT_SPEC_CONCAT_PLACEHOLDER = structures.ComponentSpec(
     inputs={'input_prefix': structures.InputSpec(type='String')},
 )
 
+V1_YAML_NESTED_PLACEHOLDER = textwrap.dedent("""\
+    name: component_nested
+    implementation:
+      container:
+        args:
+        - concat:
+            - --arg1 
+            - if:
+                cond:
+                    isPresent: input_prefix
+                else:
+                - --arg2
+                - default
+                - concat:
+                    - --arg1
+                    - {inputValue: input_prefix}
+                then:
+                - --arg1
+                - {inputValue: input_prefix}
+        image: alpine
+    inputs:
+    - {name: input_prefix, optional: false, type: String}
+    """)
+
 V2_YAML_NESTED_PLACEHOLDER = textwrap.dedent("""\
     implementation:
       container:
@@ -338,6 +362,10 @@ class StructuresTest(parameterized.TestCase):
         {
             'yaml': V2_YAML_CONCAT_PLACEHOLDER,
             'expected_component': V2_COMPONENT_SPEC_CONCAT_PLACEHOLDER
+        },
+        {
+            'yaml': V1_YAML_NESTED_PLACEHOLDER,
+            'expected_component': V2_COMPONENT_SPEC_NESTED_PLACEHOLDER
         },
         {
             'yaml': V2_YAML_NESTED_PLACEHOLDER,
