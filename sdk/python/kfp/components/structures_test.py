@@ -18,11 +18,9 @@ import sys
 import tempfile
 import textwrap
 import unittest
-from unittest.util import strclass
 
 from absl.testing import parameterized
 from kfp import compiler
-from kfp import components
 from kfp.components import structures
 
 V1_YAML_IF_PLACEHOLDER = textwrap.dedent("""\
@@ -371,154 +369,107 @@ sdkVersion: kfp-2.0.0-alpha.2
         self.assertEqual(generated_spec, expected_spec)
 
 
-class TestInputValuePlaceholder(unittest.TestCase):
+class TestInputValuePlaceholder(parameterized.TestCase):
 
-    def test_to_placeholder(self):
-        structure = structures.InputValuePlaceholder('input1')
-        actual = structure.to_placeholder()
-        expected = "{{$.inputs.parameters['input1']}}"
+    @parameterized.parameters([
+        ("{{$.inputs.parameters['input1']}}",
+         structures.InputValuePlaceholder('input1')),
+        ("{{$.inputs.parameters[''input1'']}}",
+         structures.InputValuePlaceholder('input1')),
+    ])
+    def test_to_from_placeholder(
+            self, placeholder_string: str,
+            placeholder_obj: structures.InputValuePlaceholder):
         self.assertEqual(
-            actual,
-            expected,
-        )
+            structures.InputValuePlaceholder.from_placeholder_string(
+                placeholder_string), placeholder_obj)
+        self.assertEqual(placeholder_obj.to_placeholder_string(),
+                         placeholder_string)
 
-    def test_from_placeholder_single_quote(self):
-        placeholder = "{{$.inputs.parameters['input1']}}"
-        expected = structures.InputValuePlaceholder('input1')
-        actual = structures.InputValuePlaceholder.from_placeholder(placeholder)
+
+class TestInputPathPlaceholder(parameterized.TestCase):
+
+    @parameterized.parameters([
+        ("{{$.inputs.artifacts['input1'].path}}",
+         structures.InputPathPlaceholder('input1')),
+    ])
+    def test_to_from_placeholder(
+            self, placeholder_string: str,
+            placeholder_obj: structures.InputPathPlaceholder):
         self.assertEqual(
-            actual,
-            expected,
-        )
+            structures.InputPathPlaceholder.from_placeholder_string(
+                placeholder_string), placeholder_obj)
+        self.assertEqual(placeholder_obj.to_placeholder_string(),
+                         placeholder_string)
 
-    def test_from_placeholder_double_single_quote(self):
-        placeholder = "{{$.inputs.parameters[''input1'']}}"
-        expected = structures.InputValuePlaceholder('input1')
-        actual = structures.InputValuePlaceholder.from_placeholder(placeholder)
+
+class TestInputUriPlaceholder(parameterized.TestCase):
+
+    @parameterized.parameters([
+        ("{{$.inputs.artifacts['input1'].uri}}",
+         structures.InputUriPlaceholder('input1')),
+    ])
+    def test_to_from_placeholder(
+            self, placeholder_string: str,
+            placeholder_obj: structures.InputUriPlaceholder):
         self.assertEqual(
-            actual,
-            expected,
-        )
+            structures.InputUriPlaceholder.from_placeholder_string(
+                placeholder_string), placeholder_obj)
+        self.assertEqual(placeholder_obj.to_placeholder_string(),
+                         placeholder_string)
 
-    def test_from_placeholder_double_quote(self):
-        placeholder = '{{$.inputs.parameters["input1"]}}'
-        expected = structures.InputValuePlaceholder('input1')
-        actual = structures.InputValuePlaceholder.from_placeholder(placeholder)
+
+class TestOutputPathPlaceholder(parameterized.TestCase):
+
+    @parameterized.parameters([
+        ("{{$.outputs.artifacts['output1'].path}}",
+         structures.OutputPathPlaceholder('output1')),
+    ])
+    def test_to_from_placeholder(
+            self, placeholder_string: str,
+            placeholder_obj: structures.OutputPathPlaceholder):
         self.assertEqual(
-            actual,
-            expected,
-        )
+            structures.OutputPathPlaceholder.from_placeholder_string(
+                placeholder_string), placeholder_obj)
+        self.assertEqual(placeholder_obj.to_placeholder_string(),
+                         placeholder_string)
 
 
-class TestInputPathPlaceholder(unittest.TestCase):
+class TestOutputParameterPlaceholder(parameterized.TestCase):
 
-    def test_to_placeholder(self):
-        structure = structures.InputPathPlaceholder('input1')
-        actual = structure.to_placeholder()
-        expected = "{{$.inputs.artifacts['input1'].path}}"
+    @parameterized.parameters([
+        ("{{$.outputs.parameters['output1'].output_file}}",
+         structures.OutputParameterPlaceholder('output1')),
+    ])
+    def test_to_from_placeholder(
+            self, placeholder_string: str,
+            placeholder_obj: structures.OutputParameterPlaceholder):
         self.assertEqual(
-            actual,
-            expected,
-        )
+            structures.OutputParameterPlaceholder.from_placeholder_string(
+                placeholder_string), placeholder_obj)
+        self.assertEqual(placeholder_obj.to_placeholder_string(),
+                         placeholder_string)
 
-    def test_from_placeholder(self):
-        placeholder = "{{$.inputs.artifacts['input1'].path}}"
-        expected = structures.InputPathPlaceholder('input1')
-        actual = structures.InputPathPlaceholder.from_placeholder(placeholder)
+
+class TestOutputUriPlaceholder(parameterized.TestCase):
+
+    @parameterized.parameters([
+        ("{{$.outputs.artifacts['output1'].uri}}",
+         structures.OutputUriPlaceholder('output1')),
+    ])
+    def test_to_from_placeholder(
+            self, placeholder_string: str,
+            placeholder_obj: structures.OutputUriPlaceholder):
         self.assertEqual(
-            actual,
-            expected,
-        )
+            structures.OutputUriPlaceholder.from_placeholder_string(
+                placeholder_string), placeholder_obj)
+        self.assertEqual(placeholder_obj.to_placeholder_string(),
+                         placeholder_string)
 
 
-class TestInputUriPlaceholder(unittest.TestCase):
+class TestIfPresentPlaceholderStructure(parameterized.TestCase):
 
-    def test_to_placeholder(self):
-        structure = structures.InputUriPlaceholder('input1')
-        actual = structure.to_placeholder()
-        expected = "{{$.inputs.artifacts['input1'].uri}}"
-        self.assertEqual(
-            actual,
-            expected,
-        )
-
-    def test_from_placeholder(self):
-        placeholder = "{{$.inputs.artifacts['input1'].uri}}"
-        expected = structures.InputUriPlaceholder('input1')
-        actual = structures.InputUriPlaceholder.from_placeholder(placeholder)
-        self.assertEqual(
-            actual,
-            expected,
-        )
-
-
-class TestOutputPathPlaceholder(unittest.TestCase):
-
-    def test_to_placeholder(self):
-        structure = structures.OutputPathPlaceholder('output1')
-        actual = structure.to_placeholder()
-        expected = "{{$.outputs.artifacts['output1'].path}}"
-        self.assertEqual(
-            actual,
-            expected,
-        )
-
-    def test_from_placeholder(self):
-        placeholder = "{{$.outputs.artifacts['output1'].path}}"
-        expected = structures.OutputPathPlaceholder('output1')
-        actual = structures.OutputPathPlaceholder.from_placeholder(placeholder)
-        self.assertEqual(
-            actual,
-            expected,
-        )
-
-
-class TestOutputParameterPlaceholder(unittest.TestCase):
-
-    def test_to_placeholder(self):
-        structure = structures.OutputParameterPlaceholder('output1')
-        actual = structure.to_placeholder()
-        expected = "{{$.outputs.parameters['output1'].output_file}}"
-        self.assertEqual(
-            actual,
-            expected,
-        )
-
-    def test_from_placeholder(self):
-        placeholder = "{{$.outputs.parameters['output1'].output_file}}"
-        expected = structures.OutputParameterPlaceholder('output1')
-        actual = structures.OutputParameterPlaceholder.from_placeholder(
-            placeholder)
-        self.assertEqual(
-            actual,
-            expected,
-        )
-
-
-class TestOutputUriPlaceholder(unittest.TestCase):
-
-    def test_to_placeholder(self):
-        structure = structures.OutputUriPlaceholder('output1')
-        actual = structure.to_placeholder()
-        expected = "{{$.outputs.artifacts['output1'].uri}}"
-        self.assertEqual(
-            actual,
-            expected,
-        )
-
-    def test_from_placeholder(self):
-        placeholder = "{{$.outputs.artifacts['output1'].uri}}"
-        expected = structures.OutputUriPlaceholder('output1')
-        actual = structures.OutputUriPlaceholder.from_placeholder(placeholder)
-        self.assertEqual(
-            actual,
-            expected,
-        )
-
-
-class TestIfPresentPlaceholderStructure(unittest.TestCase):
-
-    def test_otherwise(self):
+    def test_otherwise_transform(self):
         obj = structures.IfPresentPlaceholderStructure(
             then='then', input_name='input_name', otherwise=['something'])
         self.assertEqual(obj.otherwise, ['something'])
@@ -526,6 +477,66 @@ class TestIfPresentPlaceholderStructure(unittest.TestCase):
         obj = structures.IfPresentPlaceholderStructure(
             then='then', input_name='input_name', otherwise=[])
         self.assertEqual(obj.otherwise, None)
+
+    @parameterized.parameters([
+        ('{"IfPresent": {"InputName": "output1", "Then": "then", "Else": "something"}}',
+         structures.IfPresentPlaceholderStructure(
+             input_name='output1', then='then', otherwise='something')),
+        ('{"IfPresent": {"InputName": "output1", "Then": "then"}}',
+         structures.IfPresentPlaceholderStructure(
+             input_name='output1', then='then')),
+        ('{"IfPresent": {"InputName": "output1", "Then": "then"}}',
+         structures.IfPresentPlaceholderStructure('output1', 'then')),
+        ('{"IfPresent": {"InputName": "output1", "Then": ["then"], "Else": ["something"]}}',
+         structures.IfPresentPlaceholderStructure(
+             input_name='output1', then=['then'], otherwise=['something'])),
+        ('{"IfPresent": {"InputName": "output1", "Then": ["then", {"IfPresent": {"InputName": "output1", "Then": ["then"], "Else": ["something"]}}], "Else": ["something"]}}',
+         structures.IfPresentPlaceholderStructure(
+             input_name='output1',
+             then=[
+                 'then',
+                 structures.IfPresentPlaceholderStructure(
+                     input_name='output1',
+                     then=['then'],
+                     otherwise=['something'])
+             ],
+             otherwise=['something'])),
+    ])
+    def test_to_from_placeholder(self, placeholder_string: str,
+                                 placeholder_obj: structures.ConcatPlaceholder):
+        self.assertEqual(
+            structures.IfPresentPlaceholderStructure.from_placeholder_string(
+                placeholder_string), placeholder_obj)
+        self.assertEqual(placeholder_obj.to_placeholder_string(),
+                         placeholder_string)
+
+
+class TestConcatPlaceholder(parameterized.TestCase):
+
+    @parameterized.parameters([
+        ('{"Concat": ["a", "b"]}', structures.ConcatPlaceholder(['a', 'b'])),
+        ('{"Concat": ["a", {"Concat": ["b", "c"]}]}',
+         structures.ConcatPlaceholder(
+             ['a', structures.ConcatPlaceholder(['b', 'c'])])),
+        ('{"Concat": ["a", {"Concat": ["b", {"IfPresent": {"InputName": "output1", "Then": ["then"], "Else": ["something"]}}]}]}',
+         structures.ConcatPlaceholder([
+             'a',
+             structures.ConcatPlaceholder([
+                 'b',
+                 structures.IfPresentPlaceholderStructure(
+                     input_name='output1',
+                     then=['then'],
+                     otherwise=['something'])
+             ])
+         ]))
+    ])
+    def test_to_from_placeholder(self, placeholder_string: str,
+                                 placeholder_obj: structures.ConcatPlaceholder):
+        self.assertEqual(
+            structures.ConcatPlaceholder.from_placeholder_string(
+                placeholder_string), placeholder_obj)
+        self.assertEqual(placeholder_obj.to_placeholder_string(),
+                         placeholder_string)
 
 
 class TestContainerSpec(unittest.TestCase):
@@ -693,7 +704,7 @@ class TestInputValuePlaceholder(unittest.TestCase):
 
     def test_to_placeholder(self):
         structure = structures.InputValuePlaceholder('input1')
-        actual = structure.to_placeholder()
+        actual = structure.to_placeholder_string()
         expected = "{{$.inputs.parameters['input1']}}"
         self.assertEqual(
             actual,
@@ -703,7 +714,8 @@ class TestInputValuePlaceholder(unittest.TestCase):
     def test_from_placeholder_single_quote(self):
         placeholder = "{{$.inputs.parameters['input1']}}"
         expected = structures.InputValuePlaceholder('input1')
-        actual = structures.InputValuePlaceholder.from_placeholder(placeholder)
+        actual = structures.InputValuePlaceholder.from_placeholder_string(
+            placeholder)
         self.assertEqual(
             actual,
             expected,
@@ -712,7 +724,8 @@ class TestInputValuePlaceholder(unittest.TestCase):
     def test_from_placeholder_double_single_quote(self):
         placeholder = "{{$.inputs.parameters[''input1'']}}"
         expected = structures.InputValuePlaceholder('input1')
-        actual = structures.InputValuePlaceholder.from_placeholder(placeholder)
+        actual = structures.InputValuePlaceholder.from_placeholder_string(
+            placeholder)
         self.assertEqual(
             actual,
             expected,
@@ -721,7 +734,8 @@ class TestInputValuePlaceholder(unittest.TestCase):
     def test_from_placeholder_double_quote(self):
         placeholder = '{{$.inputs.parameters["input1"]}}'
         expected = structures.InputValuePlaceholder('input1')
-        actual = structures.InputValuePlaceholder.from_placeholder(placeholder)
+        actual = structures.InputValuePlaceholder.from_placeholder_string(
+            placeholder)
         self.assertEqual(
             actual,
             expected,
@@ -732,7 +746,7 @@ class TestInputPathPlaceholder(unittest.TestCase):
 
     def test_to_placeholder(self):
         structure = structures.InputPathPlaceholder('input1')
-        actual = structure.to_placeholder()
+        actual = structure.to_placeholder_string()
         expected = "{{$.inputs.artifacts['input1'].path}}"
         self.assertEqual(
             actual,
@@ -742,7 +756,8 @@ class TestInputPathPlaceholder(unittest.TestCase):
     def test_from_placeholder(self):
         placeholder = "{{$.inputs.artifacts['input1'].path}}"
         expected = structures.InputPathPlaceholder('input1')
-        actual = structures.InputPathPlaceholder.from_placeholder(placeholder)
+        actual = structures.InputPathPlaceholder.from_placeholder_string(
+            placeholder)
         self.assertEqual(
             actual,
             expected,
@@ -753,7 +768,7 @@ class TestInputUriPlaceholder(unittest.TestCase):
 
     def test_to_placeholder(self):
         structure = structures.InputUriPlaceholder('input1')
-        actual = structure.to_placeholder()
+        actual = structure.to_placeholder_string()
         expected = "{{$.inputs.artifacts['input1'].uri}}"
         self.assertEqual(
             actual,
@@ -763,7 +778,8 @@ class TestInputUriPlaceholder(unittest.TestCase):
     def test_from_placeholder(self):
         placeholder = "{{$.inputs.artifacts['input1'].uri}}"
         expected = structures.InputUriPlaceholder('input1')
-        actual = structures.InputUriPlaceholder.from_placeholder(placeholder)
+        actual = structures.InputUriPlaceholder.from_placeholder_string(
+            placeholder)
         self.assertEqual(
             actual,
             expected,
@@ -774,7 +790,7 @@ class TestOutputPathPlaceholder(unittest.TestCase):
 
     def test_to_placeholder(self):
         structure = structures.OutputPathPlaceholder('output1')
-        actual = structure.to_placeholder()
+        actual = structure.to_placeholder_string()
         expected = "{{$.outputs.artifacts['output1'].path}}"
         self.assertEqual(
             actual,
@@ -784,7 +800,8 @@ class TestOutputPathPlaceholder(unittest.TestCase):
     def test_from_placeholder(self):
         placeholder = "{{$.outputs.artifacts['output1'].path}}"
         expected = structures.OutputPathPlaceholder('output1')
-        actual = structures.OutputPathPlaceholder.from_placeholder(placeholder)
+        actual = structures.OutputPathPlaceholder.from_placeholder_string(
+            placeholder)
         self.assertEqual(
             actual,
             expected,
@@ -795,7 +812,7 @@ class TestOutputParameterPlaceholder(unittest.TestCase):
 
     def test_to_placeholder(self):
         structure = structures.OutputParameterPlaceholder('output1')
-        actual = structure.to_placeholder()
+        actual = structure.to_placeholder_string()
         expected = "{{$.outputs.parameters['output1'].output_file}}"
         self.assertEqual(
             actual,
@@ -805,7 +822,7 @@ class TestOutputParameterPlaceholder(unittest.TestCase):
     def test_from_placeholder(self):
         placeholder = "{{$.outputs.parameters['output1'].output_file}}"
         expected = structures.OutputParameterPlaceholder('output1')
-        actual = structures.OutputParameterPlaceholder.from_placeholder(
+        actual = structures.OutputParameterPlaceholder.from_placeholder_string(
             placeholder)
         self.assertEqual(
             actual,
@@ -817,7 +834,7 @@ class TestOutputUriPlaceholder(unittest.TestCase):
 
     def test_to_placeholder(self):
         structure = structures.OutputUriPlaceholder('output1')
-        actual = structure.to_placeholder()
+        actual = structure.to_placeholder_string()
         expected = "{{$.outputs.artifacts['output1'].uri}}"
         self.assertEqual(
             actual,
@@ -827,7 +844,8 @@ class TestOutputUriPlaceholder(unittest.TestCase):
     def test_from_placeholder(self):
         placeholder = "{{$.outputs.artifacts['output1'].uri}}"
         expected = structures.OutputUriPlaceholder('output1')
-        actual = structures.OutputUriPlaceholder.from_placeholder(placeholder)
+        actual = structures.OutputUriPlaceholder.from_placeholder_string(
+            placeholder)
         self.assertEqual(
             actual,
             expected,
@@ -838,53 +856,53 @@ class TestProcessCommandArg(unittest.TestCase):
 
     def test_string(self):
         arg = 'test'
-        struct = structures.maybe_convert_command_arg_to_placeholder(arg)
+        struct = structures.maybe_convert_placeholder_string_to_placeholder(arg)
         self.assertEqual(struct, arg)
 
     def test_input_value_placeholder(self):
         arg = "{{$.inputs.parameters['input1']}}"
-        actual = structures.maybe_convert_command_arg_to_placeholder(arg)
+        actual = structures.maybe_convert_placeholder_string_to_placeholder(arg)
         expected = structures.InputValuePlaceholder(input_name='input1')
         self.assertEqual(actual, expected)
 
     def test_input_path_placeholder(self):
         arg = "{{$.inputs.artifacts['input1'].path}}"
-        actual = structures.maybe_convert_command_arg_to_placeholder(arg)
+        actual = structures.maybe_convert_placeholder_string_to_placeholder(arg)
         expected = structures.InputPathPlaceholder('input1')
         self.assertEqual(actual, expected)
 
     def test_input_uri_placeholder(self):
         arg = "{{$.inputs.artifacts['input1'].uri}}"
-        actual = structures.maybe_convert_command_arg_to_placeholder(arg)
+        actual = structures.maybe_convert_placeholder_string_to_placeholder(arg)
         expected = structures.InputUriPlaceholder('input1')
         self.assertEqual(actual, expected)
 
     def test_output_path_placeholder(self):
         arg = "{{$.outputs.artifacts['output1'].path}}"
-        actual = structures.maybe_convert_command_arg_to_placeholder(arg)
+        actual = structures.maybe_convert_placeholder_string_to_placeholder(arg)
         expected = structures.OutputPathPlaceholder('output1')
         self.assertEqual(actual, expected)
 
     def test_output_uri_placeholder(self):
         placeholder = "{{$.outputs.artifacts['output1'].uri}}"
-        actual = structures.maybe_convert_command_arg_to_placeholder(
+        actual = structures.maybe_convert_placeholder_string_to_placeholder(
             placeholder)
         expected = structures.OutputUriPlaceholder('output1')
         self.assertEqual(actual, expected)
 
     def test_output_parameter_placeholder(self):
         placeholder = "{{$.outputs.parameters['output1'].output_file}}"
-        actual = structures.maybe_convert_command_arg_to_placeholder(
+        actual = structures.maybe_convert_placeholder_string_to_placeholder(
             placeholder)
         expected = structures.OutputParameterPlaceholder('output1')
         self.assertEqual(actual, expected)
 
     def test_concat_placeholder(self):
         placeholder = "{{$.inputs.parameters[''input1'']}}+{{$.inputs.parameters[''input2'']}}"
-        actual = structures.maybe_convert_command_arg_to_placeholder(
+        actual = structures.maybe_convert_placeholder_string_to_placeholder(
             placeholder)
         expected = structures.ConcatPlaceholder(items=[
-            structures.InputValuePlaceholder(input_name='input1'), '+',
+            structures.InputValuePlaceholder(input_name='input1'),
             structures.InputValuePlaceholder(input_name='input2')
         ])
         self.assertEqual(actual, expected)
@@ -1246,7 +1264,7 @@ sdkVersion: kfp-2.0.0-alpha.2""")
                         'sh', '-c', 'echo "$0"',
                         structures.ConcatPlaceholder(items=[
                             structures.InputValuePlaceholder(
-                                input_name='input1'), '+',
+                                input_name='input1'),
                             structures.InputValuePlaceholder(
                                 input_name='input2')
                         ])

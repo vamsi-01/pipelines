@@ -13,11 +13,17 @@
 # limitations under the License.
 """Definitions for component spec."""
 
+# TODO: clean up, round out test cases
+# TODO: extract everything into a command line element object or something like that...
+# TODO: add support for the final form of concat placeholder
+
+import abc
 import ast
 import collections
 import dataclasses
 import functools
 import itertools
+import json
 import re
 from typing import Any, Dict, List, Mapping, Optional, Type, TypeVar, Union
 import uuid
@@ -160,31 +166,40 @@ class OutputSpec(base_model.BaseModel):
             return False
 
 
-P = TypeVar('P', bound='PlaceholderSerializationMixin')
+RPSM = TypeVar('P', bound='RegexPlaceholderSerializationMixin')
+RPSA = TypeVar('P', bound='PlaceholderSerializationABC')
 
 
-class PlaceholderSerializationMixin:
+class PlaceholderABC(abc.ABC):
+
+    @abc.abstractclassmethod
+    def from_placeholder_string(cls: Type[RPSA], placeholder: str) -> RPSA:
+        raise NotImplementedError
+
+    @abc.abstractclassmethod
+    def is_match(cls: Type[RPSA], placeholder: str) -> bool:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def to_placeholder_string(self) -> str:
+        raise NotImplementedError
+
+
+class RegexPlaceholderSerializationMixin(PlaceholderABC):
     """Mixin for *Placeholder objects that handles the
     serialization/deserialization of the placeholder."""
-    _FROM_PLACEHOLDER_REGEX: Union[str, type(NotImplemented)] = NotImplemented
-    _TO_PLACEHOLDER_TEMPLATE_STRING: Union[
-        str, type(NotImplemented)] = NotImplemented
+    _FROM_PLACEHOLDER: Union[re.Pattern, type(NotImplemented)] = NotImplemented
+    _TO_PLACEHOLDER: Union[str, type(NotImplemented)] = NotImplemented
 
     @classmethod
-    def _is_input_placeholder(cls) -> bool:
-        """Checks if the class is an InputPlaceholder (rather than an
-        OutputPlaceholder).
-
-        Returns:
-            bool: True if the class is an InputPlaceholder, False otherwise.
-        """
-        field_names = {field.name for field in dataclasses.fields(cls)}
-        return "input_name" in field_names
-
-    @classmethod
-    def is_match(cls: Type[P], placeholder_string: str) -> bool:
+    def is_match(cls: Type[RPSM], placeholder_string: str) -> bool:
         """Determines if the placeholder_string matches the placeholder
-        pattern.
+        pattern. This is good default behavior for the standard
+        Parameter/Uri/Path Input/Output placeholders. ConcatPlaceholder and
+        IsPresentPlaceholder override this. Note: these must be aggressive
+        matching functions, since they will likely be used greedily: check one
+        placeholder struct and return if matches, without checking for double
+        matches.
 
         Args:
             placeholder_string (str): The string (often "{{$.inputs/outputs...}}") to check.
@@ -192,11 +207,11 @@ class PlaceholderSerializationMixin:
         Returns:
             bool: Determines if the placeholder_string matches the placeholder pattern.
         """
-        return re.match(cls._FROM_PLACEHOLDER_REGEX,
-                        placeholder_string) is not None
+        return cls._FROM_PLACEHOLDER.match(placeholder_string) is not None
 
     @classmethod
-    def from_placeholder(cls: Type[P], placeholder_string: str) -> P:
+    def from_placeholder_string(cls: Type[RPSM],
+                                placeholder_string: str) -> RPSM:
         """Converts a placeholder string into a placeholder object.
 
         Args:
@@ -205,38 +220,38 @@ class PlaceholderSerializationMixin:
         Returns:
             PlaceholderSerializationMixin subclass: The placeholder object.
         """
-        if cls._FROM_PLACEHOLDER_REGEX == NotImplemented:
+        if cls._FROM_PLACEHOLDER == NotImplemented:
             raise NotImplementedError(
                 f'{cls.__name__} does not support placeholder parsing.')
-
-        matches = re.search(cls._FROM_PLACEHOLDER_REGEX, placeholder_string)
+        matches = re.search(cls._FROM_PLACEHOLDER, placeholder_string)
         if matches is None:
             raise ValueError(
                 f'Could not parse placeholder: {placeholder_string} into {cls.__name__}'
             )
-        if cls._is_input_placeholder():
-            return cls(input_name=matches[1])  # type: ignore
-        else:
-            return cls(output_name=matches[1])  # type: ignore
+        field_names = [field.name for field in dataclasses.fields(cls)]
+        if len(matches.groups()) > len(field_names):
+            raise ValueError(
+                f'Could not parse placeholder string: {placeholder_string}. Expected no more than {len(field_names)} groups matched for fields {field_names}. Got {len(matches.groups())} matched: {matches.groups()}.'
+            )
+        kwargs = {field_name: matches[field_name] for field_name in field_names}
+        return cls(**kwargs)
 
-    def to_placeholder(self: P) -> str:
+    def to_placeholder_string(self: RPSM) -> str:
         """Converts a placeholder object into a placeholder string.
 
         Returns:
             str: The placeholder string.
         """
-        if self._TO_PLACEHOLDER_TEMPLATE_STRING == NotImplemented:
+        if self._TO_PLACEHOLDER == NotImplemented:
             raise NotImplementedError(
                 f'{self.__class__.__name__} does not support creating placeholder strings.'
             )
-        attr_name = 'input_name' if self._is_input_placeholder(
-        ) else 'output_name'
-        value = getattr(self, attr_name)
-        return self._TO_PLACEHOLDER_TEMPLATE_STRING.format(value)
+
+        return self._TO_PLACEHOLDER.format(**self.to_dict())
 
 
 class InputValuePlaceholder(base_model.BaseModel,
-                            PlaceholderSerializationMixin):
+                            RegexPlaceholderSerializationMixin):
     """Class that holds input value for conditional cases.
 
     Attributes:
@@ -244,11 +259,14 @@ class InputValuePlaceholder(base_model.BaseModel,
     """
     input_name: str
     _aliases = {'input_name': 'inputValue'}
-    _TO_PLACEHOLDER_TEMPLATE_STRING = "{{{{$.inputs.parameters['{}']}}}}"
-    _FROM_PLACEHOLDER_REGEX = r"\{\{\$\.inputs\.parameters\[(?:''|'|\")(.+?)(?:''|'|\")]\}\}"
+    _TO_PLACEHOLDER = "{{{{$.inputs.parameters['{input_name}']}}}}"
+    _FROM_PLACEHOLDER = re.compile(
+        r"^\{\{\$\.inputs\.parameters\[(?:''|'|\")(?P<input_name>.+?)(?:''|'|\")]\}\}$"
+    )
 
 
-class InputPathPlaceholder(base_model.BaseModel, PlaceholderSerializationMixin):
+class InputPathPlaceholder(base_model.BaseModel,
+                           RegexPlaceholderSerializationMixin):
     """Class that holds input path for conditional cases.
 
     Attributes:
@@ -256,11 +274,14 @@ class InputPathPlaceholder(base_model.BaseModel, PlaceholderSerializationMixin):
     """
     input_name: str
     _aliases = {'input_name': 'inputPath'}
-    _TO_PLACEHOLDER_TEMPLATE_STRING = "{{{{$.inputs.artifacts['{}'].path}}}}"
-    _FROM_PLACEHOLDER_REGEX = r"\{\{\$\.inputs\.artifacts\[(?:''|'|\")(.+?)(?:''|'|\")]\.path\}\}"
+    _TO_PLACEHOLDER = "{{{{$.inputs.artifacts['{input_name}'].path}}}}"
+    _FROM_PLACEHOLDER = re.compile(
+        r"^\{\{\$\.inputs\.artifacts\[(?:''|'|\")(?P<input_name>.+?)(?:''|'|\")]\.path\}\}$"
+    )
 
 
-class InputUriPlaceholder(base_model.BaseModel, PlaceholderSerializationMixin):
+class InputUriPlaceholder(base_model.BaseModel,
+                          RegexPlaceholderSerializationMixin):
     """Class that holds input uri for conditional cases.
 
     Attributes:
@@ -268,12 +289,14 @@ class InputUriPlaceholder(base_model.BaseModel, PlaceholderSerializationMixin):
     """
     input_name: str
     _aliases = {'input_name': 'inputUri'}
-    _TO_PLACEHOLDER_TEMPLATE_STRING = "{{{{$.inputs.artifacts['{}'].uri}}}}"
-    _FROM_PLACEHOLDER_REGEX = r"\{\{\$\.inputs\.artifacts\[(?:''|'|\")(.+?)(?:''|'|\")]\.uri\}\}"
+    _TO_PLACEHOLDER = "{{{{$.inputs.artifacts['{input_name}'].uri}}}}"
+    _FROM_PLACEHOLDER = re.compile(
+        r"^\{\{\$\.inputs\.artifacts\[(?:''|'|\")(?P<input_name>.+?)(?:''|'|\")]\.uri\}\}$"
+    )
 
 
 class OutputParameterPlaceholder(base_model.BaseModel,
-                                 PlaceholderSerializationMixin):
+                                 RegexPlaceholderSerializationMixin):
     """Class that holds output path for conditional cases.
 
     Attributes:
@@ -281,12 +304,14 @@ class OutputParameterPlaceholder(base_model.BaseModel,
     """
     output_name: str
     _aliases = {'output_name': 'outputPath'}
-    _TO_PLACEHOLDER_TEMPLATE_STRING = "{{{{$.outputs.parameters['{}'].output_file}}}}"
-    _FROM_PLACEHOLDER_REGEX = r"\{\{\$\.outputs\.parameters\[(?:''|'|\")(.+?)(?:''|'|\")]\.output_file\}\}"
+    _TO_PLACEHOLDER = "{{{{$.outputs.parameters['{output_name}'].output_file}}}}"
+    _FROM_PLACEHOLDER = re.compile(
+        r"^\{\{\$\.outputs\.parameters\[(?:''|'|\")(?P<output_name>.+?)(?:''|'|\")]\.output_file\}\}$"
+    )
 
 
 class OutputPathPlaceholder(base_model.BaseModel,
-                            PlaceholderSerializationMixin):
+                            RegexPlaceholderSerializationMixin):
     """Class that holds output path for conditional cases.
 
     Attributes:
@@ -294,11 +319,14 @@ class OutputPathPlaceholder(base_model.BaseModel,
     """
     output_name: str
     _aliases = {'output_name': 'outputPath'}
-    _TO_PLACEHOLDER_TEMPLATE_STRING = "{{{{$.outputs.artifacts['{}'].path}}}}"
-    _FROM_PLACEHOLDER_REGEX = r"\{\{\$\.outputs\.artifacts\[(?:''|'|\")(.+?)(?:''|'|\")]\.path\}\}"
+    _TO_PLACEHOLDER = "{{{{$.outputs.artifacts['{output_name}'].path}}}}"
+    _FROM_PLACEHOLDER = re.compile(
+        r"^\{\{\$\.outputs\.artifacts\[(?:''|'|\")(?P<output_name>.+?)(?:''|'|\")]\.path\}\}$"
+    )
 
 
-class OutputUriPlaceholder(base_model.BaseModel, PlaceholderSerializationMixin):
+class OutputUriPlaceholder(base_model.BaseModel,
+                           RegexPlaceholderSerializationMixin):
     """Class that holds output uri for conditional cases.
 
     Attributes:
@@ -306,8 +334,10 @@ class OutputUriPlaceholder(base_model.BaseModel, PlaceholderSerializationMixin):
     """
     output_name: str
     _aliases = {'output_name': 'outputUri'}
-    _TO_PLACEHOLDER_TEMPLATE_STRING = "{{{{$.outputs.artifacts['{}'].uri}}}}"
-    _FROM_PLACEHOLDER_REGEX = r"\{\{\$\.outputs\.artifacts\[(?:''|'|\")(.+?)(?:''|'|\")]\.uri\}\}"
+    _TO_PLACEHOLDER = "{{{{$.outputs.artifacts['{output_name}'].uri}}}}"
+    _FROM_PLACEHOLDER = re.compile(
+        r"^\{\{\$\.outputs\.artifacts\[(?:''|'|\")(?P<output_name>.+?)(?:''|'|\")]\.uri\}\}$"
+    )
 
 
 ValidCommandArgs = Union[str, InputValuePlaceholder, InputPathPlaceholder,
@@ -315,18 +345,92 @@ ValidCommandArgs = Union[str, InputValuePlaceholder, InputPathPlaceholder,
                          OutputUriPlaceholder, OutputParameterPlaceholder,
                          'IfPresentPlaceholder', 'ConcatPlaceholder']
 
+# TODO: need a good way to detect which type of placeholder it is, then direct the placeholder to the correct class... okay maybe_convert_command_arg_to_placeholder invokes .is_match, which does
+#         ...
 
-class ConcatPlaceholder(base_model.BaseModel):
-    """Class that extends basePlaceholders for concatenation.
+import json
+from json.decoder import JSONArray
+from json.scanner import py_make_scanner
+
+
+class CustomizedDecoder(json.JSONDecoder):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        def parse_array(*_args, **_kwargs):
+            values, end = JSONArray(*_args, **_kwargs)
+            for i, item in enumerate(values):
+                if isinstance(item, dict):
+                    values[i] = json.dumps(item)
+            return values, end
+
+        self.parse_array = parse_array
+        self.scan_once = py_make_scanner(self)
+
+
+def custom_load_nested_placeholder_string(
+        placeholder_string: str) -> Dict[str, Union[str, List[str]]]:
+    try:
+        return json.loads(placeholder_string, cls=CustomizedDecoder)
+    except json.JSONDecodeError:
+        return placeholder_string
+
+
+class ConcatPlaceholder(base_model.BaseModel, PlaceholderABC):
+    """Placeholder for concatenating multiple strings. This is a container
+    placeholder and inner placeholders must be resolved.
 
     Attributes:
-        items: string or ValidCommandArgs for concatenation.
+        items: String or ValidCommandArgs for concatenation.
     """
     items: List[ValidCommandArgs]
     _aliases = {'items': 'concat'}
 
+    def to_placeholder_struct(self) -> Dict[str, Any]:
+        return {
+            "Concat": [
+                maybe_convert_placeholder_to_placeholder_string(item)
+                for item in self.items
+            ]
+        }
+
+    def to_placeholder_string(self) -> str:
+        return json.dumps(self.to_placeholder_struct())
+
     @classmethod
-    def from_concat_string(cls, concat_string: str) -> 'ConcatPlaceholder':
+    def from_placeholder_string(self,
+                                placeholder_string: str) -> 'ConcatPlaceholder':
+        placeholder_struct = custom_load_nested_placeholder_string(
+            placeholder_string)
+        if isinstance(placeholder_struct, str):
+            return self.from_addition_concat_string(placeholder_struct)
+        elif isinstance(placeholder_struct, dict):
+            items = [
+                maybe_convert_placeholder_string_to_placeholder(item)
+                for item in placeholder_struct['Concat']
+            ]
+            return ConcatPlaceholder(items=items)
+
+        raise ValueError
+
+    @classmethod
+    def is_match(cls, item: str) -> bool:
+        """Checks if the placeholder string is an
+        IfPresentPlaceholderStructure.
+
+        Args:
+            string: String to check.
+
+        Returns:
+            bool: True if the string is an IfPresentPlaceholderStructure.
+        """
+        return '}}+{{' in item or 'Concat' in custom_load_nested_placeholder_string(
+            item)
+
+    @classmethod
+    def from_addition_concat_string(cls,
+                                    concat_string: str) -> 'ConcatPlaceholder':
         """Creates a concat placeholder from an IR string indicating
         concatenation.
 
@@ -336,14 +440,14 @@ class ConcatPlaceholder(base_model.BaseModel):
         Returns:
             ConcatPlaceholder: The ConcatPlaceholder instance.
         """
-        items = []
-        for a in concat_string.split('+'):
-            items.extend([maybe_convert_command_arg_to_placeholder(a), '+'])
-        del items[-1]
+        items = [
+            maybe_convert_placeholder_string_to_placeholder(a)
+            for a in concat_string.split('+')
+        ]
         return ConcatPlaceholder(items=items)
 
 
-class IfPresentPlaceholderStructure(base_model.BaseModel):
+class IfPresentPlaceholderStructure(base_model.BaseModel, PlaceholderABC):
     """Class that holds structure for conditional cases.
 
     Attributes:
@@ -360,9 +464,78 @@ class IfPresentPlaceholderStructure(base_model.BaseModel):
     otherwise: Optional[List[ValidCommandArgs]] = None
     _aliases = {'input_name': 'inputName', 'otherwise': 'else'}
 
+    @classmethod
+    def is_match(cls, string: str) -> bool:
+        """Checks if the placeholder string is an
+        IfPresentPlaceholderStructure.
+
+        Args:
+            string: String to check.
+
+        Returns:
+            bool: True if the string is an IfPresentPlaceholderStructure.
+        """
+        try:
+            return "IfPresent" in json.loads(string)
+        except json.decoder.JSONDecodeError:
+            return False
+
+    def to_placeholder_struct(self) -> Dict[str, Any]:
+        then = [
+            maybe_convert_placeholder_to_placeholder_string(item)
+            for item in self.then
+        ] if isinstance(self.then, list) else self.then
+        struct = {"IfPresent": {"InputName": self.input_name, "Then": then}}
+        if self.otherwise:
+            otherwise = [
+                maybe_convert_placeholder_to_placeholder_string(item)
+                for item in self.otherwise
+            ] if isinstance(self.otherwise, list) else self.otherwise
+            struct["IfPresent"]["Else"] = otherwise
+        return struct
+
+    def to_placeholder_string(self) -> str:
+        return json.dumps(self.to_placeholder_struct())
+
+    @classmethod
+    def from_placeholder_string(
+            self, placeholder_string: str) -> 'IfPresentPlaceholderStructure':
+        struct = custom_load_nested_placeholder_string(placeholder_string)
+        struct_body = struct['IfPresent']
+
+        then = struct_body['Then']
+        then = [
+            maybe_convert_placeholder_string_to_placeholder(item)
+            for item in then
+        ] if isinstance(then, list) else then
+
+        otherwise = struct_body.get('Else')
+        otherwise = [
+            maybe_convert_placeholder_string_to_placeholder(item)
+            for item in otherwise
+        ] if isinstance(otherwise, list) else otherwise
+        kwargs = {
+            'input_name': struct_body['InputName'],
+            'then': then,
+            'otherwise': otherwise
+        }
+        return IfPresentPlaceholderStructure(**kwargs)
+
     def transform_otherwise(self) -> None:
         """Use None instead of empty list for optional."""
         self.otherwise = None if self.otherwise == [] else self.otherwise
+
+
+def dump_non_strings_to_string(obj: Any) -> str:
+    """Dumps an object to a string.
+
+    Args:
+        obj: Object to dump.
+
+    Returns:
+        str: The string representation of the object.
+    """
+    return json.dumps(obj, default=lambda o: o)
 
 
 class IfPresentPlaceholder(base_model.BaseModel):
@@ -432,16 +605,17 @@ class ContainerSpec(base_model.BaseModel):
         Returns:
             ContainerSpec: The ContainerSpec instance.
         """
-
         args = container_dict.get('args')
         if args is not None:
             args = [
-                maybe_convert_command_arg_to_placeholder(arg) for arg in args
+                maybe_convert_placeholder_string_to_placeholder(arg)
+                for arg in args
             ]
         command = container_dict.get('command')
         if command is not None:
             command = [
-                maybe_convert_command_arg_to_placeholder(c) for c in command
+                maybe_convert_placeholder_string_to_placeholder(c)
+                for c in command
             ]
         return ContainerSpec(
             image=container_dict['image'],
@@ -451,7 +625,45 @@ class ContainerSpec(base_model.BaseModel):
             resources=None)  # can only be set on tasks
 
 
-def maybe_convert_command_arg_to_placeholder(arg: str) -> ValidCommandArgs:
+def load_json_if_possible(element: Union[str, Dict[str, Any]]) -> Any:
+    """Loads a string as json if possible.
+
+    Args:
+        string (str): The string to load.
+
+    Returns:
+        Any: The loaded string.
+    """
+    if isinstance(element, dict):
+        return element
+    try:
+        return json.loads(element)
+    except json.decoder.JSONDecodeError:
+        return element
+
+
+P = TypeVar('P', bound=PlaceholderABC)
+
+
+def maybe_convert_placeholder_to_placeholder_string(placeholder: P) -> str:
+    """Converts a placeholder to a placeholder string.
+
+    Args:
+        placeholder (Placeholder): The placeholder to convert.
+
+    Returns:
+        str: The placeholder string.
+    """
+    if hasattr(placeholder, 'to_placeholder_struct') and callable(
+            placeholder.to_placeholder_struct):
+        return placeholder.to_placeholder_struct()
+    if isinstance(placeholder, PlaceholderABC):
+        return placeholder.to_placeholder_string()
+    return placeholder
+
+
+def maybe_convert_placeholder_string_to_placeholder(
+        placeholder_string: str) -> ValidCommandArgs:
     """Infers if a command is a placeholder and converts it to the correct
     Placeholder object.
 
@@ -461,28 +673,24 @@ def maybe_convert_command_arg_to_placeholder(arg: str) -> ValidCommandArgs:
     Returns:
         ValidCommandArgs: The converted command or original string.
     """
-    # short path to avoid checking all regexs
-    if not arg.startswith('{{$'):
-        return arg
+    if not placeholder_string.startswith('{'):
+        return placeholder_string
 
-    # handle concat placeholder
-    # TODO: change when support for concat is added to IR
-    if '}}+{{' in arg:
-        return ConcatPlaceholder.from_concat_string(arg)
-
-    placeholders = {
+    from_string_placeholders = [
+        ConcatPlaceholder,
+        IfPresentPlaceholderStructure,
         InputValuePlaceholder,
         InputPathPlaceholder,
         InputUriPlaceholder,
         OutputPathPlaceholder,
         OutputUriPlaceholder,
         OutputParameterPlaceholder,
-    }
-    for placeholder_struct in placeholders:
-        if placeholder_struct.is_match(arg):
-            return placeholder_struct.from_placeholder(arg)
-
-    return arg
+    ]
+    for placeholder_struct in from_string_placeholders:
+        if placeholder_struct.is_match(placeholder_string):
+            return placeholder_struct.from_placeholder_string(
+                placeholder_string)
+    return placeholder_string
 
 
 class TaskSpec(base_model.BaseModel):
