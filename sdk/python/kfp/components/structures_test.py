@@ -18,11 +18,9 @@ import sys
 import tempfile
 import textwrap
 import unittest
-from unittest.util import strclass
 
 from absl.testing import parameterized
 from kfp import compiler
-from kfp import components
 from kfp.components import structures
 
 V1_YAML_IF_PLACEHOLDER = textwrap.dedent("""\
@@ -44,7 +42,7 @@ V1_YAML_IF_PLACEHOLDER = textwrap.dedent("""\
     name: component_if
     """)
 
-V2_COMPONENT_SPEC_IF_PLACEHOLDER = structures.ComponentSpec(
+COMPONENT_SPEC_IF_PLACEHOLDER = structures.ComponentSpec(
     name='component_if',
     implementation=structures.Implementation(
         container=structures.ContainerSpec(
@@ -79,20 +77,7 @@ V1_YAML_CONCAT_PLACEHOLDER = textwrap.dedent("""\
     - {name: input_prefix, type: String}
     """)
 
-V2_YAML_CONCAT_PLACEHOLDER = textwrap.dedent("""\
-    implementation:
-      container:
-        args:
-        - concat:
-          - --arg1
-          - {inputValue: input_prefix}
-        image: alpine
-    inputs:
-      input_prefix: {type: String}
-    name: component_concat
-    """)
-
-V2_COMPONENT_SPEC_CONCAT_PLACEHOLDER = structures.ComponentSpec(
+COMPONENT_SPEC_CONCAT_PLACEHOLDER = structures.ComponentSpec(
     name='component_concat',
     implementation=structures.Implementation(
         container=structures.ContainerSpec(
@@ -106,7 +91,7 @@ V2_COMPONENT_SPEC_CONCAT_PLACEHOLDER = structures.ComponentSpec(
     inputs={'input_prefix': structures.InputSpec(type='String')},
 )
 
-V2_COMPONENT_SPEC_NESTED_PLACEHOLDER = structures.ComponentSpec(
+COMPONENT_SPEC_NESTED_PLACEHOLDER = structures.ComponentSpec(
     name='component_nested',
     implementation=structures.Implementation(
         container=structures.ContainerSpec(
@@ -296,11 +281,11 @@ sdkVersion: kfp-2.0.0-alpha.2
     @parameterized.parameters(
         {
             'yaml': V1_YAML_IF_PLACEHOLDER,
-            'expected_component': V2_COMPONENT_SPEC_IF_PLACEHOLDER
+            'expected_component': COMPONENT_SPEC_IF_PLACEHOLDER
         },
         {
             'yaml': V1_YAML_CONCAT_PLACEHOLDER,
-            'expected_component': V2_COMPONENT_SPEC_CONCAT_PLACEHOLDER
+            'expected_component': COMPONENT_SPEC_CONCAT_PLACEHOLDER
         },
     )
     def test_component_spec_placeholder_load_from_v2_component_yaml(
