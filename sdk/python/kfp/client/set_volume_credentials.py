@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import logging
-
-from kubernetes.client import configuration
+import os
 
 from kfp import client
+from kubernetes.client import configuration
 
 
 class ServiceAccountTokenVolumeCredentials(client.TokenCredentialsBase):
@@ -48,8 +47,8 @@ class ServiceAccountTokenVolumeCredentials(client.TokenCredentialsBase):
         try:
             token = client.read_token_from_file(self._token_path)
         except OSError as e:
-            logging.error("Failed to read a token from file '%s' (%s).",
-                          self._token_path, str(e))
+            logging.error(
+                f"Failed to read a token from file '{self._token_path}' ({e}).")
             raise
         return token
 
@@ -66,4 +65,4 @@ class ServiceAccountTokenVolumeCredentials(client.TokenCredentialsBase):
                 The Configuration object of the kubernetes client's is the same
                 with kfp_server_api.configuration.Configuration.
         """
-        config.api_key["authorization"] = self._get_token()
+        config.api_key['authorization'] = self._get_token()
