@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import abc
+from typing import Optional
 
 from kubernetes.client import configuration
 
@@ -39,7 +40,7 @@ class TokenCredentialsBase(abc.ABC):
         raise NotImplementedError()
 
 
-def read_token_from_file(path=None):
+def read_token_from_file(path: Optional[str] = None) -> str:
     """Read a token found in some file."""
     token = None
     with open(path) as f:
