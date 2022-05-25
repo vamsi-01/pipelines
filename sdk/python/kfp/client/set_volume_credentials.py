@@ -16,10 +16,12 @@ import logging
 import os
 
 from kfp import client
+from kfp.client import token_credentials_base
 from kubernetes.client import configuration
 
 
-class ServiceAccountTokenVolumeCredentials(client.TokenCredentialsBase):
+class ServiceAccountTokenVolumeCredentials(
+        token_credentials_base.TokenCredentialsBase):
     """Audience-bound ServiceAccountToken in the local filesystem.
 
     This is a credentials interface for audience-bound ServiceAccountTokens

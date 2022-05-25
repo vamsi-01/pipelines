@@ -22,14 +22,15 @@ import re
 import tarfile
 import tempfile
 import time
+from typing import Any, Callable, Mapping, Optional
 import warnings
 import zipfile
-from typing import Any, Callable, Mapping, Optional
 
-import kfp_server_api
-import yaml
 from kfp import compiler
 from kfp.client import auth
+from kfp.client import set_volume_credentials
+import kfp_server_api
+import yaml
 
 # Operators on scalar values. Only applies to one of |int_value|,
 # |long_value|, |string_value| or |timestamp_value|.
@@ -338,7 +339,8 @@ class Client:
         # implement more and more credentials, we can have some heuristic and
         # choose from a number of options.
         # See https://github.com/kubeflow/pipelines/pull/5287#issuecomment-805654121
-        credentials = auth.ServiceAccountTokenVolumeCredentials()
+        credentials = set_volume_credentials.ServiceAccountTokenVolumeCredentials(
+        )
         config_copy = copy.deepcopy(config)
 
         try:
