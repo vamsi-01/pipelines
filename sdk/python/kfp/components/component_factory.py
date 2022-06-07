@@ -17,8 +17,9 @@ import itertools
 import pathlib
 import re
 import textwrap
+import typing
+from typing import Any, Callable, Dict, List, Optional, Tuple
 import warnings
-from typing import Callable, List, Optional, Tuple
 
 import docstring_parser
 from kfp.components import python_component
@@ -310,16 +311,171 @@ def extract_component_interface(func: Callable) -> structures.ComponentSpec:
     return component_spec
 
 
+def get_signature_from_func(func: Callable) -> str:
+    """Extracts the function signature from a function from initial character
+    to ending colon.
+
+    Args:
+        func (Callable): The function.
+
+    Returns:
+        str: The signature string from source code.
+    """
+    source = _get_function_source_definition(func)
+    closing_paren_idx = source.find(')')
+    signature_end_colon_idx = source[closing_paren_idx:].find(':')
+    last_char = closing_paren_idx + signature_end_colon_idx
+    return source[:last_char + 1]
+
+
+def get_param_to_ann_string_from_signature(signature: str) -> Dict[str, str]:
+    """Gets a dictionary of parameter name to type annotation string from a
+    function signature string.
+
+    Args:
+        signature (str): The function signature string, from starting character to ending colon.
+
+    Returns:
+        Dict[str, str]: Dictionary of parameter name to type annotation string.
+    """
+    # get parameters
+    args = signature[signature.find('(') + 1:signature.find(')')]
+    args = re.sub(r'\s', '', args)
+    args = args[:-1] if args[-1] == ',' else args
+    args_list = args.split(',')
+    split_args = [arg.split(':') for arg in args_list]
+    args_dict = {
+        arg[0]: arg[1] if len(arg) == 2 else None for arg in split_args
+    }
+    # get return
+    if '->' in signature:
+        return_type = signature[signature.find('->') + 2:-1].strip()
+        args_dict['return'] = return_type
+
+    return args_dict
+
+
+def get_param_to_ann_string(func: Callable) -> Dict[str, str]:
+    """Gets a dictionary of parameter name to type annotation string from a
+    function.
+
+    Args:
+        func (Callable): The function.
+
+    Returns:
+        Dict[str, str]: Dictionary of parameter name to type annotation string.
+    """
+    signature = get_signature_from_func(func)
+    return get_param_to_ann_string_from_signature(signature)
+
+
+def get_full_qualname_for_annotation(obj: type) -> str:
+    """Gets the fully qualified name for an annotation. For example, for class
+    Foo in module bar.baz, this function returns bar.baz.Foo.
+
+    Args:
+        obj (type): The class or module for which to get the fully qualified name.
+
+    Returns:
+        str: The fully qualified name for the class.
+    """
+    module = obj.__module__
+    name = obj.__qualname__
+    if module is not None and module != '__builtin__':
+        name = module + '.' + name
+    return name
+
+
+def get_import_item_from_annotation_string_and_ann_obj(
+        string: str, qualname: str) -> Dict[str, str]:
+    """Get an import item dictionary (keys 'name' and 'alias') from an artifact
+    annotation string.
+
+    Args:
+        string (str): The type annotation string.
+        qualname (str): The fully qualified type annotation name as a string.
+
+    Returns:
+        Dict[str, str]: The string.
+    """
+    artifact_str = string.lstrip('Input[').lstrip('Output[').rstrip(']')
+
+    # It is challenging to reliably handle module-relative type annotations (e.g. annotation_module.CustomArtifact) because the type annotation object doesn't hold a reference to its parent module (only the name as a string). If the pipeline author aliases a module import via `import module as alias`, we cannot determine the "true" module path to reconstruct an import. For now, raise an error.
+    if '.' in artifact_str:
+        annotation_module = artifact_str.split('.', 1)[0]
+        split_qualname = qualname.split('.')
+        if annotation_module not in split_qualname:
+            raise TypeError(
+                f'Cannot identify object used in type annotation: {string}. This is likely due to an aliased module used in the type annotation.'
+            )
+        name_to_import = '.'.join(
+            split_qualname[:split_qualname.index(annotation_module) + 1])
+    else:
+        name_to_import = qualname
+    return {'name': name_to_import, 'alias': artifact_str.split('.')[0]}
+
+
+def is_artifact(obj: Any) -> bool:
+    return hasattr(obj, 'TYPE_NAME')
+
+
+def get_artifact_import_items_from_function(
+        func: Callable) -> List[Dict[str, str]]:
+    """Gets a list of required Artifact imports (keys 'name' and 'alias') from
+    a function.
+
+    Args:
+        func (Callable): The component function.
+
+    Returns:
+        List[Dict[str, str]]: A dictionary containing string-to-string key-value pairs, with keys 'name' and 'alias'.
+    """
+    type_hints = typing.get_type_hints(func)
+    import_items = []
+    for param_name, ann_string in get_param_to_ann_string(func).items():
+        actual_ann = type_hints.get(param_name)
+        if actual_ann is not None and hasattr(actual_ann,
+                                              '__origin__') and is_artifact(
+                                                  actual_ann.__origin__):
+            qualname = get_full_qualname_for_annotation(actual_ann.__origin__)
+            # kfp artifact types are already imported
+            if not qualname.startswith('kfp.'):
+                import_items.append(
+                    get_import_item_from_annotation_string_and_ann_obj(
+                        ann_string, qualname))
+    return import_items
+
+
+def import_artifact_annotations(import_items: List[Dict[str, str]],
+                                globalns: Dict[str, Any]) -> None:
+    """Imports objects to global namespace based on module path, name, and alias.
+    mapping. For example, import_items = {'name': 'bar.baz.Foo', 'alias': 'Bat'} is equivalent to `from bar.baz import Foo as Bat`. The alias field can be omitted.
+
+    Args:
+        import_items (Dict[str, str]): A dictionary containing string-to-string key-value pairs, with keys 'module_path`, 'name', and optionally 'alias'.
+        globalns (Dict[str, Any]): The global namespace dictionary.
+    """
+    for import_item in import_items:
+        import_parts = import_item['name'].rsplit('.', 1)
+        imported_obj = getattr(
+            __import__(name=import_parts[0], fromlist=[import_parts[1]]),
+            import_parts[1])
+        globalns[import_item['alias']] = imported_obj
+
+
 EXECUTOR_INPUT_PLACEHOLDER = "{{$}}"
 
 
 def _get_command_and_args_for_lightweight_component(
         func: Callable) -> Tuple[List[str], List[str]]:
+    items_to_import = get_artifact_import_items_from_function(func)
     imports_source = [
         'import kfp',
         'from kfp import dsl',
         'from kfp.dsl import *',
         'from typing import *',
+        'from kfp.components import component_factory',
+        f'component_factory.{import_artifact_annotations.__name__}({items_to_import}, globals())',
     ]
 
     func_source = _get_function_source_definition(func)
