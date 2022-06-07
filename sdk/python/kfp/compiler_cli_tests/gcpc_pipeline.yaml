@@ -1,0 +1,100 @@
+components:
+  comp-dummy-op:
+    executorLabel: exec-dummy-op
+    inputDefinitions:
+      artifacts:
+        artifact:
+          artifactType:
+            schemaTitle: google.UnmanagedContainerModel
+            schemaVersion: 0.0.1
+  comp-importer:
+    executorLabel: exec-importer
+    inputDefinitions:
+      parameters:
+        uri:
+          parameterType: STRING
+    outputDefinitions:
+      artifacts:
+        artifact:
+          artifactType:
+            schemaTitle: system.Artifact
+            schemaVersion: 0.0.1
+defaultPipelineRoot: gs://cjmccarthy-kfp-default-bucket
+deploymentSpec:
+  executors:
+    exec-dummy-op:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - dummy_op
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet     --no-warn-script-location 'git+https://github.com/connor-mccarthy/pipelines@support-custom-artifact-types#subdirectory=components/google-cloud'\
+          \ 'git+https://github.com/connor-mccarthy/pipelines@support-custom-artifact-types#subdirectory=sdk/python'\
+          \ && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          python3 -m kfp.components.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\nfrom kfp.components import component_factory\ncomponent_factory.import_artifact_annotations([{'name':\
+          \ 'google_cloud_pipeline_components.types.artifact_types', 'alias': 'artifact_types'}],\
+          \ globals())\n\ndef dummy_op(artifact: Input[artifact_types.UnmanagedContainerModel]):\n\
+          \    print('artifact.type: ', type(artifact))\n    print('artifact.name:\
+          \ ', artifact.name)\n    print('artifact.uri: ', artifact.uri)\n    print('artifact.metadata:\
+          \ ', artifact.metadata)\n\n"
+        image: python:3.7
+    exec-importer:
+      importer:
+        artifactUri:
+          constant: gs://managed-pipeline-gcpc-e2e-test/automl-tabular/model
+        metadata:
+          containerSpec:
+            imageUri: us-docker.pkg.dev/vertex-ai/automl-tabular/prediction-server:prod
+        typeSchema:
+          schemaTitle: google.UnmanagedContainerModel
+          schemaVersion: 0.0.1
+pipelineInfo:
+  name: test-custom-artifact
+root:
+  dag:
+    tasks:
+      dummy-op:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-dummy-op
+        dependentTasks:
+        - importer
+        inputs:
+          artifacts:
+            artifact:
+              taskOutputArtifact:
+                outputArtifactKey: artifact
+                producerTask: importer
+        taskInfo:
+          name: dummy-op
+      importer:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-importer
+        inputs:
+          parameters:
+            uri:
+              runtimeValue:
+                constant: gs://managed-pipeline-gcpc-e2e-test/automl-tabular/model
+        taskInfo:
+          name: importer
+schemaVersion: 2.1.0
+sdkVersion: kfp-1.9.9
