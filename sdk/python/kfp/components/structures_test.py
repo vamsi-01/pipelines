@@ -20,8 +20,10 @@ import textwrap
 import unittest
 
 from absl.testing import parameterized
+from google.protobuf import json_format
 from kfp import compiler
 from kfp.components import structures
+from kfp.pipeline_spec import pipeline_spec_pb2
 
 V1_YAML_IF_PLACEHOLDER = textwrap.dedent("""\
     implementation:
@@ -1131,6 +1133,28 @@ sdkVersion: kfp-2.0.0-alpha.2""")
             },
             outputs=None)
         self.assertEqual(loaded_component_spec, component_spec)
+
+
+class TestRetryPolicy(unittest.TestCase):
+
+    def test_to_from_proto(self):
+        retry_policy_struct = structures.RetryPolicy(
+            max_retry_count=3,
+            backoff_duration=5,
+            backoff_factor=1.0,
+            backoff_max_duration=1)
+        retry_policy_proto = json_format.ParseDict(
+            {
+                'max_retry_count': 3,
+                'backoff_duration': '5s',
+                'backoff_factor': 1.0,
+                'backoff_max_duration': '1s'
+            }, pipeline_spec_pb2.PipelineTaskSpec.RetryPolicy())
+
+        self.assertEqual(retry_policy_struct.to_proto(), retry_policy_proto)
+        self.assertEqual(
+            structures.RetryPolicy.from_proto(retry_policy_proto),
+            retry_policy_struct)
 
 
 if __name__ == '__main__':
