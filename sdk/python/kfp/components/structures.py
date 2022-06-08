@@ -22,6 +22,7 @@ import re
 from typing import Any, Dict, List, Mapping, Optional, Type, TypeVar, Union
 import uuid
 
+from google.protobuf import json_format
 import kfp
 from kfp import dsl
 from kfp.compiler import compiler
@@ -485,6 +486,42 @@ def maybe_convert_command_arg_to_placeholder(arg: str) -> ValidCommandArgs:
     return arg
 
 
+class RetryPolicy(base_model.BaseModel):
+    """The retry policy of a container execution.
+
+    Attributes:
+        num_retries (int): Number of times to retry on failure.
+        backoff_duration (int): The the number of seconds to wait before triggering a retry.
+        backoff_factor (float): The exponential backoff factor applied to backoff_duration. For example, if backoff_duration="60" (60 seconds) and backoff_factor=2, the first retry will happen after 60 seconds, then after 120, 240, and so on.
+        backoff_max_duration (int): The maximum duration during which the task will be retried.
+    """
+    max_retry_count: int
+    backoff_duration: int
+    backoff_factor: float
+    backoff_max_duration: int
+
+    def to_proto(self) -> pipeline_spec_pb2.PipelineTaskSpec.RetryPolicy:
+        dictionary = self.to_dict()
+        dictionary['backoff_duration'] = f'{dictionary["backoff_duration"]}s'
+        dictionary[
+            'backoff_max_duration'] = f'{dictionary["backoff_max_duration"]}s'
+        return json_format.ParseDict(
+            dictionary, pipeline_spec_pb2.PipelineTaskSpec.RetryPolicy())
+
+    @classmethod
+    def from_proto(
+        cls, retry_policy_proto: pipeline_spec_pb2.PipelineTaskSpec.RetryPolicy
+    ) -> 'RetryPolicy':
+        dictionary = json_format.MessageToDict(
+            retry_policy_proto, preserving_proto_field_name=True)
+        dictionary['backoff_duration'] = str(
+            dictionary['backoff_duration'][:-1])
+        dictionary['backoff_max_duration'] = str(
+            dictionary['backoff_max_duration'][:-1])
+
+        return cls.from_dict(dictionary)
+
+
 class TaskSpec(base_model.BaseModel):
     """The spec of a pipeline task.
 
@@ -517,6 +554,7 @@ class TaskSpec(base_model.BaseModel):
     iterator_item_input: Optional[str] = None
     enable_caching: bool = True
     display_name: Optional[str] = None
+    retry_policy: Optional[RetryPolicy] = None
 
 
 class DagSpec(base_model.BaseModel):
