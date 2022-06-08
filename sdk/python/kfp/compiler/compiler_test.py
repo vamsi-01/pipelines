@@ -862,5 +862,31 @@ class TestWriteIrToFile(unittest.TestCase):
                                                  temp_filepath)
 
 
+class TestSetRetryCompilation(unittest.TestCase):
+
+    def test_set_retry(self):
+
+        @dsl.component
+        def hello_world(text: str) -> str:
+            """Hello world component."""
+            return text
+
+        @dsl.pipeline(name='hello-world', description='A simple intro pipeline')
+        def pipeline_hello_world(text: str = 'hi there'):
+            """Hello world pipeline."""
+
+            hello_world(text=text).set_retry(3)
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            package_path = os.path.join(tempdir, 'pipeline.yaml')
+            compiler.Compiler().compile(
+                pipeline_func=pipeline_hello_world, package_path=package_path)
+            pipeline_spec = pipeline_spec_from_file(package_path)
+
+        self.assertEqual(
+            pipeline_spec.root.dag.tasks['hello-world'].retry_policy
+            .max_retry_count, 3)
+
+
 if __name__ == '__main__':
     unittest.main()
