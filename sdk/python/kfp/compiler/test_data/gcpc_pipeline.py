@@ -1,20 +1,8 @@
-# Copyright 2022 The Kubeflow Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import os
+from typing import NamedTuple
 
 from google_cloud_pipeline_components.types import artifact_types
+from kfp import compiler
 from kfp import components
 from kfp import dsl
 from kfp.components import importer_node
@@ -26,18 +14,34 @@ component_path = os.path.join(project_root, 'components', 'google-cloud',
                               'upload_model', 'component.yaml')
 gcpc_component = components.load_component_from_file(component_path)
 
+KFP_PACKAGE_PATH = 'git+https://github.com/connor-mccarthy/pipelines@support-custom-artifact-types#subdirectory=sdk/python'
+GCPC_PACKAGE_PATH = 'git+https://github.com/connor-mccarthy/pipelines@support-custom-artifact-types#subdirectory=components/google-cloud'
+
 
 @dsl.component(
-    kfp_package_path='git+https://github.com/connor-mccarthy/pipelines@support-custom-artifact-types#subdirectory=sdk/python',
-    packages_to_install=[
-        'git+https://github.com/connor-mccarthy/pipelines@support-custom-artifact-types#subdirectory=components/google-cloud'
-    ],
+    kfp_package_path=KFP_PACKAGE_PATH,
+    packages_to_install=[GCPC_PACKAGE_PATH],
 )
 def dummy_op(artifact: Input[artifact_types.UnmanagedContainerModel]):
     print('artifact.type: ', type(artifact))
     print('artifact.name: ', artifact.name)
     print('artifact.uri: ', artifact.uri)
     print('artifact.metadata: ', artifact.metadata)
+
+
+@dsl.component(
+    kfp_package_path=KFP_PACKAGE_PATH,
+    packages_to_install=[GCPC_PACKAGE_PATH],
+)
+def named_tuple_op(
+    artifact: Input[dsl.Artifact]
+) -> NamedTuple('Outputs', [('model1', artifact_types.UnmanagedContainerModel),
+                            ('model2', artifact_types.UnmanagedContainerModel)
+                           ]):
+    import collections
+
+    output = collections.namedtuple('Outputs', ['model1', 'model2'])
+    return output(model1=artifact, model2=artifact)
 
 
 @dsl.pipeline(
@@ -54,10 +58,10 @@ def my_pipeline():
             }
         })
 
-    dummy_op(artifact=importer_spec.outputs['artifact'])
+    named_tuple_op(artifact=importer_spec.outputs['artifact'])
 
 
 if __name__ == '__main__':
-    from kfp import compiler
-    ir_file = __file__.replace('.py', '.yaml')
-    compiler.Compiler().compile(pipeline_func=my_pipeline, package_path=ir_file)
+    compiler.Compiler().compile(
+        pipeline_func=my_pipeline,
+        package_path=__file__.replace('.py', '.yaml'))
