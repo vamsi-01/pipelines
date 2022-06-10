@@ -21,12 +21,15 @@ from typing import Any, Dict
 import unittest
 
 from absl.testing import parameterized
+from kfp import dsl
 from kfp.components import component_factory
 from kfp.components.types import artifact_types
 from kfp.components.types.artifact_types import Artifact
 from kfp.components.types.artifact_types import Dataset
 from kfp.components.types.type_annotations import Input
+from kfp.components.types.type_annotations import InputPath
 from kfp.components.types.type_annotations import Output
+from kfp.components.types.type_annotations import OutputPath
 
 
 class TestGetPackagesToInstallCommand(unittest.TestCase):
@@ -119,6 +122,15 @@ class TestGetSignatureFromFunc(unittest.TestCase):
 
         actual = component_factory.get_signature_from_func(func)
         expected = 'def func(a: int, b: Input[artifact_types.Artifact]):'
+        self.assertEqual(actual, expected)
+
+    def test_input_and_output_paths(self):
+
+        def func(a: int, b: InputPath('Dataset'), c: OutputPath('Dataset')):
+            pass
+
+        actual = component_factory.get_signature_from_func(func)
+        expected = "def func(a: int, b: InputPath('Dataset'), c: OutputPath('Dataset')):"
         self.assertEqual(actual, expected)
 
 
@@ -227,10 +239,11 @@ class _TestCaseWithThirdPartyPackage(parameterized.TestCase):
     @classmethod
     def setUpClass(cls):
 
-        class ThirdPartyArtifact:
-            TYPE_NAME = 'my_third_party_artifact'
+        class ThirdPartyArtifact(artifact_types.Artifact):
+            TYPE_NAME = 'custom.my_third_party_artifact'
 
-        class_source = textwrap.dedent(inspect.getsource(ThirdPartyArtifact))
+        class_source = 'from kfp.components.types import artifact_types\n\n' + textwrap.dedent(
+            inspect.getsource(ThirdPartyArtifact))
 
         tmp_dir = tempfile.TemporaryDirectory()
         with open(os.path.join(tmp_dir.name, 'my_package.py'), 'w') as f:
@@ -261,24 +274,6 @@ class TestGetFullQualnameForClass(_TestCaseWithThirdPartyPackage):
         self.assertEqual(
             component_factory.get_full_qualname_for_annotation(
                 my_package.ThirdPartyArtifact), 'my_package.ThirdPartyArtifact')
-
-
-class TestIsArtifact(_TestCaseWithThirdPartyPackage):
-
-    @parameterized.parameters([
-        (Dataset, True),
-        (Artifact, True),
-        (Alias, True),
-        (MyCustomArtifact, True),
-        (list, False),
-    ])
-    def test(self, obj: Any, expected: bool):
-        self.assertEqual(component_factory.is_artifact(obj), expected)
-
-    def test_my_package_artifact(self):
-        import my_package
-        self.assertEqual(
-            component_factory.is_artifact(my_package.ThirdPartyArtifact), True)
 
 
 class GetArtifactImportItemsFromFunction(_TestCaseWithThirdPartyPackage):

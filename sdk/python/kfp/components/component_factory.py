@@ -322,10 +322,22 @@ def get_signature_from_func(func: Callable) -> str:
         str: The signature string from source code.
     """
     source = _get_function_source_definition(func)
-    closing_paren_idx = source.find(')')
-    signature_end_colon_idx = source[closing_paren_idx:].find(':')
-    last_char = closing_paren_idx + signature_end_colon_idx
-    return source[:last_char + 1]
+    chars = []
+    opens = 0
+    for i, char in enumerate(source):
+        chars.append(char)
+        if char == '(':
+            opens += 1
+        elif char == ')':
+            opens -= 1
+            if opens == 0:
+                break
+
+    next_char_idx = i + 1
+    chars.append(source[next_char_idx:next_char_idx + source[i + 1:].find(':') +
+                        1])
+
+    return ''.join(chars)
 
 
 def get_param_to_ann_string_from_signature(signature: str) -> Dict[str, str]:
@@ -338,9 +350,9 @@ def get_param_to_ann_string_from_signature(signature: str) -> Dict[str, str]:
     Returns:
         Dict[str, str]: Dictionary of parameter name to type annotation string.
     """
-    # get parameters
-    args = signature[signature.find('(') + 1:signature.find(')')]
+    args = signature[signature.find('(') + 1:signature.rfind(')')]
     args = re.sub(r'\s', '', args)
+
     args = args[:-1] if args[-1] == ',' else args
     args_list = args.split(',')
     split_args = [arg.split(':') for arg in args_list]
@@ -415,10 +427,6 @@ def get_import_item_from_annotation_string_and_ann_obj(
     return {'name': name_to_import, 'alias': artifact_str.split('.')[0]}
 
 
-def is_artifact(obj: Any) -> bool:
-    return hasattr(obj, 'TYPE_NAME')
-
-
 def get_artifact_import_items_from_function(
         func: Callable) -> List[Dict[str, str]]:
     """Gets a list of required Artifact imports (keys 'name' and 'alias') from
@@ -430,14 +438,20 @@ def get_artifact_import_items_from_function(
     Returns:
         List[Dict[str, str]]: A dictionary containing string-to-string key-value pairs, with keys 'name' and 'alias'.
     """
-    type_hints = typing.get_type_hints(func)
+    signature = inspect.signature(func)
+    annotation_dict = {
+        name: parameter.annotation
+        for name, parameter in signature.parameters.items()
+    }
     import_items = []
     for param_name, ann_string in get_param_to_ann_string(func).items():
-        actual_ann = type_hints.get(param_name)
-        if actual_ann is not None and hasattr(actual_ann,
-                                              '__origin__') and is_artifact(
-                                                  actual_ann.__origin__):
-            qualname = get_full_qualname_for_annotation(actual_ann.__origin__)
+        actual_ann = annotation_dict.get(param_name)
+
+        if actual_ann is not None and type_annotations.is_artifact_annotation(
+                actual_ann):
+            qualname = get_full_qualname_for_annotation(
+                type_annotations.get_io_artifact_class(actual_ann))
+
             # kfp artifact types are already imported
             if not qualname.startswith('kfp.'):
                 import_items.append(
