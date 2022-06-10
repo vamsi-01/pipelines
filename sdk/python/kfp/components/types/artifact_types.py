@@ -16,8 +16,7 @@
 These are only compatible with v2 Pipelines.
 """
 
-import os
-from typing import Dict, Generic, List, Optional, Type, TypeVar, Union
+from typing import Dict, List, Optional
 
 _GCS_LOCAL_MOUNT_PREFIX = '/gcs/'
 _MINIO_LOCAL_MOUNT_PREFIX = '/minio/'
@@ -453,9 +452,8 @@ def create_runtime_artifact(
     """
     schema_title = runtime_artifact.get('type', {}).get('schemaTitle', '')
 
-    artifact_type = _SCHEMA_TITLE_TO_TYPE.get(schema_title)
-    if not artifact_type:
-        artifact_type = artifact_cls or Artifact
+    artifact_type = _SCHEMA_TITLE_TO_TYPE.get(
+        schema_title) or artifact_cls or Artifact
     return artifact_type(
         uri=runtime_artifact.get('uri', ''),
         name=runtime_artifact.get('name', ''),
