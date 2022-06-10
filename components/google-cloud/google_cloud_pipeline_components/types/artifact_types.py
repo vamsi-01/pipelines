@@ -192,22 +192,11 @@ class BQTable(dsl.Artifact):
 
 
 class UnmanagedContainerModel(dsl.Artifact):
-  """An artifact representing an unmanaged container model."""
-  TYPE_NAME = 'google.UnmanagedContainerModel'
+    """An artifact representing an unmanaged container model."""
+    TYPE_NAME = 'google.UnmanagedContainerModel'
 
-  def __init__(self, predict_schemata: Dict, container_spec: Dict):
-    """Args:
-
-         predict_schemata: Contains the schemata used in Model's predictions and
-         explanations via PredictionService.Predict, PredictionService.Explain
-         and BatchPredictionJob. For more details, see
-         https://cloud.google.com/vertex-ai/docs/reference/rest/v1/PredictSchemata
-         container_spec: Specification of a container for serving predictions.
-         Some fields in this message correspond to fields in the Kubernetes
-         Container v1 core specification. For more details, see
-         https://cloud.google.com/vertex-ai/docs/reference/rest/v1/ModelContainerSpec
-    """
-    super().__init__(metadata={
-        'predictSchemata': predict_schemata,
-        'containerSpec': container_spec
-    })
+    def __init__(self,
+                 name: Optional[str] = None,
+                 uri: Optional[str] = None,
+                 metadata: Optional[Dict] = None):
+        super().__init__(uri=uri, name=name, metadata=metadata)
