@@ -1,35 +1,41 @@
 components:
-  comp-consumer-op:
-    executorLabel: exec-consumer-op
+  comp-dummy-op:
+    executorLabel: exec-dummy-op
     inputDefinitions:
       artifacts:
-        model:
+        artifact:
           artifactType:
-            schemaTitle: google.VertexModel
+            schemaTitle: google.UnmanagedContainerModel
             schemaVersion: 0.0.1
-  comp-producer:
-    executorLabel: exec-producer
+  comp-importer:
+    executorLabel: exec-importer
+    inputDefinitions:
+      parameters:
+        uri:
+          parameterType: STRING
     outputDefinitions:
       artifacts:
-        model:
+        artifact:
           artifactType:
-            schemaTitle: google.VertexModel
+            schemaTitle: system.Artifact
             schemaVersion: 0.0.1
+defaultPipelineRoot: gs://cjmccarthy-kfp-default-bucket
 deploymentSpec:
   executors:
-    exec-consumer-op:
+    exec-dummy-op:
       container:
         args:
         - --executor_input
         - '{{$}}'
         - --function_to_execute
-        - consumer_op
+        - dummy_op
         command:
         - sh
         - -c
         - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
           \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
-          \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==2.0.0-alpha.1'\
+          \ python3 -m pip install --quiet     --no-warn-script-location 'git+https://github.com/connor-mccarthy/pipelines@support-custom-artifact-types#subdirectory=components/google-cloud'\
+          \ 'git+https://github.com/connor-mccarthy/pipelines@support-custom-artifact-types#subdirectory=sdk/python'\
           \ && \"$0\" \"$@\"\n"
         - sh
         - -ec
@@ -41,41 +47,54 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef consumer_op(model: Input[VertexModel]):\n    pass\n\n"
+          \ *\nfrom kfp.components import component_factory\ncomponent_factory.import_artifact_annotations([{'name':\
+          \ 'google_cloud_pipeline_components.types.artifact_types', 'alias': 'artifact_types'}],\
+          \ globals())\n\ndef dummy_op(artifact: Input[artifact_types.UnmanagedContainerModel]):\n\
+          \    print('artifact.type: ', type(artifact))\n    print('artifact.name:\
+          \ ', artifact.name)\n    print('artifact.uri: ', artifact.uri)\n    print('artifact.metadata:\
+          \ ', artifact.metadata)\n\n"
         image: python:3.7
-    exec-producer:
-      container:
-        args:
-        - '{{$.outputs.artifacts[''model''].path}}'
-        command:
-        - cmd
-        image: dummy
+    exec-importer:
+      importer:
+        artifactUri:
+          constant: gs://managed-pipeline-gcpc-e2e-test/automl-tabular/model
+        metadata:
+          containerSpec:
+            imageUri: us-docker.pkg.dev/vertex-ai/automl-tabular/prediction-server:prod
+        typeSchema:
+          schemaTitle: google.UnmanagedContainerModel
+          schemaVersion: 0.0.1
 pipelineInfo:
-  name: pipeline-with-gcpc-types
+  name: test-custom-artifact
 root:
   dag:
     tasks:
-      consumer-op:
+      dummy-op:
         cachingOptions:
           enableCache: true
         componentRef:
-          name: comp-consumer-op
+          name: comp-dummy-op
         dependentTasks:
-        - producer
+        - importer
         inputs:
           artifacts:
-            model:
+            artifact:
               taskOutputArtifact:
-                outputArtifactKey: model
-                producerTask: producer
+                outputArtifactKey: artifact
+                producerTask: importer
         taskInfo:
-          name: consumer-op
-      producer:
+          name: dummy-op
+      importer:
         cachingOptions:
           enableCache: true
         componentRef:
-          name: comp-producer
+          name: comp-importer
+        inputs:
+          parameters:
+            uri:
+              runtimeValue:
+                constant: gs://managed-pipeline-gcpc-e2e-test/automl-tabular/model
         taskInfo:
-          name: producer
+          name: importer
 schemaVersion: 2.1.0
-sdkVersion: kfp-2.0.0-alpha.1
+sdkVersion: kfp-1.9.9

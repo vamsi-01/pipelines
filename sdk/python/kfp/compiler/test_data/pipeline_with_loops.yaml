@@ -167,7 +167,7 @@ deploymentSpec:
         - -c
         - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
           \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
-          \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==2.0.0-alpha.1'\
+          \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==1.9.9'\
           \ && \"$0\" \"$@\"\n"
         - sh
         - -ec
@@ -179,8 +179,9 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef args_generator_op() -> List[Dict[str, str]]:\n    return [{'A_a':\
-          \ '1', 'B_b': '2'}, {'A_a': '10', 'B_b': '20'}]\n\n"
+          \ *\nfrom kfp.components import component_factory\ncomponent_factory.import_artifact_annotations([],\
+          \ globals())\n\ndef args_generator_op() -> List[Dict[str, str]]:\n    return\
+          \ [{'A_a': '1', 'B_b': '2'}, {'A_a': '10', 'B_b': '20'}]\n\n"
         image: python:3.7
     exec-print-struct:
       container:
@@ -194,7 +195,7 @@ deploymentSpec:
         - -c
         - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
           \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
-          \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==2.0.0-alpha.1'\
+          \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==1.9.9'\
           \ && \"$0\" \"$@\"\n"
         - sh
         - -ec
@@ -206,7 +207,8 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef print_struct(struct: Dict):\n    print(struct)\n\n"
+          \ *\nfrom kfp.components import component_factory\ncomponent_factory.import_artifact_annotations([],\
+          \ globals())\n\ndef print_struct(struct: Dict):\n    print(struct)\n\n"
         image: python:3.7
     exec-print-struct-2:
       container:
@@ -220,7 +222,7 @@ deploymentSpec:
         - -c
         - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
           \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
-          \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==2.0.0-alpha.1'\
+          \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==1.9.9'\
           \ && \"$0\" \"$@\"\n"
         - sh
         - -ec
@@ -232,7 +234,8 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef print_struct(struct: Dict):\n    print(struct)\n\n"
+          \ *\nfrom kfp.components import component_factory\ncomponent_factory.import_artifact_annotations([],\
+          \ globals())\n\ndef print_struct(struct: Dict):\n    print(struct)\n\n"
         image: python:3.7
     exec-print-text:
       container:
@@ -246,7 +249,7 @@ deploymentSpec:
         - -c
         - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
           \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
-          \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==2.0.0-alpha.1'\
+          \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==1.9.9'\
           \ && \"$0\" \"$@\"\n"
         - sh
         - -ec
@@ -258,7 +261,8 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef print_text(msg: str):\n    print(msg)\n\n"
+          \ *\nfrom kfp.components import component_factory\ncomponent_factory.import_artifact_annotations([],\
+          \ globals())\n\ndef print_text(msg: str):\n    print(msg)\n\n"
         image: python:3.7
     exec-print-text-2:
       container:
@@ -272,7 +276,7 @@ deploymentSpec:
         - -c
         - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
           \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
-          \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==2.0.0-alpha.1'\
+          \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==1.9.9'\
           \ && \"$0\" \"$@\"\n"
         - sh
         - -ec
@@ -284,7 +288,8 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef print_text(msg: str):\n    print(msg)\n\n"
+          \ *\nfrom kfp.components import component_factory\ncomponent_factory.import_artifact_annotations([],\
+          \ globals())\n\ndef print_text(msg: str):\n    print(msg)\n\n"
         image: python:3.7
     exec-print-text-3:
       container:
@@ -298,7 +303,7 @@ deploymentSpec:
         - -c
         - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
           \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
-          \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==2.0.0-alpha.1'\
+          \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==1.9.9'\
           \ && \"$0\" \"$@\"\n"
         - sh
         - -ec
@@ -310,7 +315,8 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef print_text(msg: str):\n    print(msg)\n\n"
+          \ *\nfrom kfp.components import component_factory\ncomponent_factory.import_artifact_annotations([],\
+          \ globals())\n\ndef print_text(msg: str):\n    print(msg)\n\n"
         image: python:3.7
     exec-print-text-4:
       container:
@@ -324,7 +330,7 @@ deploymentSpec:
         - -c
         - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
           \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
-          \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==2.0.0-alpha.1'\
+          \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==1.9.9'\
           \ && \"$0\" \"$@\"\n"
         - sh
         - -ec
@@ -336,7 +342,8 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef print_text(msg: str):\n    print(msg)\n\n"
+          \ *\nfrom kfp.components import component_factory\ncomponent_factory.import_artifact_annotations([],\
+          \ globals())\n\ndef print_text(msg: str):\n    print(msg)\n\n"
         image: python:3.7
     exec-print-text-5:
       container:
@@ -350,7 +357,7 @@ deploymentSpec:
         - -c
         - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
           \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
-          \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==2.0.0-alpha.1'\
+          \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==1.9.9'\
           \ && \"$0\" \"$@\"\n"
         - sh
         - -ec
@@ -362,7 +369,8 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef print_text(msg: str):\n    print(msg)\n\n"
+          \ *\nfrom kfp.components import component_factory\ncomponent_factory.import_artifact_annotations([],\
+          \ globals())\n\ndef print_text(msg: str):\n    print(msg)\n\n"
         image: python:3.7
 pipelineInfo:
   name: pipeline-with-loops
@@ -420,4 +428,4 @@ root:
       loop_parameter:
         parameterType: LIST
 schemaVersion: 2.1.0
-sdkVersion: kfp-2.0.0-alpha.1
+sdkVersion: kfp-1.9.9

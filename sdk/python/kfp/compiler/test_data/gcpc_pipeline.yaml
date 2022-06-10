@@ -67,14 +67,12 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\nfrom kfp.components import component_factory\ncomponent_factory.import_artifact_annotations([{'name':\
-          \ 'google_cloud_pipeline_components.types.artifact_types', 'alias': 'artifact_types'}],\
-          \ globals())\n\ndef named_tuple_op(\n    artifact: Input[dsl.Artifact]\n\
-          ) -> NamedTuple('Outputs', [('model1', artifact_types.UnmanagedContainerModel),\n\
-          \                            ('model2', artifact_types.UnmanagedContainerModel)\n\
-          \                           ]):\n    import collections\n\n    output =\
-          \ collections.namedtuple('Outputs', ['model1', 'model2'])\n    return output(model1=artifact,\
-          \ model2=artifact)\n\n"
+          \ *\n\ndef named_tuple_op(\n    artifact: Input[dsl.Artifact]\n) -> NamedTuple('Outputs',\
+          \ [('model1', artifact_types.UnmanagedContainerModel),\n               \
+          \             ('model2', artifact_types.UnmanagedContainerModel)\n     \
+          \                      ]):\n    import collections\n\n    output = collections.namedtuple('Outputs',\
+          \ ['model1', 'model2'])\n    return output(model1=artifact, model2=artifact)\n\
+          \n"
         image: python:3.7
 pipelineInfo:
   name: test-custom-artifact
@@ -109,4 +107,4 @@ root:
         taskInfo:
           name: named-tuple-op
 schemaVersion: 2.1.0
-sdkVersion: kfp-1.9.9
+sdkVersion: kfp-2.0.0-alpha.5
