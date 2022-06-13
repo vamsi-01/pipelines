@@ -543,7 +543,7 @@ def get_artifact_import_items_from_function(
     import_items = []
     seen = set()
     for param_name, ann_string in param_to_ann_string.items():
-        # don't process the same annotation string multiple times... doing this with objects could fail if an annotation is sometimes referenced by name and sometimes by module attribute
+        # don't process the same annotation string multiple times... us the string, not the object in the seen set, since the same object can be referenced different ways in the same function signature
         if ann_string in seen:
             continue
         else:
