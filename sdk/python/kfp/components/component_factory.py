@@ -17,6 +17,7 @@ import inspect
 import itertools
 import pathlib
 import re
+import sys
 import textwrap
 from typing import Any, Callable, Dict, List, Optional, Tuple
 import warnings
@@ -29,6 +30,7 @@ from kfp.components.types import type_annotations
 from kfp.components.types import type_utils
 
 _DEFAULT_BASE_IMAGE = 'python:3.7'
+PYTHON_VERSION = str(sys.version_info.major) + '.' + str(sys.version_info.minor)
 
 
 @dataclasses.dataclass
@@ -329,10 +331,18 @@ def convert_arg_nodes_to_param_dict(args: List[ast.arg]) -> Dict[str, str]:
         # annotations with a subtype like Input[Artifact]
         elif isinstance(annotation, ast.Subscript):
             # get inner type
-            if isinstance(annotation.slice.value, ast.Name):
-                arg_to_ann[arg.arg] = annotation.slice.value.id
-            if isinstance(annotation.slice.value, ast.Attribute):
-                arg_to_ann[arg.arg] = annotation.slice.value.value.id
+            if PYTHON_VERSION < '3.9':
+                # see "Changed in version 3.9" https://docs.python.org/3/library/ast.html#node-classes
+                if isinstance(annotation.slice.value, ast.Name):
+                    arg_to_ann[arg.arg] = annotation.slice.value.id
+                if isinstance(annotation.slice.value, ast.Attribute):
+                    arg_to_ann[arg.arg] = annotation.slice.value.value.id
+            else:
+                if isinstance(annotation.slice, ast.Name):
+                    arg_to_ann[arg.arg] = annotation.slice.id
+                if isinstance(annotation.slice, ast.Attribute):
+                    arg_to_ann[arg.arg] = annotation.slice.value.id
+
         # annotations like type_annotations.Input[Artifact]
         elif isinstance(annotation, ast.Attribute):
             arg_to_ann[arg.arg] = annotation.value.id
