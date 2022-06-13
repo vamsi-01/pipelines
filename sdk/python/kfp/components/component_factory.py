@@ -502,7 +502,7 @@ def get_import_item_from_annotation_string_and_ann_obj(
     """
 
     def is_camel_case(s: str) -> str:
-        return s != s.lower() and s != s.upper() and "_" not in s
+        return s.islower() and s.isupper() and '_' not in s
 
     split_qualname = qualname.split('.')
     if artifact_str in split_qualname:
