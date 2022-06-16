@@ -70,8 +70,8 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\nfrom kfp.components import component_factory\ncomponent_factory.import_artifact_annotations(['google_cloud_pipeline_components.types.artifact_types'],\
-          \ globals())\n\ndef dummy_op(\n    artifact: Input[artifact_types.UnmanagedContainerModel]\n\
+          \ *\nfrom google_cloud_pipeline_components.types import artifact_types\n\
+          \ndef dummy_op(\n    artifact: Input[artifact_types.UnmanagedContainerModel]\n\
           ) -> artifact_types.UnmanagedContainerModel:\n    print('artifact.type:\
           \ ', type(artifact))\n    print('artifact.name: ', artifact.name)\n    print('artifact.uri:\
           \ ', artifact.uri)\n    print('artifact.metadata: ', artifact.metadata)\n\
@@ -112,10 +112,10 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\nfrom kfp.components import component_factory\ncomponent_factory.import_artifact_annotations(['google_cloud_pipeline_components.types.artifact_types.UnmanagedContainerModel',\
-          \ 'google_cloud_pipeline_components.types.artifact_types'], globals())\n\
-          \ndef named_tuple_op(\n    artifact: Input[UnmanagedContainerModel]\n) ->\
-          \ NamedTuple('NamedTupleOutput',\n                [('model1', artifact_types.UnmanagedContainerModel),\n\
+          \ *\nfrom google_cloud_pipeline_components.types.artifact_types import UnmanagedContainerModel\n\
+          from google_cloud_pipeline_components.types import artifact_types\n\ndef\
+          \ named_tuple_op(\n    artifact: Input[UnmanagedContainerModel]\n) -> NamedTuple('NamedTupleOutput',\n\
+          \                [('model1', artifact_types.UnmanagedContainerModel),\n\
           \                 ('model2', artifact_types.UnmanagedContainerModel)]):\n\
           \    NamedTupleOutput = NamedTuple(\n        'NamedTupleOutput',\n     \
           \   [('model1', artifact_types.UnmanagedContainerModel),\n         ('model2',\
