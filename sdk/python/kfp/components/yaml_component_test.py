@@ -89,7 +89,7 @@ V1_COMPONENT_YAML_TEST_CASES = [
 ]
 
 
-class YamlComponentTest(parameterized.TestCase):
+class YamlComponentTest(unittest.TestCase):
 
     def test_load_component_from_text(self):
         component = yaml_component.load_component_from_text(SAMPLE_YAML)
@@ -138,18 +138,26 @@ class YamlComponentTest(parameterized.TestCase):
                 component.component_spec.implementation.container.image,
                 'alpine')
 
+
+class TestReadWriteEquality(parameterized.TestCase):
+
     @parameterized.parameters(V1_COMPONENT_YAML_TEST_CASES)
     def test_load_from_v1_component_yaml(self, file: str):
         fp = os.path.join(V1_COMPONENTS_TEST_DATA_DIR, file)
         with open(fp, 'r') as f:
-            yaml_component.load_component_from_text(f.read())
+            loaded_component = yaml_component.load_component_from_text(f.read())
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_file = os.path.join(temp_dir, file)
+            compiler.Compiler().compile(loaded_component, temp_file)
+            re_loaded_component = yaml_component.load_component_from_text(
+                f.read())
 
     @parameterized.parameters(compiler_test.SUPPORTED_COMPONENT_TEST_CASES)
     def test_load_from_component_ir(self, file: str):
         fp = os.path.join(compiler_test.SUPPORTED_COMPONENTS_TEST_DATA_DIR,
                           f'{file}.yaml')
         with open(fp, 'r') as f:
-            yaml_component.load_component_from_text(f.read())
+            loaded_component = yaml_component.load_component_from_text(f.read())
 
 
 if __name__ == '__main__':
