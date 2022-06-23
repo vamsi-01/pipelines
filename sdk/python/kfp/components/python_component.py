@@ -15,6 +15,7 @@
 
 from typing import Callable
 
+
 from kfp.components import base_component
 from kfp.components import structures
 
