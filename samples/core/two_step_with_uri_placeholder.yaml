@@ -1,0 +1,86 @@
+components:
+  comp-read-from-gcs:
+    executorLabel: exec-read-from-gcs
+    inputDefinitions:
+      artifacts:
+        artifact:
+          artifactType:
+            schemaTitle: system.Artifact
+            schemaVersion: 0.0.1
+  comp-write-to-gcs:
+    executorLabel: exec-write-to-gcs
+    inputDefinitions:
+      parameters:
+        msg:
+          parameterType: STRING
+    outputDefinitions:
+      artifacts:
+        artifact:
+          artifactType:
+            schemaTitle: system.Artifact
+            schemaVersion: 0.0.1
+deploymentSpec:
+  executors:
+    exec-read-from-gcs:
+      container:
+        command:
+        - sh
+        - -c
+        - 'set -e -x
+
+          gsutil cat "$0"
+
+          '
+        - '{{$.inputs.artifacts[''artifact''].uri}}'
+        image: google/cloud-sdk:slim
+    exec-write-to-gcs:
+      container:
+        command:
+        - sh
+        - -c
+        - 'set -e -x
+
+          echo "$0" | gsutil cp - "$1"
+
+          '
+        - '{{$.inputs.parameters[''msg'']}}'
+        - '{{$.outputs.artifacts[''artifact''].uri}}'
+        image: google/cloud-sdk:slim
+pipelineInfo:
+  name: two-step-with-uri-placeholders
+root:
+  dag:
+    tasks:
+      read-from-gcs:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-read-from-gcs
+        dependentTasks:
+        - write-to-gcs
+        inputs:
+          artifacts:
+            artifact:
+              taskOutputArtifact:
+                outputArtifactKey: artifact
+                producerTask: write-to-gcs
+        taskInfo:
+          name: read-from-gcs
+      write-to-gcs:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-write-to-gcs
+        inputs:
+          parameters:
+            msg:
+              componentInputParameter: msg
+        taskInfo:
+          name: write-to-gcs
+  inputDefinitions:
+    parameters:
+      msg:
+        defaultValue: Hello world!
+        parameterType: STRING
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.0.0-beta.0

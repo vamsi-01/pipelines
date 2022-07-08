@@ -1,4 +1,4 @@
-# Copyright 2019 The Kubeflow Authors
+# Copyright 2021 The Kubeflow Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,20 +11,25 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from kfp.deprecated import components
+from kfp.deprecated import dsl
 
-from kfp import compiler
-from kfp import dsl
+echo = components.load_component_from_text("""
+name: Echo
+inputs:
+- {name: text, type: String}
+implementation:
+  container:
+    image: alpine
+    command:
+    - echo
+    - {inputValue: text}
+""")
 
 
-@dsl.component
-def echo_op():
-    print("Hello world")
-
-
-@dsl.pipeline(name='my-first-pipeline', description='A hello world pipeline.')
-def hello_world_pipeline():
-    echo_task = echo_op()
-
-
-if __name__ == '__main__':
-    compiler.Compiler().compile(hello_world_pipeline, __file__ + '.yaml')
+@dsl.pipeline(name='parameter_value_missing')
+def pipeline(
+    parameter:
+    str  # parameter should be specified when submitting, but we are missing it in the test
+):
+    echo_op = echo(text=parameter)
