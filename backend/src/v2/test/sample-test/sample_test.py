@@ -111,6 +111,12 @@ def collect_pipeline_func(
         del sys.path[0]
 
 
+def pop_module(path: str):
+    # pop module in case reimporting from a module with the same name for a different pipeline test
+    module = os.path.splitext(os.path.split(path)[1])[0]
+    sys.modules.pop(module)
+
+
 def run(test_case: TestCase) -> Tuple[str, client.client.RunPipelineResult]:
     full_path = os.path.join(PROJECT_ROOT, test_case.path)
     pipeline_func = collect_pipeline_func(full_path, test_case.pipeline)
@@ -123,6 +129,7 @@ def run(test_case: TestCase) -> Tuple[str, client.client.RunPipelineResult]:
     print(
         f'\nRunning {test_case.version} pipeline {test_case.pipeline} from {test_case.path}:\n\t{run_url}'
     )
+    pop_module(test_case.path)
     return run_url, run_result
 
 
