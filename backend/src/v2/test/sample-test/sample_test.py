@@ -56,6 +56,7 @@ class TestCase:
     pipeline: str
     arguments: Dict[str, Any] = dataclasses.field(default_factory=dict)
     execute: bool = True
+    expect_failure: bool = False
 
     def as_dict(self) -> Dict[str, Any]:
         return dataclasses.asdict(self)
@@ -176,7 +177,10 @@ async def test(test_case: TestCase) -> None:
     if test_case.execute:
         run_url, run_result = run(test_case)
         api_run = await event_loop.run_in_executor(None, wait, run_result)
-        assert api_run.run.status == 'Succeeded', f'Pipeline {test_case.path}-{test_case.pipeline} failed. More info: {run_url}.'
+        assert api_run.run.status == (
+            'Failed' if test_case.expect_failure else 'Succeeded'
+        ), f'Pipeline {test_case.path}-{test_case.pipeline} ended with incorrect status: {api_run.run.status}. More info: {run_url}.'
+
     else:
         compile(test_case)
 
