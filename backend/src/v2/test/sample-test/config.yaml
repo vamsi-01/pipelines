@@ -147,7 +147,3 @@ v2:
   # TODO: uncomment when BE adds support (expected: 2.0.0beta.3 release)
   # - path: samples/core/placeholder_concat.py
   #   pipeline: pipeline_with_concat_placeholder
-  # TODO: add support for failure validation
-  # TODO: modify to align with new approach (not using TestCase)
-  # - path: samples/core/cache_test.py
-  #   pipeline: n.a.
