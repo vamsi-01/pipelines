@@ -1,4 +1,5 @@
-# Copyright 2019 The Kubeflow Authors
+#!/usr/bin/env python3
+# Copyright 2021 The Kubeflow Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,19 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from kfp import compiler
-from kfp import dsl
+import kfp.deprecated as kfp
+from kfp.samples.test.utils import run_pipeline_func
+from kfp.samples.test.utils import TestCase
 
+from .use_run_id import pipeline_use_run_id
 
-@dsl.component
-def echo_op():
-    print("Hello world")
-
-
-@dsl.pipeline(name='my-first-pipeline', description='A hello world pipeline.')
-def hello_world_pipeline():
-    echo_task = echo_op()
-
-
-if __name__ == '__main__':
-    compiler.Compiler().compile(hello_world_pipeline, __file__ + '.yaml')
+run_pipeline_func([
+    TestCase(
+        pipeline_func=pipeline_use_run_id,
+        mode=kfp.dsl.PipelineExecutionMode.V1_LEGACY,
+    ),
+])
