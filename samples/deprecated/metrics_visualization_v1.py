@@ -12,20 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import sys
-
 import kfp.deprecated.dsl as dsl
+from visualization.confusion_matrix import confusion_visualization
+from visualization.html import html_visualization
+from visualization.markdown import markdown_visualization
+from visualization.roc import roc_visualization
+from visualization.table import table_visualization
 
-try:
-    sys.path.insert(0, os.path.dirname(__file__))
-    from visualization.confusion_matrix import confusion_visualization
-    from visualization.html import html_visualization
-    from visualization.markdown import markdown_visualization
-    from visualization.roc import roc_visualization
-    from visualization.table import table_visualization
-finally:
-    del sys.path[0]
 # Note: This test is to verify that visualization metrics on V1 is runnable by KFP.
 # However, this pipeline is only runnable on V1 mode, but not V2 compatible mode.
 

@@ -22,7 +22,6 @@ from kfp.samples.test.utils import TestCase
 import kfp_server_api
 
 from .confusion_matrix import confusion_matrix_pipeline
-from .confusion_matrix import confusion_visualization
 
 
 def verify(run: kfp_server_api.ApiRun, mlmd_connection_config, **kwargs):

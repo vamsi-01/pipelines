@@ -1,6 +1,5 @@
 from typing import NamedTuple
 
-import kfp.deprecated as kfp
 import kfp.deprecated.components as components
 import kfp.deprecated.dsl as dsl
 

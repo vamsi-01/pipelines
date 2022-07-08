@@ -35,7 +35,6 @@ def digit_classification(metrics: Output[Metrics]):
     from sklearn import datasets
     from sklearn import model_selection
     from sklearn.linear_model import LogisticRegression
-    from sklearn.metrics import accuracy_score
 
     # Load digits dataset
     iris = datasets.load_iris()

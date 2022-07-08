@@ -14,7 +14,6 @@
 
 from kfp import components
 from kfp import dsl
-import kfp.compiler as compiler
 
 component_op = components.load_component_from_text("""
 name: Component with concat placeholder
