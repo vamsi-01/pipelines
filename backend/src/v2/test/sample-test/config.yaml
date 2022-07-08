@@ -11,10 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-# TODO restructure sample files
-# TODO flatten test directory
-# TODO handle remaining files
 # TODO add verification funcs
 # TODO clean up
 # TODO backend testing
@@ -99,10 +95,9 @@ v1:
     execute: false
   - path: samples/deprecated/legacy_exit_handler.py
     pipeline: download_and_print
-  # TODO: add support for failure validation
-  # - path: samples/deprecated/fail.py
-  #   pipeline: fail_pipeline
-  # samples/core/
+  - path: samples/deprecated/fail.py
+    pipeline: fail_pipeline
+    expect_failure: true
 v2:
   - path: samples/core/helloworld/hello_world.py
     pipeline: hello_world_pipeline
@@ -143,6 +138,9 @@ v2:
   - path: samples/core/two_step_with_uri_placeholder.py
     pipeline: two_step_with_uri_placeholder
     execute: false # TODO: investigate
+  - path: samples/core/fail_v2.py
+    pipeline: fail_pipeline
+    expect_failure: true
   - path: samples/core/pipeline_container_no_input.py
     name: pipeline_container_no_input
   - path: samples/core/two_step_pipeline_containerized.py
@@ -151,10 +149,6 @@ v2:
   # - path: samples/core/placeholder_concat.py
   #   pipeline: pipeline_with_concat_placeholder
   # TODO: add support for failure validation
-  # - path: samples/core/fail_v2.py
-  #   pipeline: fail_pipeline
-  # - path: samples/core/fail_parameter_value_missing.py
-  #   pipeline: pipeline
   # TODO: modify to align with new approach (not using TestCase)
   # - path: samples/core/cache_test.py
   #   pipeline: n.a.
