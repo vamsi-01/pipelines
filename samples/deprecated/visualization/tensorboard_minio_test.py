@@ -23,7 +23,7 @@ from kfp.samples.test.utils import run_pipeline_func
 from kfp.samples.test.utils import TestCase
 import kfp_server_api
 
-from .tensorboard_minio import my_pipeline
+from ..tensorboard_minio import my_pipeline
 
 
 def verify(run: kfp_server_api.ApiRun, mlmd_connection_config, **kwargs):
