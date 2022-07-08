@@ -24,7 +24,7 @@ def preprocess(uri: str, some_int: int, output_parameter_one: OutputPath(int),
     with open(output_dataset_one, 'w') as f:
         f.write(uri)
     with open(output_parameter_one, 'w') as f:
-        f.write("{}".format(some_int))
+        f.write(f'{some_int}')
 
 
 preprocess_op = components.create_component_from_func(
@@ -37,11 +37,11 @@ def train_op(dataset: InputPath('Dataset'),
              num_steps: int = 100):
     """Dummy Training Step."""
 
-    with open(dataset, 'r') as input_file:
+    with open(dataset) as input_file:
         input_string = input_file.read()
         with open(model, 'w') as output_file:
             for i in range(num_steps):
-                output_file.write("Step {}\n{}\n=====\n".format(
+                output_file.write('Step {}\n{}\n=====\n'.format(
                     i, input_string))
 
 

@@ -53,7 +53,7 @@ def html_visualization(
     name='html-pipeline',
     description='A sample pipeline to generate HTML for UI visualization.')
 def html_pipeline():
-    html_visualization_task = html_visualization("")
+    html_visualization_task = html_visualization('')
     # html_visualization_task = html_visualization_op("gs://jamxl-kfp-bucket/v2-compatible/html/hello-world.html")
     # Replace the parameter gcsPath with actual google cloud storage path with html file.
     # For example: Upload hello-world.html in the same folder to gs://bucket-name/hello-world.html.

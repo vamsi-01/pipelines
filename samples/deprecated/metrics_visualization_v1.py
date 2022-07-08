@@ -33,7 +33,7 @@ finally:
 @dsl.pipeline(name='metrics-visualization-v1-pipeline')
 def metrics_visualization_v1_pipeline():
     confusion_visualization_task = confusion_visualization()
-    html_visualization_task = html_visualization("")
+    html_visualization_task = html_visualization('')
     markdown_visualization_task = markdown_visualization()
     roc_visualization_task = roc_visualization()
     table_visualization_task = table_visualization()

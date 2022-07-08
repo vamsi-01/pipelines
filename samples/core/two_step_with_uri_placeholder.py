@@ -62,9 +62,8 @@ if __name__ == '__main__':
     import warnings
     import webbrowser
 
-    from kfp import compiler
-
     from kfp import client
+    from kfp import compiler
 
     warnings.filterwarnings('ignore')
     ir_file = __file__.replace('.py', '.yaml')

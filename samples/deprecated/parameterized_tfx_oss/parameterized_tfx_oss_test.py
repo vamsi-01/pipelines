@@ -35,9 +35,9 @@ run_pipeline_func([
                 f'gs://{bucket}/tfx_taxi_simple',
             'push_destination':
                 json.dumps({
-                    "filesystem": {
-                        "base_directory":
-                            f"gs://{bucket}/tfx_taxi_simple/serving_model"
+                    'filesystem': {
+                        'base_directory':
+                            f'gs://{bucket}/tfx_taxi_simple/serving_model'
                     }
                 })
         },

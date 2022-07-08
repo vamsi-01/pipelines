@@ -39,8 +39,8 @@ if __name__ == '__main__':
     pipeline_conf = kfp.dsl.PipelineConf()
     pipeline_conf.set_dns_config(
         dns_config=V1PodDNSConfig(
-            nameservers=["1.2.3.4"],
-            options=[V1PodDNSConfigOption(name="ndots", value="2")]))
+            nameservers=['1.2.3.4'],
+            options=[V1PodDNSConfigOption(name='ndots', value='2')]))
 
     compiler.Compiler().compile(
         dns_config_pipeline, __file__ + '.yaml', pipeline_conf=pipeline_conf)

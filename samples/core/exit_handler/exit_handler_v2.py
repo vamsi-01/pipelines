@@ -14,8 +14,9 @@
 """Pipeline using ExitHandler."""
 
 import os
-from kfp import dsl
+
 from kfp import compiler
+from kfp import dsl
 from kfp.dsl import component
 
 # In tests, we install a KFP package from the PR under test. Users should not

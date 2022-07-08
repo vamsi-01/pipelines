@@ -49,23 +49,23 @@ run_pipeline_func([
     TestCase(
         pipeline_func=condition_v2,
         mode=kfp.dsl.PipelineExecutionMode.V2_ENGINE,
-        arguments={"force_flip_result": "heads"},
+        arguments={'force_flip_result': 'heads'},
         verify_func=verify_heads,
     ),
     TestCase(
         pipeline_func=condition_v2,
         mode=kfp.dsl.PipelineExecutionMode.V2_ENGINE,
-        arguments={"force_flip_result": "tails"},
+        arguments={'force_flip_result': 'tails'},
         verify_func=verify_tails,
     ),
     TestCase(
         pipeline_func=condition,
         mode=kfp.dsl.PipelineExecutionMode.V1_LEGACY,
-        arguments={"force_flip_result": "heads"},
+        arguments={'force_flip_result': 'heads'},
     ),
     TestCase(
         pipeline_func=condition,
         mode=kfp.dsl.PipelineExecutionMode.V1_LEGACY,
-        arguments={"force_flip_result": "tails"},
+        arguments={'force_flip_result': 'tails'},
     ),
 ])

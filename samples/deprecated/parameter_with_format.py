@@ -24,5 +24,5 @@ def print_op(name: str) -> str:
 
 @dsl.pipeline(name='pipeline-with-pipelineparam-containing-format')
 def my_pipeline(name: str = 'KFP'):
-    print_task = print_op('Hello {}'.format(name))
-    print_op('{}, again.'.format(print_task.output))
+    print_task = print_op(f'Hello {name}')
+    print_op(f'{print_task.output}, again.')

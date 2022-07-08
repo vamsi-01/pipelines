@@ -59,7 +59,7 @@ def producer_consumer_param_pipeline(text: str = 'Hello world'):
     consumer = consumer_op(input_value=producer.outputs['output_value'])
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     # execute only if run as a script
     compiler.Compiler().compile(
         pipeline_func=producer_consumer_param_pipeline,

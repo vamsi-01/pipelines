@@ -49,7 +49,7 @@ def preprocess(
     # A locally accessible filepath for an output parameter of type list.
     output_list_parameter_path: OutputPath(List[str]),
     # An input message that defaults to empty.
-    empty_message: str = "",
+    empty_message: str = '',
 ):
     """Dummy preprocessing step."""
 
@@ -101,10 +101,10 @@ def train(
     num_steps: int = 100,
 ):
     """Dummy Training step."""
-    with open(dataset_one_path, 'r') as input_file:
+    with open(dataset_one_path) as input_file:
         dataset_one_contents = input_file.read()
 
-    with open(dataset_two.path, 'r') as input_file:
+    with open(dataset_two.path) as input_file:
         dataset_two_contents = input_file.read()
 
     line = (f'dataset_one_contents: {dataset_one_contents} || '
@@ -116,7 +116,7 @@ def train(
 
     with open(model.path, 'w') as output_file:
         for i in range(num_steps):
-            output_file.write('Step {}\n{}\n=====\n'.format(i, line))
+            output_file.write(f'Step {i}\n{line}\n=====\n')
 
     # model is an instance of Model artifact, which has a .metadata dictionary
     # to store arbitrary metadata for the output artifact.

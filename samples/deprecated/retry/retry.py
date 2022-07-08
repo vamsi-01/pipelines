@@ -24,7 +24,7 @@ def random_failure_op(exit_codes):
     import random
     import sys
 
-    exit_code = int(random.choice(exit_codes.split(",")))
+    exit_code = int(random.choice(exit_codes.split(',')))
     print(exit_code)
     sys.exit(exit_code)
 

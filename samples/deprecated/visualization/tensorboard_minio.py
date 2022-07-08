@@ -49,7 +49,7 @@ def train(minio_endpoint: str, log_bucket: str, log_dir: str):
         loss='sparse_categorical_crossentropy',
         metrics=['accuracy'])
 
-    log_dir_local = "logs/fit"
+    log_dir_local = 'logs/fit'
     tensorboard_callback = tf.keras.callbacks.TensorBoard(
         log_dir=log_dir_local, histogram_freq=1)
 
@@ -82,7 +82,7 @@ def train(minio_endpoint: str, log_bucket: str, log_dir: str):
         secure=False)
     count = 0
     from pathlib import Path
-    for path in Path("logs").rglob("*"):
+    for path in Path('logs').rglob('*'):
         if not path.is_dir():
             object_name = os.path.join(
                 log_dir, os.path.relpath(start=log_dir_local, path=path))
