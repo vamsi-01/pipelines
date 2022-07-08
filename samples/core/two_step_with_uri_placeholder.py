@@ -55,26 +55,3 @@ implementation:
 def two_step_with_uri_placeholder(msg: str = 'Hello world!'):
     write_to_gcs = write_to_gcs_op(msg=msg)
     read_from_gcs = read_from_gcs_op(artifact=write_to_gcs.outputs['artifact'])
-
-
-if __name__ == '__main__':
-    import datetime
-    import warnings
-    import webbrowser
-
-    from kfp import client
-    from kfp import compiler
-
-    warnings.filterwarnings('ignore')
-    ir_file = __file__.replace('.py', '.yaml')
-    compiler.Compiler().compile(
-        pipeline_func=two_step_with_uri_placeholder, package_path=ir_file)
-    pipeline_name = __file__.split('/')[-1].replace('_', '-').replace('.py', '')
-    display_name = datetime.datetime.now().strftime('%m-%d-%Y-%H-%M-%S')
-    job_id = f'{pipeline_name}-{display_name}'
-    endpoint = 'https://4e18c21c9d33d20f-dot-datalab-vm-staging.googleusercontent.com'
-    kfp_client = client.Client(host=endpoint)
-    run = kfp_client.create_run_from_pipeline_package(ir_file)
-    url = f'{endpoint}/#/runs/details/{run.run_id}'
-    print(url)
-    webbrowser.open_new_tab(url)
