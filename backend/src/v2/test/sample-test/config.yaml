@@ -1,0 +1,156 @@
+# Copyright 2022 The Kubeflow Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# TODO restructure sample files
+# TODO flatten test directory
+# TODO handle remaining files
+# TODO add verification funcs
+# TODO clean up
+# TODO backend testing
+# TODO update sample testing documentation/READMEs
+# samples/deprecated/
+v1:
+  - path: samples/deprecated/condition/condition.py
+    pipeline: condition
+    arguments: { "force_flip_result": "heads" }
+  - path: samples/deprecated/condition/condition.py
+    pipeline: condition
+    arguments: { "force_flip_result": "tails" }
+  - path: samples/deprecated/condition/nested_condition.py
+    pipeline: my_pipeline
+  - path: samples/deprecated/loop_output/loop_output.py
+    pipeline: my_pipeline
+  - path: samples/deprecated/loop_static/loop_static.py
+    pipeline: my_pipeline
+  - path: samples/deprecated/loop_parameter/loop_parameter.py
+    pipeline: my_pipeline
+  - path: samples/deprecated/loop_parallelism/loop_parallelism.py
+    pipeline: pipeline
+  - path: samples/deprecated/resource_spec/resource_spec.py
+    pipeline: my_pipeline
+  - path: samples/deprecated/resource_spec/resource_spec.py
+    pipeline: my_pipeline
+    arguments: { "n": 21234567 }
+  - path: samples/deprecated/resource_spec/runtime_resource_request.py
+    pipeline: resource_request_pipeline
+  - path: samples/deprecated/resource_spec/runtime_resource_request.py
+    pipeline: resource_request_pipeline
+    arguments: { "n": 21234567 }
+  - path: samples/deprecated/secret/secret.py
+    pipeline: secret_op_pipeline
+  - path: samples/deprecated/sidecar/sidecar.py
+    pipeline: pipeline_with_sidecar
+  - path: samples/deprecated/execution_order/execution_order.py
+    pipeline: execution_order_pipeline
+  - path: samples/deprecated/imagepullsecrets/imagepullsecrets.py
+    pipeline: save_most_frequent_word
+  - path: samples/deprecated/retry/retry.py
+    pipeline: retry_sample_pipeline
+  - path: samples/deprecated/resource_ops/resource_ops.py
+    pipeline: resourceop_basic
+  - path: samples/deprecated/parallelism_sub_dag/parallelism_sub_dag.py
+    pipeline: pipeline
+  - path: samples/deprecated/parallelism_sub_dag/parallelism_sub_dag_with_op_output.py
+    pipeline: pipeline
+  - path: samples/deprecated/exit_handler/exit_handler.py
+    pipeline: pipeline_exit_handler
+  - path: samples/deprecated/output_a_directory/output_a_directory.py
+    pipeline: dir_pipeline
+  - path: samples/deprecated/XGBoost/xgboost_sample.py
+    pipeline: xgboost_pipeline
+  - path: samples/deprecated/use_run_info/use_run_id.py
+    pipeline: pipeline_use_run_id
+  - path: samples/deprecated/pipeline_transformers/pipeline_transformers.py
+    pipeline: transform_pipeline
+  - path: samples/deprecated/two_step.py
+    pipeline: two_step_pipeline
+  - path: samples/deprecated/legacy_data_passing.py
+    pipeline: data_passing_pipeline
+  - path: samples/deprecated/parameter_with_format.py
+    pipeline: my_pipeline
+  - path: samples/deprecated/reused_component.py
+    pipeline: my_pipeline
+  - path: samples/deprecated/visualization/tensorboard_minio.py
+    pipeline: my_pipeline
+  - path: samples/deprecated/placeholder_if.py
+    pipeline: pipeline_none
+  - path: samples/deprecated/metrics_visualization_v1.py
+    pipeline: metrics_visualization_v1_pipeline
+  - path: samples/deprecated/lightweight_component/lightweight_component.py
+    pipeline: calc_pipeline
+  - path: samples/deprecated/multiple_outputs/multiple_outputs.py
+    pipeline: pipeline
+  - path: samples/deprecated/volume_snapshot_ops/volume_snapshot_ops.py
+    pipeline: volume_snapshotop_sequential
+    execute: false
+  - path: samples/deprecated/preemptible_tpu_gpu/preemptible_tpu_gpu.py
+    pipeline: flipcoin
+    execute: false
+  - path: samples/deprecated/legacy_exit_handler.py
+    pipeline: download_and_print
+  # TODO: add support for failure validation
+  # - path: samples/deprecated/fail.py
+  #   pipeline: fail_pipeline
+  # samples/core/
+v2:
+  - path: samples/core/helloworld/hello_world.py
+    pipeline: hello_world_pipeline
+  - path: samples/core/condition/condition_v2.py
+    pipeline: condition
+  - path: samples/core/condition/condition_v2.py
+    pipeline: condition
+    arguments: { "force_flip_result": "heads" }
+  - path: samples/core/loop_output/loop_output_v2.py
+    pipeline: my_pipeline
+  - path: samples/core/loop_static/loop_static_v2.py
+    pipeline: my_pipeline
+  - path: samples/core/loop_parameter/loop_parameter_v2.py
+    pipeline: my_pipeline
+  - path: samples/core/exit_handler/exit_handler_v2.py
+    pipeline: pipeline_exit_handler
+  - path: samples/core/lightweight_python_functions_v2_with_outputs.py
+    pipeline: pipeline
+  - path: samples/core/lightweight_python_functions_v2_pipeline.py
+    pipeline: pipeline
+  - path: samples/core/metrics_visualization_v2.py
+    pipeline: metrics_visualization_pipeline
+  - path: samples/core/producer_consumer_param.py
+    pipeline: producer_consumer_param_pipeline
+  - path: samples/core/pipeline_with_importer.py
+    pipeline: pipeline_with_importer
+  - path: samples/core/placeholder_if_v2.py
+    pipeline: pipeline_both
+  - path: samples/core/placeholder_if_v2.py
+    pipeline: pipeline_none
+  - path: samples/core/resource_spec/resource_spec_v2.py
+    pipeline: my_pipeline
+  - path: samples/core/resource_spec/resource_spec_v2.py
+    pipeline: my_pipeline
+    arguments: { "num": 21234567 }
+  - path: samples/core/after.py
+    pipeline: my_pipeline
+  - path: samples/core/two_step_with_uri_placeholder.py
+    pipeline: two_step_with_uri_placeholder
+    execute: false # TODO: investigate
+  # TODO: uncomment when BE adds support (expected: 2.0.0beta.3 release)
+  # - path: samples/core/placeholder_concat.py
+  #   pipeline: pipeline_with_concat_placeholder
+  # TODO: add support for failure validation
+  # - path: samples/core/fail_v2.py
+  #   pipeline: fail_pipeline
+  # - path: samples/core/fail_parameter_value_missing.py
+  #   pipeline: pipeline
+  # TODO: modify to align with new approach (not using TestCase)
+  # - path: samples/core/cache_test.py
+  #   pipeline: n.a.
