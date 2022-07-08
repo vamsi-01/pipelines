@@ -13,12 +13,10 @@
 # limitations under the License.
 
 import json
-import os
 
 from kfp.deprecated import components
 from kfp.deprecated import dsl
 from kfp.deprecated.components import create_component_from_func
-from kfp.deprecated.components import OutputPath
 from kfp.deprecated.onprem import use_k8s_secret
 
 prepare_tensorboard = components.load_component_from_url(

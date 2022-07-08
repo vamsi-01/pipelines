@@ -33,8 +33,6 @@ def my_divmod(
 
     import json
 
-    from tensorflow.python.lib.io import file_io
-
     # Exports a sample tensorboard:
     metadata = {
         'outputs': [{

@@ -1,5 +1,3 @@
-from typing import List
-
 from kfp.deprecated import components
 from kfp.deprecated import dsl
 

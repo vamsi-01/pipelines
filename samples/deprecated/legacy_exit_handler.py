@@ -15,7 +15,6 @@
 
 from kfp.deprecated import compiler
 from kfp.deprecated import dsl
-import kfp.deprecated as kfp
 
 
 def gcs_download_op(url):
