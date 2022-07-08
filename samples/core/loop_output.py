@@ -35,7 +35,7 @@ def print_op(s: str):
     print(s)
 
 
-@dsl.pipeline(name='pipeline-with-loop-output-v2')
+@dsl.pipeline(name='pipeline-with-loop-output')
 def my_pipeline():
     args_generator = args_generator_op()
     with dsl.ParallelFor(args_generator.output) as item:

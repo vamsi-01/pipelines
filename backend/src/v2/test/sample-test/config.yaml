@@ -11,10 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# steps
 # TODO add verification funcs
-# TODO clean up
+# TODO clean up old test code
 # TODO backend testing
 # TODO update sample testing documentation/READMEs
+
 # samples/deprecated/
 v1:
   - path: samples/deprecated/condition/condition.py
@@ -99,38 +102,38 @@ v1:
     pipeline: fail_pipeline
     expect_failure: true
 v2:
-  - path: samples/core/helloworld/hello_world.py
+  - path: samples/core/hello_world.py
     pipeline: hello_world_pipeline
-  - path: samples/core/condition/condition_v2.py
+  - path: samples/core/condition.py
     pipeline: condition
-  - path: samples/core/condition/condition_v2.py
+  - path: samples/core/condition.py
     pipeline: condition
     arguments: { "force_flip_result": "heads" }
-  - path: samples/core/loop_output/loop_output_v2.py
+  - path: samples/core/loop_output.py
     pipeline: my_pipeline
-  - path: samples/core/loop_static/loop_static_v2.py
+  - path: samples/core/loop_static.py
     pipeline: my_pipeline
-  - path: samples/core/loop_parameter/loop_parameter_v2.py
+  - path: samples/core/loop_parameter.py
     pipeline: my_pipeline
-  - path: samples/core/exit_handler/exit_handler_v2.py
+  - path: samples/core/exit_handler.py
     pipeline: pipeline_exit_handler
-  - path: samples/core/lightweight_python_functions_v2_with_outputs.py
+  - path: samples/core/lightweight_python_functions_with_outputs.py
     pipeline: pipeline
-  - path: samples/core/lightweight_python_functions_v2_pipeline.py
+  - path: samples/core/lightweight_python_functions_pipeline.py
     pipeline: pipeline
-  - path: samples/core/metrics_visualization_v2.py
+  - path: samples/core/metrics_visualization.py
     pipeline: metrics_visualization_pipeline
   - path: samples/core/producer_consumer_param.py
     pipeline: producer_consumer_param_pipeline
   - path: samples/core/pipeline_with_importer.py
     pipeline: pipeline_with_importer
-  - path: samples/core/placeholder_if_v2.py
+  - path: samples/core/placeholder_if.py
     pipeline: pipeline_both
-  - path: samples/core/placeholder_if_v2.py
+  - path: samples/core/placeholder_if.py
     pipeline: pipeline_none
-  - path: samples/core/resource_spec/resource_spec_v2.py
+  - path: samples/core/resource_spec.py
     pipeline: my_pipeline
-  - path: samples/core/resource_spec/resource_spec_v2.py
+  - path: samples/core/resource_spec.py
     pipeline: my_pipeline
     arguments: { "num": 21234567 }
   - path: samples/core/after.py
@@ -138,7 +141,7 @@ v2:
   - path: samples/core/two_step_with_uri_placeholder.py
     pipeline: two_step_with_uri_placeholder
     execute: false # TODO: investigate
-  - path: samples/core/fail_v2.py
+  - path: samples/core/fail.py
     pipeline: fail_pipeline
     expect_failure: true
   - path: samples/core/pipeline_container_no_input.py
