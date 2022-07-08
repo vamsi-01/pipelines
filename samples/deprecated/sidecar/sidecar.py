@@ -18,27 +18,27 @@ from kfp.deprecated import dsl
 
 
 @dsl.pipeline(
-    name="pipeline-with-sidecar",
-    description="A pipeline that demonstrates how to add a sidecar to an operation."
+    name='pipeline-with-sidecar',
+    description='A pipeline that demonstrates how to add a sidecar to an operation.'
 )
 def pipeline_with_sidecar():
     # sidecar with sevice that reply "hello world" to any GET request
     echo = dsl.Sidecar(
-        name="echo",
-        image="nginx:1.13",
-        command=["nginx", "-g", "daemon off;"],
+        name='echo',
+        image='nginx:1.13',
+        command=['nginx', '-g', 'daemon off;'],
     )
 
     # container op with sidecar
     op1 = dsl.ContainerOp(
-        name="download",
-        image="busybox:latest",
-        command=["sh", "-c"],
+        name='download',
+        image='busybox:latest',
+        command=['sh', '-c'],
         arguments=[
-            "until wget http://localhost:80 -O /tmp/results.txt; do sleep 5; done && cat /tmp/results.txt"
+            'until wget http://localhost:80 -O /tmp/results.txt; do sleep 5; done && cat /tmp/results.txt'
         ],
         sidecars=[echo],
-        file_outputs={"downloaded": "/tmp/results.txt"},
+        file_outputs={'downloaded': '/tmp/results.txt'},
     )
 
 

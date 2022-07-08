@@ -31,7 +31,7 @@ class GetFrequentWordOp(dsl.ContainerOp):
          name: An identifier of the step which needs to be unique within a pipeline.
          message: a dsl.PipelineParam object representing an input message.
     """
-        super(GetFrequentWordOp, self).__init__(
+        super().__init__(
             name=name,
             image='python:3.5-jessie',
             command=['sh', '-c'],
@@ -52,7 +52,7 @@ def save_most_frequent_word(message: str):
     counter = GetFrequentWordOp(name='get-Frequent', message=message)
     # Call set_image_pull_secrets after get_pipeline_conf().
     dsl.get_pipeline_conf()\
-      .set_image_pull_secrets([k8s_client.V1ObjectReference(name="secretA")])
+      .set_image_pull_secrets([k8s_client.V1ObjectReference(name='secretA')])
 
 
 if __name__ == '__main__':

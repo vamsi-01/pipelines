@@ -47,7 +47,7 @@ _CONTAINER_MANIFEST = """
 
 
 @dsl.pipeline(
-    name="resourceop-basic", description="A Basic Example on ResourceOp Usage.")
+    name='resourceop-basic', description='A Basic Example on ResourceOp Usage.')
 def resourceop_basic():
 
     # Start a container. Print out env vars.

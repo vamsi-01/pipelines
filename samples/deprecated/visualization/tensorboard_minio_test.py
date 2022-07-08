@@ -45,49 +45,49 @@ def verify(run: kfp_server_api.ApiRun, mlmd_connection_config, **kwargs):
     blob = storage.Blob.from_string(mlpipeline_ui_metadata.uri, storage_client)
     data = blob.download_as_text(storage_client)
     data = json.loads(data)
-    t.assertTrue(data["outputs"][0]["source"])
+    t.assertTrue(data['outputs'][0]['source'])
     # source is a URI that is generated differently each run
-    data["outputs"][0]["source"] = "<redacted>"
+    data['outputs'][0]['source'] = '<redacted>'
     t.assertEqual(
         {
-            "outputs": [{
-                "type":
-                    "tensorboard",
-                "source":
-                    "<redacted>",
-                "image":
-                    "gcr.io/deeplearning-platform-release/tf2-cpu.2-3:latest",
-                "pod_template_spec": {
-                    "spec": {
-                        "containers": [{
-                            "env": [{
-                                "name": "AWS_ACCESS_KEY_ID",
-                                "valueFrom": {
-                                    "secretKeyRef": {
-                                        "name": "mlpipeline-minio-artifact",
-                                        "key": "accesskey"
+            'outputs': [{
+                'type':
+                    'tensorboard',
+                'source':
+                    '<redacted>',
+                'image':
+                    'gcr.io/deeplearning-platform-release/tf2-cpu.2-3:latest',
+                'pod_template_spec': {
+                    'spec': {
+                        'containers': [{
+                            'env': [{
+                                'name': 'AWS_ACCESS_KEY_ID',
+                                'valueFrom': {
+                                    'secretKeyRef': {
+                                        'name': 'mlpipeline-minio-artifact',
+                                        'key': 'accesskey'
                                     }
                                 }
                             }, {
-                                "name": "AWS_SECRET_ACCESS_KEY",
-                                "valueFrom": {
-                                    "secretKeyRef": {
-                                        "name": "mlpipeline-minio-artifact",
-                                        "key": "secretkey"
+                                'name': 'AWS_SECRET_ACCESS_KEY',
+                                'valueFrom': {
+                                    'secretKeyRef': {
+                                        'name': 'mlpipeline-minio-artifact',
+                                        'key': 'secretkey'
                                     }
                                 }
                             }, {
-                                "name": "AWS_REGION",
-                                "value": "minio"
+                                'name': 'AWS_REGION',
+                                'value': 'minio'
                             }, {
-                                "name": "S3_ENDPOINT",
-                                "value": "minio-service:9000"
+                                'name': 'S3_ENDPOINT',
+                                'value': 'minio-service:9000'
                             }, {
-                                "name": "S3_USE_HTTPS",
-                                "value": "0"
+                                'name': 'S3_USE_HTTPS',
+                                'value': '0'
                             }, {
-                                "name": "S3_VERIFY_SSL",
-                                "value": "0"
+                                'name': 'S3_VERIFY_SSL',
+                                'value': '0'
                             }]
                         }]
                     }

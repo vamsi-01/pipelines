@@ -20,9 +20,6 @@ This file is equivalent to examples/chicago_taxi/trainer/model.py and
 examples/chicago_taxi/preprocess.py.
 """
 
-from __future__ import division
-from __future__ import print_function
-
 import tensorflow as tf
 import tensorflow_model_analysis as tfma
 import tensorflow_transform as tft

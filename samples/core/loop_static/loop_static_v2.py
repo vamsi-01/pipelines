@@ -1,6 +1,7 @@
 import os
-from kfp import dsl
 from typing import List
+
+from kfp import dsl
 
 # In tests, we install a KFP package from the PR under test. Users should not
 # normally need to specify `kfp_package_path` in their component definitions.
@@ -21,8 +22,7 @@ def concat_op(a: str, b: str) -> str:
 
 @dsl.pipeline(name='pipeline-with-loop-static')
 def my_pipeline(
-    greeting: str = 'this is a test for looping through parameters',
-):
+    greeting: str = 'this is a test for looping through parameters',):
     print_task = print_op(text=greeting)
     static_loop_arguments = [{'a': '1', 'b': '2'}, {'a': '10', 'b': '20'}]
 

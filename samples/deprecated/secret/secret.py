@@ -44,7 +44,7 @@ def gcs_list_buckets():
     from google.cloud import storage
     storage_client = storage.Client()
     buckets = storage_client.list_buckets()
-    print("List of buckets:")
+    print('List of buckets:')
     for bucket in buckets:
         print(bucket.name)
 

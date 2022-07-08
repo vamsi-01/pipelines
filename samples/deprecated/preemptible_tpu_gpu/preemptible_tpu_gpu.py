@@ -24,7 +24,7 @@ class FlipCoinOp(dsl.ContainerOp):
     """Flip a coin and output heads or tails randomly."""
 
     def __init__(self):
-        super(FlipCoinOp, self).__init__(
+        super().__init__(
             name='Flip',
             image='python:alpine3.6',
             command=['sh', '-c'],

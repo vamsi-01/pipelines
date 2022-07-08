@@ -18,7 +18,7 @@ from kfp import dsl
 
 @dsl.component
 def echo_op():
-    print("Hello world")
+    print('Hello world')
 
 
 @dsl.pipeline(name='my-first-pipeline', description='A hello world pipeline.')

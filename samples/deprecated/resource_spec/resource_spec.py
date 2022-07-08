@@ -38,4 +38,4 @@ def my_pipeline(n: int = 11234567):
     # .set_gpu_limit(1)
 
     # Disable cache for KFP v1 mode.
-    training_task.execution_options.caching_strategy.max_cache_staleness = "P0D"
+    training_task.execution_options.caching_strategy.max_cache_staleness = 'P0D'

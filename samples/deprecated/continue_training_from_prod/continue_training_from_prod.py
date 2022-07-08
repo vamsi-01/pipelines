@@ -83,7 +83,7 @@ def continuous_training_pipeline(
     prod_model_uri = get_prod_model_uri_task.output
 
     # Training new model from scratch
-    with kfp.dsl.Condition(prod_model_uri == ""):
+    with kfp.dsl.Condition(prod_model_uri == ''):
         # Training
         model = xgboost_train_on_csv_op(
             training_data=training_data,
@@ -121,7 +121,7 @@ def continuous_training_pipeline(
             ).set_display_name('Set prod model')
 
     # Training new model starting from the prod model
-    with kfp.dsl.Condition(prod_model_uri != ""):
+    with kfp.dsl.Condition(prod_model_uri != ''):
         # Downloading the model
         prod_model = download_from_gcs_op(prod_model_uri).output
 
