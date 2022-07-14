@@ -12,5 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from kfp.registry.registry_client import ApiAuth
-from kfp.registry.registry_client import RegistryClient
+__all__ = [
+    'ApiAuth',
+    'RegistryClient',
+]
+from kfp.registry.registry_client import ApiAuth, RegistryClient
