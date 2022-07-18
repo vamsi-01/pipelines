@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kfp.components.component_decorator &mdash; KFP SDK API Reference</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> Kubeflow Pipelines
+            <img src="../../../_static/kubeflow.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">Home</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/kfp.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/cli.html">kfp CLI</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://kubeflow.org/docs/pipelines/">Usage Docs (kubeflow.org)</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/kubeflow/pipelines/">Source Code</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Kubeflow Pipelines</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      <li>kfp.components.component_decorator</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for kfp.components.component_decorator</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2021-2022 The Kubeflow Authors</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="kn">import</span> <span class="nn">functools</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">kfp.components</span> <span class="kn">import</span> <span class="n">component_factory</span>
+
+
+<div class="viewcode-block" id="component"><a class="viewcode-back" href="../../../source/dsl.html#kfp.dsl.component">[docs]</a><span class="k">def</span> <span class="nf">component</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+              <span class="o">*</span><span class="p">,</span>
+              <span class="n">base_image</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+              <span class="n">target_image</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+              <span class="n">packages_to_install</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+              <span class="n">pip_index_urls</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+              <span class="n">output_component_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+              <span class="n">install_kfp_package</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+              <span class="n">kfp_package_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Decorator for Python-function based components in KFP v2.</span>
+
+<span class="sd">    A KFP v2 component can either be a lightweight component, or a containerized</span>
+<span class="sd">    one.</span>
+
+<span class="sd">    If target_image is not specified, this function creates a lightweight</span>
+<span class="sd">    component. A lightweight component is a self-contained Python function that</span>
+<span class="sd">    includes all necessary imports and dependencies. In lightweight components,</span>
+<span class="sd">    packages_to_install will be used to install dependencies at runtime. The</span>
+<span class="sd">    parameters install_kfp_package and kfp_package_path can be used to control</span>
+<span class="sd">    how KFP should be installed when the lightweight component is executed.</span>
+
+<span class="sd">    If target_image is specified, this function creates a component definition</span>
+<span class="sd">    based around the target_image. The assumption is that the function in func</span>
+<span class="sd">    will be packaged by KFP into this target_image. Use the KFP CLI&#39;s `build`</span>
+<span class="sd">    command to package func into target_image.</span>
+
+<span class="sd">    Example usage:</span>
+
+<span class="sd">    from kfp import dsl</span>
+<span class="sd">    @dsl.component</span>
+<span class="sd">    def my_function_one(input: str, output: Output[Model]):</span>
+<span class="sd">      ...</span>
+
+<span class="sd">    @dsl.component(</span>
+<span class="sd">      base_image=&#39;python:3.9&#39;,</span>
+<span class="sd">      output_component_file=&#39;my_function.yaml&#39;</span>
+<span class="sd">    )</span>
+<span class="sd">    def my_function_two(input: Input[Mode])):</span>
+<span class="sd">      ...</span>
+
+<span class="sd">    @dsl.pipeline(pipeline_root=&#39;...&#39;,</span>
+<span class="sd">                  name=&#39;my-pipeline&#39;)</span>
+<span class="sd">    def pipeline():</span>
+<span class="sd">      my_function_one_task = my_function_one(input=...)</span>
+<span class="sd">      my_function_two_task = my_function_two(input=my_function_one_task.outputs..</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        func: The python function to create a component from. The function</span>
+<span class="sd">            should have type annotations for all its arguments, indicating how</span>
+<span class="sd">            it is intended to be used (e.g. as an input/output Artifact object,</span>
+<span class="sd">            a plain parameter, or a path to a file).</span>
+<span class="sd">        base_image: The image to use when executing func. It should</span>
+<span class="sd">            contain a default Python interpreter that is compatible with KFP.</span>
+<span class="sd">        packages_to_install: A list of optional packages to install before</span>
+<span class="sd">            executing func. These will always be installed at component runtime.</span>
+<span class="sd">        pip_index_urls: Python Package Index base URLS from which to</span>
+<span class="sd">        install `packages_to_install`. Defaults to installing from only</span>
+<span class="sd">            &quot;https://pypi.org/simple&quot;. For more information, see:</span>
+<span class="sd">            https://pip.pypa.io/en/stable/cli/pip_install/#cmdoption-0.</span>
+<span class="sd">        output_component_file: If specified, this function will write a</span>
+<span class="sd">            shareable/loadable version of the component spec into this file.</span>
+<span class="sd">        install_kfp_package: Specifies if we should add a KFP Python package to</span>
+<span class="sd">            packages_to_install. Lightweight Python functions always require</span>
+<span class="sd">            an installation of KFP in base_image to work. If you specify</span>
+<span class="sd">            a base_image that already contains KFP, you can set this to False.</span>
+<span class="sd">            This flag is ignored when target_image is specified, which implies</span>
+<span class="sd">            we&#39;re building a containerized component. Containerized components</span>
+<span class="sd">            will always install KFP as part of the build process.</span>
+<span class="sd">        kfp_package_path: Specifies the location from which to install KFP. By</span>
+<span class="sd">            default, this will try to install from PyPi using the same version</span>
+<span class="sd">            as that used when this component was created. KFP developers can</span>
+<span class="sd">            choose to override this to point to a Github pull request or</span>
+<span class="sd">            other pip-compatible location when testing changes to lightweight</span>
+<span class="sd">            Python functions.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A component task factory that can be used in pipeline definitions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">output_component_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s1">&#39;output_component_file parameter is deprecated and will eventually be removed. Please use `Compiler().compile()` to compile a component instead.&#39;</span><span class="p">,</span>
+            <span class="ne">DeprecationWarning</span><span class="p">,</span>
+            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">func</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span>
+            <span class="n">component</span><span class="p">,</span>
+            <span class="n">base_image</span><span class="o">=</span><span class="n">base_image</span><span class="p">,</span>
+            <span class="n">target_image</span><span class="o">=</span><span class="n">target_image</span><span class="p">,</span>
+            <span class="n">packages_to_install</span><span class="o">=</span><span class="n">packages_to_install</span><span class="p">,</span>
+            <span class="n">pip_index_urls</span><span class="o">=</span><span class="n">pip_index_urls</span><span class="p">,</span>
+            <span class="n">output_component_file</span><span class="o">=</span><span class="n">output_component_file</span><span class="p">,</span>
+            <span class="n">install_kfp_package</span><span class="o">=</span><span class="n">install_kfp_package</span><span class="p">,</span>
+            <span class="n">kfp_package_path</span><span class="o">=</span><span class="n">kfp_package_path</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">component_factory</span><span class="o">.</span><span class="n">create_component_from_func</span><span class="p">(</span>
+        <span class="n">func</span><span class="p">,</span>
+        <span class="n">base_image</span><span class="o">=</span><span class="n">base_image</span><span class="p">,</span>
+        <span class="n">target_image</span><span class="o">=</span><span class="n">target_image</span><span class="p">,</span>
+        <span class="n">packages_to_install</span><span class="o">=</span><span class="n">packages_to_install</span><span class="p">,</span>
+        <span class="n">pip_index_urls</span><span class="o">=</span><span class="n">pip_index_urls</span><span class="p">,</span>
+        <span class="n">output_component_file</span><span class="o">=</span><span class="n">output_component_file</span><span class="p">,</span>
+        <span class="n">install_kfp_package</span><span class="o">=</span><span class="n">install_kfp_package</span><span class="p">,</span>
+        <span class="n">kfp_package_path</span><span class="o">=</span><span class="n">kfp_package_path</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, The Kubeflow Authors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
