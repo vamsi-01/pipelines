@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kfp.components.pipeline_channel &mdash; KFP SDK API Reference</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> Kubeflow Pipelines
+            <img src="../../../_static/kubeflow.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">Home</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/kfp.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/cli.html">kfp CLI</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://kubeflow.org/docs/pipelines/">Usage Docs (kubeflow.org)</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/kubeflow/pipelines/">Source Code</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Kubeflow Pipelines</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      <li>kfp.components.pipeline_channel</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for kfp.components.pipeline_channel</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2021 The Kubeflow Authors</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#      http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="sd">&quot;&quot;&quot;Definition of PipelineChannel.&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">import</span> <span class="nn">dataclasses</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">kfp.components.types</span> <span class="kn">import</span> <span class="n">type_utils</span>
+
+
+<span class="nd">@dataclasses</span><span class="o">.</span><span class="n">dataclass</span>
+<span class="k">class</span> <span class="nc">ConditionOperator</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Represents a condition expression to be used in dsl.Condition().</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">      operator: The operator of the condition.</span>
+<span class="sd">      left_operand: The left operand.</span>
+<span class="sd">      right_operand: The right operand.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">operator</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">left_operand</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="s1">&#39;PipelineParameterChannel&#39;</span><span class="p">,</span> <span class="n">type_utils</span><span class="o">.</span><span class="n">PARAMETER_TYPES</span><span class="p">]</span>
+    <span class="n">right_operand</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="s1">&#39;PipelineParameterChannel&#39;</span><span class="p">,</span> <span class="n">type_utils</span><span class="o">.</span><span class="n">PARAMETER_TYPES</span><span class="p">]</span>
+
+
+<span class="c1"># The string template used to generate the placeholder of a PipelineChannel.</span>
+<span class="n">_PIPELINE_CHANNEL_PLACEHOLDER_TEMPLATE</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s1">&#39;{{channel:task=</span><span class="si">%s</span><span class="s1">;name=</span><span class="si">%s</span><span class="s1">;type=</span><span class="si">%s</span><span class="s1">;}}&#39;</span><span class="p">)</span>
+<span class="c1"># The regex for parsing PipelineChannel placeholders from a string.</span>
+<span class="n">_PIPELINE_CHANNEL_PLACEHOLDER_REGEX</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="sa">r</span><span class="s1">&#39;{{channel:task=([\w\s_-]*);name=([\w\s_-]+);type=([\w\s</span><span class="si">{}</span><span class="s1">&quot;:_-]*);}}&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="PipelineChannel"><a class="viewcode-back" href="../../../source/dsl.html#kfp.dsl.PipelineChannel">[docs]</a><span class="k">class</span> <span class="nc">PipelineChannel</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Represents a future value that is passed between pipeline components.</span>
+
+<span class="sd">    A PipelineChannel object can be used as a pipeline function argument so that</span>
+<span class="sd">    it will be a pipeline artifact or parameter that shows up in ML Pipelines</span>
+<span class="sd">    system UI. It can also represent an intermediate value passed between</span>
+<span class="sd">    components.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        name: The name of the pipeline channel.</span>
+<span class="sd">        channel_type: The type of the pipeline channel.</span>
+<span class="sd">        task_name: The name of the task that produces the pipeline channel.</span>
+<span class="sd">            None means it is not produced by any task, so if None, either user</span>
+<span class="sd">            constructs it directly (for providing an immediate value), or it is</span>
+<span class="sd">            a pipeline function argument.</span>
+<span class="sd">        pattern: The serialized string regex pattern this pipeline channel</span>
+<span class="sd">            created from.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">channel_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">],</span>
+        <span class="n">task_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes a PipelineChannel instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name: The name of the pipeline channel. The name will be sanitized</span>
+<span class="sd">                to be k8s compatible.</span>
+<span class="sd">            channel_type: The type of the pipeline channel.</span>
+<span class="sd">            task_name: Optional; The name of the task that produces the pipeline</span>
+<span class="sd">                channel. If provided, the task name will be sanitized to be k8s</span>
+<span class="sd">                compatible.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If name or task_name contains invalid characters.</span>
+<span class="sd">            ValueError: If both task_name and value are set.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">valid_name_regex</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;^[A-Za-z][A-Za-z0-9\s_-]*$&#39;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">valid_name_regex</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;Only letters, numbers, spaces, &quot;_&quot;, and &quot;-&quot; are allowed in the &#39;</span>
+                <span class="s1">&#39;name. Must begin with a letter. Got name: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">channel_type</span> <span class="o">=</span> <span class="n">channel_type</span>
+        <span class="c1"># ensure value is None even if empty string or empty list/dict</span>
+        <span class="c1"># so that serialization and unserialization remain consistent</span>
+        <span class="c1"># (i.e. None =&gt; &#39;&#39; =&gt; None)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">task_name</span> <span class="o">=</span> <span class="n">task_name</span> <span class="ow">or</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">full_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Unique name for the PipelineChannel.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">task_name</span><span class="si">}</span><span class="s1">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">task_name</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Unique pattern for the PipelineChannel.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;String representation of the PipelineChannel.</span>
+
+<span class="sd">        The string representation is a string identifier so we can mix</span>
+<span class="sd">        the PipelineChannel inline with other strings such as arguments.</span>
+<span class="sd">        For example, we can support: [&#39;echo %s&#39; % param] as the</span>
+<span class="sd">        container command and later a compiler can replace the</span>
+<span class="sd">        placeholder &#39;{{pipeline_channel:task=%s;name=%s;type=%s}}&#39; with</span>
+<span class="sd">        its own parameter identifier.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">task_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">task_name</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">channel_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">channel_type</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">channel_type</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">channel_type</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">channel_type</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_PIPELINE_CHANNEL_PLACEHOLDER_TEMPLATE</span> <span class="o">%</span> <span class="p">(</span><span class="n">task_name</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
+                                                         <span class="n">channel_type</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Representation of the PipelineChannel.</span>
+
+<span class="sd">        We make repr return the placeholder string so that if someone</span>
+<span class="sd">        uses str()-based serialization of complex objects containing</span>
+<span class="sd">        `PipelineChannel`, it works properly. (e.g. str([1, 2, 3,</span>
+<span class="sd">        kfp.dsl.PipelineParameterChannel(&quot;aaa&quot;), 4, 5, 6,]))</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Returns the hash of a PipelineChannel.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pattern</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">ConditionOperator</span><span class="p">(</span><span class="s1">&#39;==&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">ConditionOperator</span><span class="p">(</span><span class="s1">&#39;!=&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">ConditionOperator</span><span class="p">(</span><span class="s1">&#39;&lt;&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__le__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">ConditionOperator</span><span class="p">(</span><span class="s1">&#39;&lt;=&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__gt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">ConditionOperator</span><span class="p">(</span><span class="s1">&#39;&gt;&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__ge__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">ConditionOperator</span><span class="p">(</span><span class="s1">&#39;&gt;=&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PipelineParameterChannel"><a class="viewcode-back" href="../../../source/dsl.html#kfp.dsl.PipelineParameterChannel">[docs]</a><span class="k">class</span> <span class="nc">PipelineParameterChannel</span><span class="p">(</span><span class="n">PipelineChannel</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Represents a pipeline parameter channel.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">      name: The name of the pipeline channel.</span>
+<span class="sd">      channel_type: The type of the pipeline channel.</span>
+<span class="sd">      task_name: The name of the task that produces the pipeline channel.</span>
+<span class="sd">        None means it is not produced by any task, so if None, either user</span>
+<span class="sd">        constructs it directly (for providing an immediate value), or it is a</span>
+<span class="sd">        pipeline function argument.</span>
+<span class="sd">      pattern: The serialized string regex pattern this pipeline channel created</span>
+<span class="sd">        from.</span>
+<span class="sd">      value: The actual value of the pipeline channel. If provided, the</span>
+<span class="sd">        pipeline channel is &quot;resolved&quot; immediately.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">channel_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">],</span>
+        <span class="n">task_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">value</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">type_utils</span><span class="o">.</span><span class="n">PARAMETER_TYPES</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes a PipelineArtifactChannel instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          name: The name of the pipeline channel.</span>
+<span class="sd">          channel_type: The type of the pipeline channel.</span>
+<span class="sd">          task_name: Optional; The name of the task that produces the pipeline</span>
+<span class="sd">            channel.</span>
+<span class="sd">          value: Optional; The actual value of the pipeline channel.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">          ValueError: If name or task_name contains invalid characters.</span>
+<span class="sd">          ValueError: If both task_name and value are set.</span>
+<span class="sd">          TypeError: If the channel type is not a parameter type.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">task_name</span> <span class="ow">and</span> <span class="n">value</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;task_name and value cannot be both set.&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">type_utils</span><span class="o">.</span><span class="n">is_parameter_type</span><span class="p">(</span><span class="n">channel_type</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">channel_type</span><span class="si">}</span><span class="s1"> is not a parameter type.&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">PipelineParameterChannel</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">channel_type</span><span class="o">=</span><span class="n">channel_type</span><span class="p">,</span>
+            <span class="n">task_name</span><span class="o">=</span><span class="n">task_name</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PipelineArtifactChannel"><a class="viewcode-back" href="../../../source/dsl.html#kfp.dsl.PipelineArtifactChannel">[docs]</a><span class="k">class</span> <span class="nc">PipelineArtifactChannel</span><span class="p">(</span><span class="n">PipelineChannel</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Represents a pipeline artifact channel.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">      name: The name of the pipeline channel.</span>
+<span class="sd">      channel_type: The type of the pipeline channel.</span>
+<span class="sd">      task_name: The name of the task that produces the pipeline channel.</span>
+<span class="sd">        A pipeline artifact channel is always produced by some task.</span>
+<span class="sd">      pattern: The serialized string regex pattern this pipeline channel created</span>
+<span class="sd">        from.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">channel_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">],</span>
+        <span class="n">task_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes a PipelineArtifactChannel instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          name: The name of the pipeline channel.</span>
+<span class="sd">          channel_type: The type of the pipeline channel.</span>
+<span class="sd">          task_name: The name of the task that produces the pipeline channel.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">          ValueError: If name or task_name contains invalid characters.</span>
+<span class="sd">          TypeError: If the channel type is not an artifact type.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">type_utils</span><span class="o">.</span><span class="n">is_parameter_type</span><span class="p">(</span><span class="n">channel_type</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">channel_type</span><span class="si">}</span><span class="s1"> is not an artifact type.&#39;</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">PipelineArtifactChannel</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">channel_type</span><span class="o">=</span><span class="n">channel_type</span><span class="p">,</span>
+            <span class="n">task_name</span><span class="o">=</span><span class="n">task_name</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">create_pipeline_channel</span><span class="p">(</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">channel_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">],</span>
+    <span class="n">task_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">type_utils</span><span class="o">.</span><span class="n">PARAMETER_TYPES</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PipelineChannel</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Creates a PipelineChannel object.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name: The name of the channel.</span>
+<span class="sd">        channel_type: The type of the channel, which decides whether it is an</span>
+<span class="sd">            PipelineParameterChannel or PipelineArtifactChannel</span>
+<span class="sd">        task_name: Optional; the task that produced the channel.</span>
+<span class="sd">        value: Optional; the realized value for a channel.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A PipelineParameterChannel or PipelineArtifactChannel object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">type_utils</span><span class="o">.</span><span class="n">is_parameter_type</span><span class="p">(</span><span class="n">channel_type</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">PipelineParameterChannel</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">channel_type</span><span class="o">=</span><span class="n">channel_type</span><span class="p">,</span>
+            <span class="n">task_name</span><span class="o">=</span><span class="n">task_name</span><span class="p">,</span>
+            <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">PipelineArtifactChannel</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">channel_type</span><span class="o">=</span><span class="n">channel_type</span><span class="p">,</span>
+            <span class="n">task_name</span><span class="o">=</span><span class="n">task_name</span><span class="p">,</span>
+        <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">extract_pipeline_channels_from_string</span><span class="p">(</span>
+        <span class="n">payload</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">PipelineChannel</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Extracts a list of PipelineChannel instances from the payload string.</span>
+
+<span class="sd">    Note: this function removes all duplicate matches.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      payload: A string that may contain serialized PipelineChannels.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A list of PipelineChannels found from the payload.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">matches</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">_PIPELINE_CHANNEL_PLACEHOLDER_REGEX</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+    <span class="n">unique_channels</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">matches</span><span class="p">:</span>
+        <span class="n">task_name</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">channel_type</span> <span class="o">=</span> <span class="n">match</span>
+
+        <span class="c1"># channel_type could be either a string (e.g. &quot;Integer&quot;) or a dictionary</span>
+        <span class="c1"># (e.g.: {&quot;custom_type&quot;: {&quot;custom_property&quot;: &quot;some_value&quot;}}).</span>
+        <span class="c1"># Try loading it into dictionary, if failed, it means channel_type is a</span>
+        <span class="c1"># string.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">channel_type</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">channel_type</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">if</span> <span class="n">type_utils</span><span class="o">.</span><span class="n">is_parameter_type</span><span class="p">(</span><span class="n">channel_type</span><span class="p">):</span>
+            <span class="n">pipeline_channel</span> <span class="o">=</span> <span class="n">PipelineParameterChannel</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+                <span class="n">channel_type</span><span class="o">=</span><span class="n">channel_type</span><span class="p">,</span>
+                <span class="n">task_name</span><span class="o">=</span><span class="n">task_name</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pipeline_channel</span> <span class="o">=</span> <span class="n">PipelineArtifactChannel</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+                <span class="n">channel_type</span><span class="o">=</span><span class="n">channel_type</span><span class="p">,</span>
+                <span class="n">task_name</span><span class="o">=</span><span class="n">task_name</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">unique_channels</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">pipeline_channel</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">unique_channels</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">extract_pipeline_channels_from_any</span><span class="p">(</span>
+    <span class="n">payload</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">PipelineChannel</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">PipelineChannel</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Recursively extract PipelineChannels from any object or list of objects.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      payload: An object that contains serialized PipelineChannels or k8</span>
+<span class="sd">        definition objects.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A list of PipelineChannels found from the payload.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">payload</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">PipelineChannel</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">payload</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">extract_pipeline_channels_from_string</span><span class="p">(</span><span class="n">payload</span><span class="p">)))</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+        <span class="n">pipeline_channels</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">payload</span><span class="p">:</span>
+            <span class="n">pipeline_channels</span> <span class="o">+=</span> <span class="n">extract_pipeline_channels_from_any</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">pipeline_channels</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">pipeline_channels</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">payload</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">pipeline_channels</span> <span class="o">+=</span> <span class="n">extract_pipeline_channels_from_any</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">pipeline_channels</span> <span class="o">+=</span> <span class="n">extract_pipeline_channels_from_any</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">pipeline_channels</span><span class="p">))</span>
+
+    <span class="c1"># TODO(chensun): extract PipelineChannel from v2 container spec?</span>
+
+    <span class="k">return</span> <span class="p">[]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, The Kubeflow Authors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
