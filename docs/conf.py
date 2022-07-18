@@ -18,8 +18,13 @@
 # full list see the documentation:
 # http://www.sphinx-doc.org/en/master/config
 
+import functools
 import os
 import sys
+from typing import List, Optional
+
+import sphinx
+from sphinx import application
 
 # -- Path setup --------------------------------------------------------------
 
@@ -163,3 +168,36 @@ epub_title = project
 epub_exclude_files = ['search.html']
 
 # # -- Extension configuration -------------------------------------------------
+readme_path = os.path.join(
+    os.path.abspath(os.path.dirname(os.path.dirname(__file__))), 'sdk',
+    'python', 'README.md')
+
+
+def trim_header_of_readme(path: str) -> List[str]:
+    with open(path, 'r') as f:
+        contents = f.readlines()
+    with open(path, 'w') as f:
+        f.writelines(contents[1:])
+    return contents
+
+
+def re_attach_header_of_readme(path: str, contents: List[str]) -> None:
+    with open(path, 'w') as f:
+        f.writelines(contents)
+
+
+original_readme_contents = trim_header_of_readme(readme_path)
+
+re_attach_header_of_readme_closure = functools.partial(
+    re_attach_header_of_readme,
+    path=readme_path,
+    contents=original_readme_contents)
+
+
+def re_attach_header_of_readme_hook(app: sphinx.application.Sphinx,
+                                    exception: Optional[Exception]) -> None:
+    re_attach_header_of_readme_closure()
+
+
+def setup(app: sphinx.application.Sphinx) -> None:
+    app.connect('build-finished', re_attach_header_of_readme_hook)
