@@ -1,3 +1,5 @@
+"""The `kfp.dsl` module contains domain-specific language objects used to
+compose pipelines."""
 # Copyright 2020 The Kubeflow Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,6 +13,37 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+__all__ = [
+    'component',
+    'importer',
+    'PipelineArtifactChannel',
+    'PipelineChannel',
+    'PipelineParameterChannel',
+    'pipeline',
+    'PipelineTask',
+    'PipelineTaskFinalStatus',
+    'Condition',
+    'ExitHandler',
+    'ParallelFor',
+    'Artifact',
+    'ClassificationMetrics',
+    'Dataset',
+    'HTML',
+    'Markdown',
+    'Metrics',
+    'Model',
+    'SlicedClassificationMetrics',
+    'Input',
+    'Output',
+    'InputPath',
+    'OutputPath',
+    'PIPELINE_JOB_NAME_PLACEHOLDER',
+    'PIPELINE_JOB_RESOURCE_NAME_PLACEHOLDER',
+    'PIPELINE_JOB_ID_PLACEHOLDER',
+    'PIPELINE_TASK_NAME_PLACEHOLDER',
+    'PIPELINE_TASK_ID_PLACEHOLDER',
+]
 
 from kfp.components.component_decorator import component
 from kfp.components.importer_node import importer
