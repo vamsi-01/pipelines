@@ -103,3 +103,5 @@ if __name__ == '__main__':
     compiler.Compiler().compile(
         pipeline_func=my_pipeline,
         package_path=__file__.replace('.py', '.yaml'))
+
+{'inputs': {'parameters': {'input_a': {'uri': 'my_uri', 'metadata': {{}}}}}}

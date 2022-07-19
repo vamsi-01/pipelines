@@ -46,6 +46,8 @@ class Artifact(object):
         self.name = name or ''
         self.metadata = metadata or {}
 
+        self.foo = name + name
+
     @property
     def path(self):
         return self._get_path()

@@ -1,4 +1,4 @@
-"""The `kfp.client` module contains the compiler for compiling pipeline
+"""The `kfp.compiler` module contains the compiler for compiling pipeline
 definitions."""
 # Copyright 2020 The Kubeflow Authors
 #
