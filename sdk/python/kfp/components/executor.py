@@ -176,12 +176,6 @@ class Executor():
         return cls._get_short_type_name(str(annotation)) in ['Dict', 'List']
 
     @classmethod
-    def _is_artifact(cls, annotation: Any) -> bool:
-        if type(annotation) == type:
-            return issubclass(annotation, artifact_types.Artifact)
-        return False
-
-    @classmethod
     def _is_named_tuple(cls, annotation: Any) -> bool:
         if type(annotation) == type:
             return issubclass(annotation, tuple) and hasattr(
@@ -200,7 +194,7 @@ class Executor():
                     .format(self._func.__name__, type(return_value),
                             origin_type))
             self._write_output_parameter_value(output_name, return_value)
-        elif self._is_artifact(annotation_type):
+        elif type_annotations.is_artifact(annotation_type):
             self._write_output_artifact_payload(output_name, return_value)
         else:
             raise RuntimeError(
@@ -222,8 +216,9 @@ class Executor():
             self._executor_output['artifacts'][name] = artifacts_list
 
         if func_output is not None:
-            if self._is_parameter(self._return_annotation) or self._is_artifact(
-                    self._return_annotation):
+            if self._is_parameter(
+                    self._return_annotation) or type_annotations.is_artifact(
+                        self._return_annotation):
                 # Note: single output is named `Output` in component.yaml.
                 self._handle_single_return_value('Output',
                                                  self._return_annotation,

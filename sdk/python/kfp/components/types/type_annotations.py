@@ -176,6 +176,27 @@ def is_artifact_annotation(typ) -> bool:
     return True
 
 
+def is_artifact(typ: type) -> bool:
+    return hasattr(typ, 'TYPE_NAME') or hasattr(typ, 'INSTANCE_SCHEMA')
+
+
+def get_type_name_from_artifact(artifact: type) -> Union[str]:
+    """A workaround for getting TYPE_NAME from artifacts that use a.
+
+    .schema_title attribute instead of TYPE_NAME attribute.
+
+    This primarily applies to Vertex artifacts.
+    """
+
+    if hasattr(artifact, 'TYPE_NAME'):
+        return artifact.TYPE_NAME
+    elif hasattr(artifact, 'schema_title'):
+        return artifact.schema_title
+    raise ValueError(
+        f"Neither 'TYPE_NAME' nor 'schema_title' found on artifact: {artifact}."
+    )
+
+
 def is_input_artifact(typ) -> bool:
     """Returns True if typ is of type Input[T]."""
     if not is_artifact_annotation(typ):

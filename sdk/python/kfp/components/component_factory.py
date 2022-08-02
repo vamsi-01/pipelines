@@ -141,10 +141,11 @@ def _annotation_to_type_struct(annotation):
         if type_struct:
             return type_struct
 
-        if issubclass(annotation, artifact_types.Artifact
-                     ) and not annotation.schema_title.startswith('system.'):
+        if type_annotations.is_artifact(
+                annotation
+        ) and not annotation.schema_title.startswith('system.'):
             # For artifact classes not under the `system` namespace,
-            # use its schema_title as-is.
+            # use its TYPE_NAME as-is.
             schema_title = annotation.schema_title
         else:
             schema_title = str(annotation.__name__)
