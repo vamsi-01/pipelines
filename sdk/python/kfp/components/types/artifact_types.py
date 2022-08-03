@@ -510,23 +510,3 @@ _SCHEMA_TITLE_TO_TYPE: Dict[str, Artifact] = {
         Markdown,
     ]
 }
-
-
-def create_runtime_artifact(
-    runtime_artifact: Dict,
-    artifact_cls=None,
-) -> Artifact:
-    """Creates an Artifact instance from the specified RuntimeArtifact.
-
-    Args:
-      runtime_artifact: Dictionary representing JSON-encoded RuntimeArtifact.
-    """
-    schema_title = runtime_artifact.get('type', {}).get('schemaTitle', '')
-
-    artifact_type = _SCHEMA_TITLE_TO_TYPE.get(
-        schema_title) or artifact_cls or Artifact
-    return artifact_type(
-        uri=runtime_artifact.get('uri', ''),
-        name=runtime_artifact.get('name', ''),
-        metadata=runtime_artifact.get('metadata', {}),
-    )
