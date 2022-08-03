@@ -13,6 +13,7 @@
 # limitations under the License.
 import inspect
 import json
+import os
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from kfp.components import task_final_status
@@ -20,7 +21,7 @@ from kfp.components.types import artifact_types
 from kfp.components.types import type_annotations
 
 
-class Executor():
+class Executor:
     """Executor executes v2-based Python function components."""
 
     def __init__(self, executor_input: Dict, function_to_execute: Callable):
@@ -37,38 +38,31 @@ class Executor():
                                                {}).get('artifacts', {}).items():
             artifacts_list = artifacts.get('artifacts')
             if artifacts_list:
-                self._input_artifacts[name] = self._make_input_artifact(
-                    artifacts_list[0], name, self._func)
+                artifact_cls = type_annotations.get_io_artifact_class(
+                    self._func.__annotations__[name])
+                self._input_artifacts[name] = dict_to_artifact(
+                    artifacts_list[0], artifact_cls=artifact_cls)
 
         for name, artifacts in self._input.get('outputs',
                                                {}).get('artifacts', {}).items():
             artifacts_list = artifacts.get('artifacts')
             if artifacts_list:
-                self._output_artifacts[name] = self._make_output_artifact(
-                    artifacts_list[0])
+                # use .get(name) to not throw error when handling namedtuple returns with -- we don't need to handle converting to an artifact class because the artifact object isn't accessible in the component definition anyway
+                artifact_cls = type_annotations.get_io_artifact_class(
+                    self._func.__annotations__.get(name))
+                self._output_artifacts[name] = dict_to_artifact(
+                    artifacts_list[0], artifact_cls=artifact_cls)
+                self.make_artifact_dir(self._output_artifacts[name].path)
 
         self._return_annotation = inspect.signature(
             self._func).return_annotation
         self._executor_output = {}
 
-    def _make_input_artifact(
-        self,
-        runtime_artifact: Dict,
-        name: str,
-        func: Callable,
-    ):
-        annotations = inspect.getfullargspec(func).annotations
-        artifact_class = type_annotations.get_io_artifact_class(
-            annotations.get(name))
-        return artifact_types.create_runtime_artifact(runtime_artifact,
-                                                      artifact_class)
+    def get_annotations(self, func: Callable) -> Dict[str, Any]:
+        inspect.signature(func).parameters
 
-    @classmethod
-    def _make_output_artifact(cls, runtime_artifact: Dict):
-        import os
-        artifact = artifact_types.create_runtime_artifact(runtime_artifact)
-        os.makedirs(os.path.dirname(artifact.path), exist_ok=True)
-        return artifact
+    def make_artifact_dir(self, path: str) -> None:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
 
     def _get_input_artifact(self, name: str):
         return self._input_artifacts.get(name)
@@ -300,3 +294,16 @@ class Executor():
 
         result = self._func(**func_kwargs)
         self._write_executor_output(result)
+
+
+def dict_to_artifact(runtime_artifact: Dict[str, Any],
+                     artifact_cls: Union[type, None]) -> Any:
+    schema_title = runtime_artifact.get('type', {}).get('schemaTitle', '')
+
+    actual_cls = artifact_types._SCHEMA_TITLE_TO_TYPE.get(
+        schema_title) or artifact_cls or artifact_types.Artifact
+
+    return actual_cls(
+        uri=runtime_artifact.get('uri', ''),
+        name=runtime_artifact.get('name', ''),
+        metadata=runtime_artifact.get('metadata', {}))
