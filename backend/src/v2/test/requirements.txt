@@ -3,5 +3,4 @@
 ml-metadata==1.5.0
 minio==7.0.4
 google-cloud-storage
-google-cloud-aiplatform==1.16.0
 -e ../../../../samples/test/utils
