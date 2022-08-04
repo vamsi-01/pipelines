@@ -1,0 +1,188 @@
+components:
+  comp-condition-1:
+    dag:
+      tasks:
+        print-op:
+          cachingOptions:
+            enableCache: true
+          componentRef:
+            name: comp-print-op
+          inputs:
+            parameters:
+              msg:
+                componentInputParameter: pipelinechannel--text
+          taskInfo:
+            name: print-op
+    inputDefinitions:
+      parameters:
+        pipelinechannel--text:
+          parameterType: STRING
+  comp-condition-2:
+    dag:
+      tasks:
+        print-op-2:
+          cachingOptions:
+            enableCache: true
+          componentRef:
+            name: comp-print-op-2
+          inputs:
+            parameters:
+              msg:
+                componentInputParameter: pipelinechannel--text
+          taskInfo:
+            name: print-op-2
+    inputDefinitions:
+      parameters:
+        pipelinechannel--text:
+          parameterType: STRING
+        pipelinechannel--true-op-Output:
+          parameterType: BOOLEAN
+  comp-print-op:
+    executorLabel: exec-print-op
+    inputDefinitions:
+      parameters:
+        msg:
+          parameterType: STRING
+  comp-print-op-2:
+    executorLabel: exec-print-op-2
+    inputDefinitions:
+      parameters:
+        msg:
+          parameterType: STRING
+  comp-true-op:
+    executorLabel: exec-true-op
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: BOOLEAN
+defaultPipelineRoot: dummy_root
+deploymentSpec:
+  executors:
+    exec-print-op:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - print_op
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==2.0.0-beta.1'\
+          \ && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          python3 -m kfp.components.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef print_op(msg: str):\n    \"\"\"Print a message.\"\"\"\n    print(msg)\n\
+          \n"
+        image: python:3.7
+    exec-print-op-2:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - print_op
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==2.0.0-beta.1'\
+          \ && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          python3 -m kfp.components.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef print_op(msg: str):\n    \"\"\"Print a message.\"\"\"\n    print(msg)\n\
+          \n"
+        image: python:3.7
+    exec-true-op:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - true_op
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==2.0.0-beta.1'\
+          \ && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          python3 -m kfp.components.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef true_op() -> bool:\n    return True\n\n"
+        image: python:3.7
+pipelineInfo:
+  name: pipeline-with-bool-condition
+root:
+  dag:
+    tasks:
+      condition-1:
+        componentRef:
+          name: comp-condition-1
+        inputs:
+          parameters:
+            pipelinechannel--text:
+              componentInputParameter: text
+        taskInfo:
+          name: condition-1
+        triggerPolicy:
+          condition: inputs.parameter_values['pipelinechannel--text'] == 'heads'
+      condition-2:
+        componentRef:
+          name: comp-condition-2
+        dependentTasks:
+        - true-op
+        inputs:
+          parameters:
+            pipelinechannel--text:
+              componentInputParameter: text
+            pipelinechannel--true-op-Output:
+              taskOutputParameter:
+                outputParameterKey: Output
+                producerTask: true-op
+        taskInfo:
+          name: condition-2
+        triggerPolicy:
+          condition: inputs.parameter_values['pipelinechannel--true-op-Output'] ==
+            true
+      true-op:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-true-op
+        taskInfo:
+          name: true-op
+  inputDefinitions:
+    parameters:
+      text:
+        defaultValue: heads
+        parameterType: STRING
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.0.0-beta.1

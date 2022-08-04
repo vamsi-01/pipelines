@@ -398,14 +398,15 @@ class Compiler:
             if isinstance(group, dsl.Condition):
                 new_current_conditions_channels = list(
                     current_conditions_channels)
-                if isinstance(group.condition.left_operand,
-                              pipeline_channel.PipelineChannel):
-                    new_current_conditions_channels.append(
-                        group.condition.left_operand)
-                if isinstance(group.condition.right_operand,
-                              pipeline_channel.PipelineChannel):
-                    new_current_conditions_channels.append(
-                        group.condition.right_operand)
+                if not isinstance(group.condition, bool):
+                    if isinstance(group.condition.left_operand,
+                                  pipeline_channel.PipelineChannel):
+                        new_current_conditions_channels.append(
+                            group.condition.left_operand)
+                    if isinstance(group.condition.right_operand,
+                                  pipeline_channel.PipelineChannel):
+                        new_current_conditions_channels.append(
+                            group.condition.right_operand)
             for task in group.tasks:
                 for channel in new_current_conditions_channels:
                     conditions[task.name].add(channel)
