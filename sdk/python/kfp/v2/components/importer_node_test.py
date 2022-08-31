@@ -184,7 +184,7 @@ class ImporterNodeTest(parameterized.TestCase):
             return 1
 
         @dsl.pipeline(name='pipeline')
-        def my_pipeline():
+        def my_pipeline(uri_param: str = 'my_uri'):
             task = func()
             task2 = func2()
             dsl.importer(
@@ -194,6 +194,10 @@ class ImporterNodeTest(parameterized.TestCase):
                     task.output: task2.output,
                     'other': [task.output, task2.output]
                 })
+            dsl.importer(
+                artifact_uri=uri_param,
+                artifact_class=dsl.Artifact,
+                metadata={task.output: uri_param})
 
         with tempfile.TemporaryDirectory() as tmpdir:
             package_path = os.path.join(tmpdir, 'output.json')

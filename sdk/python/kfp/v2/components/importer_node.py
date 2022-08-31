@@ -142,8 +142,11 @@ def _build_importer_task_spec(
                 param
                 .name].task_output_parameter.output_parameter_key = param.name
         else:
+            print("HERE")
+            print(param.name)
+            print(param.full_name)
             result.inputs.parameters[
-                param.name].component_input_parameter = param.full_name
+                param.full_name].component_input_parameter = param.full_name
     return result
 
 
@@ -198,7 +201,7 @@ def importer(
       ValueError if the passed in artifact_uri is neither a PipelineParam nor a
         constant string value.
     """
-
+    print("METADATA", metadata)
     if isinstance(artifact_uri, _pipeline_param.PipelineParam):
         input_uri_param = copy.deepcopy(artifact_uri)
         input_uri_param.name = URI_INPUT_KEY
