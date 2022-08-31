@@ -51,20 +51,45 @@ def my_pipeline(dataset2: str = 'gs://ml-pipeline-playground/shakespeare2.txt'):
     importer1 = importer(
         artifact_uri='gs://ml-pipeline-playground/shakespeare1.txt',
         artifact_class=Dataset,
-        reimport=False)
-    train1 = train(dataset=importer1.output)
+        reimport=False,
+        metadata={
+            dataset2: dataset2,
+            'other': [dataset2]
+        })
+    # train1 = train(dataset=importer1.output)
 
-    with dsl.Condition(train1.outputs['scalar'] == '123'):
-        importer2 = importer(
-            artifact_uri=dataset2, artifact_class=Dataset, reimport=True)
-        train(dataset=importer2.output)
+    # with dsl.Condition(train1.outputs['scalar'] == '123'):
+    #     importer2 = importer(
+    #         artifact_uri=dataset2,
+    #         artifact_class=Dataset,
+    #         reimport=True,
+    #         metadata={'test': train1.outputs['scalar']})
+    #     train(dataset=importer2.output)
 
-    importer3 = importer(
-        artifact_uri=pass_through_op(dataset2).output, artifact_class=Dataset)
-    train(dataset=importer3.output)
+    # importer3 = importer(
+    #     artifact_uri=pass_through_op(dataset2).output, artifact_class=Dataset)
+    # train(dataset=importer3.output)
 
 
 if __name__ == '__main__':
-    compiler.Compiler().compile(
-        pipeline_func=my_pipeline,
-        package_path=__file__.replace('.py', '.json'))
+    import datetime
+    import warnings
+    import webbrowser
+
+    from google.cloud import aiplatform
+
+    from kfp.v2 import compiler
+
+    warnings.filterwarnings('ignore')
+    ir_file = __file__.replace('.py', '.json')
+    compiler.Compiler().compile(pipeline_func=my_pipeline, package_path=ir_file)
+    pipeline_name = __file__.split('/')[-1].replace('_', '-').replace('.py', '')
+    display_name = datetime.datetime.now().strftime('%m-%d-%Y-%H-%M-%S')
+    job_id = f'{pipeline_name}-{display_name}'
+    aiplatform.PipelineJob(
+        template_path=ir_file,
+        pipeline_root='gs://cjmccarthy-kfp-default-bucket',
+        display_name=pipeline_name,
+        job_id=job_id).submit()
+    url = f'https://console.cloud.google.com/vertex-ai/locations/us-central1/pipelines/runs/{pipeline_name}-{display_name}?project=271009669852'
+    webbrowser.open_new_tab(url)

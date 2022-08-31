@@ -25,7 +25,7 @@ from kfp.pipeline_spec import pipeline_spec_pb2
 from kfp.v2.components.types import artifact_types, type_utils
 
 URI_INPUT_KEY = 'uri'
-URI_OUTPUT_KEY = 'artifact'
+ARTIFACT_OUTPUT_KEY = 'artifact'
 
 
 def make_input_parameter_placeholder(key: str) -> str:
@@ -51,8 +51,6 @@ def transform_metadata_and_get_inputs(
     metadata: Dict[Union[str, _pipeline_param.PipelineParam],
                    Union[_pipeline_param.PipelineParam, Any]]
 ) -> Tuple[Dict[str, Any], List[_pipeline_param.PipelineParam]]:
-    inputs: List[_pipeline_param.PipelineParam] = []
-    input_keys: List[str] = []
 
     def traverse_dict_and_create_metadata_inputs(d: Any) -> Any:
         if isinstance(d, _pipeline_param.PipelineParam):
@@ -79,6 +77,8 @@ def transform_metadata_and_get_inputs(
         else:
             return d
 
+    inputs: List[_pipeline_param.PipelineParam] = []
+    input_keys: List[str] = []
     new_metadata = traverse_dict_and_create_metadata_inputs(metadata)
     return new_metadata, inputs
 
@@ -117,8 +117,9 @@ def _build_importer_spec(
 
 
 def _build_importer_task_spec(
+    artifact_uri: Union[_pipeline_param.PipelineParam, str],
     importer_base_name: str,
-    inputs: List[_pipeline_param.PipelineParam],
+    metadata_inputs: List[_pipeline_param.PipelineParam],
 ) -> pipeline_spec_pb2.PipelineTaskSpec:
     """Builds an importer task spec.
 
@@ -133,7 +134,7 @@ def _build_importer_task_spec(
     result.component_ref.name = dsl_utils.sanitize_component_name(
         importer_base_name)
 
-    for param in inputs:
+    for param in metadata_inputs:
         if param.op_name:
             result.inputs.parameters[
                 param.name].task_output_parameter.producer_task = (
@@ -142,18 +143,32 @@ def _build_importer_task_spec(
                 param
                 .name].task_output_parameter.output_parameter_key = param.name
         else:
-            print("HERE")
-            print(param.name)
-            print(param.full_name)
             result.inputs.parameters[
-                param.full_name].component_input_parameter = param.full_name
+                param.name].component_input_parameter = param.full_name
+
+    if isinstance(artifact_uri, _pipeline_param.PipelineParam):
+        param = artifact_uri
+        if param.op_name:
+            result.inputs.parameters[
+                URI_INPUT_KEY].task_output_parameter.producer_task = (
+                    dsl_utils.sanitize_task_name(param.op_name))
+            result.inputs.parameters[
+                URI_INPUT_KEY].task_output_parameter.output_parameter_key = param.name
+        else:
+            result.inputs.parameters[
+                URI_INPUT_KEY].component_input_parameter = param.full_name
+    elif isinstance(artifact_uri, str):
+        result.inputs.parameters[
+            URI_INPUT_KEY].runtime_value.constant_value.string_value = artifact_uri
+
     return result
 
 
 def _build_importer_component_spec(
+    artifact_uri: Union[_pipeline_param.PipelineParam, str],
     importer_base_name: str,
     artifact_type_schema: pipeline_spec_pb2.ArtifactTypeSchema,
-    inputs: List[_pipeline_param.PipelineParam],
+    metadata_inputs: List[_pipeline_param.PipelineParam],
 ) -> pipeline_spec_pb2.ComponentSpec:
     """Builds an importer component spec.
 
@@ -169,13 +184,17 @@ def _build_importer_component_spec(
     result = pipeline_spec_pb2.ComponentSpec()
     result.executor_label = dsl_utils.sanitize_executor_label(
         importer_base_name)
-    for param in inputs:
+
+    for param in metadata_inputs:
         result.input_definitions.parameters[
             param.name].type = type_utils._PARAMETER_TYPES_MAPPING.get(
                 param.param_type.lower())
 
-    result.output_definitions.artifacts[URI_OUTPUT_KEY].artifact_type.CopyFrom(
-        artifact_type_schema)
+    result.input_definitions.parameters[
+        URI_INPUT_KEY].type = pipeline_spec_pb2.PrimitiveType.STRING
+
+    result.output_definitions.artifacts[
+        ARTIFACT_OUTPUT_KEY].artifact_type.CopyFrom(artifact_type_schema)
 
     return result
 
@@ -201,17 +220,6 @@ def importer(
       ValueError if the passed in artifact_uri is neither a PipelineParam nor a
         constant string value.
     """
-    print("METADATA", metadata)
-    if isinstance(artifact_uri, _pipeline_param.PipelineParam):
-        input_uri_param = copy.deepcopy(artifact_uri)
-        input_uri_param.name = URI_INPUT_KEY
-    elif isinstance(artifact_uri, str):
-        input_uri_param = _pipeline_param.PipelineParam(
-            name=URI_INPUT_KEY, value=artifact_uri, param_type='String')
-    else:
-        raise ValueError(
-            'Importer got unexpected artifact_uri: {} of type: {}.'.format(
-                artifact_uri, type(artifact_uri)))
 
     old_warn_value = _container_op.ContainerOp._DISABLE_REUSABLE_COMPONENT_WARNING
     _container_op.ContainerOp._DISABLE_REUSABLE_COMPONENT_WARNING = True
@@ -220,27 +228,39 @@ def importer(
         image='importer_image',  # TODO: need a v1 implementation of importer.
         arguments=[],
         file_outputs={
-            URI_OUTPUT_KEY:
-                "{{{{$.outputs.artifacts['{}'].uri}}}}".format(URI_OUTPUT_KEY)
+            ARTIFACT_OUTPUT_KEY:
+                "{{{{$.outputs.artifacts['{}'].uri}}}}".format(
+                    ARTIFACT_OUTPUT_KEY)
         },
     )
     _container_op.ContainerOp._DISABLE_REUSABLE_COMPONENT_WARNING = old_warn_value
-
     artifact_type_schema = type_utils.get_artifact_type_schema(artifact_class)
     metadata_with_placeholders, metadata_inputs = transform_metadata_and_get_inputs(
         metadata)
-    all_task_inputs = [input_uri_param] + metadata_inputs
 
     task.importer_spec = _build_importer_spec(
         artifact_uri=artifact_uri,
         artifact_type_schema=artifact_type_schema,
         metadata_with_placeholders=metadata_with_placeholders)
+
     task.task_spec = _build_importer_task_spec(
-        importer_base_name=task.name, inputs=all_task_inputs)
+        artifact_uri=artifact_uri,
+        importer_base_name=task.name,
+        metadata_inputs=metadata_inputs)
 
     task.component_spec = _build_importer_component_spec(
+        artifact_uri=artifact_uri,
         importer_base_name=task.name,
         artifact_type_schema=artifact_type_schema,
-        inputs=all_task_inputs)
+        metadata_inputs=metadata_inputs)
+    task.inputs = metadata_inputs
 
+    if isinstance(artifact_uri, _pipeline_param.PipelineParam):
+        input_artifact_uri = artifact_uri
+    elif isinstance(artifact_uri, str):
+        input_artifact_uri = _pipeline_param.PipelineParam(
+            name=URI_INPUT_KEY, value=artifact_uri, param_type='String')
+
+    task.inputs.append(input_artifact_uri)
+    print(task)
     return task

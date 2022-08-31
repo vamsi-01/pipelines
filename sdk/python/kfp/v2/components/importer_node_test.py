@@ -123,11 +123,9 @@ class ImporterNodeTest(parameterized.TestCase):
         json_format.ParseDict(expected_result, expected_task_spec)
 
         task_spec = importer_node._build_importer_task_spec(
-            importer_base_name=importer_name, inputs=inputs)
+            importer_base_name=importer_name, metadata_inputs=inputs)
 
         self.maxDiff = None
-        print(task_spec)
-        print(expected_task_spec)
         self.assertEqual(expected_task_spec, task_spec)
 
     def test_build_importer_component_spec(self):
@@ -157,7 +155,7 @@ class ImporterNodeTest(parameterized.TestCase):
             importer_base_name='importer-1',
             artifact_type_schema=pb.ArtifactTypeSchema(
                 schema_title='system.Artifact'),
-            inputs=[
+            metadata_inputs=[
                 _pipeline_param.PipelineParam(
                     name='uri', op_name='func', value=None, param_type='String')
             ])
@@ -185,19 +183,19 @@ class ImporterNodeTest(parameterized.TestCase):
 
         @dsl.pipeline(name='pipeline')
         def my_pipeline(uri_param: str = 'my_uri'):
-            task = func()
-            task2 = func2()
-            dsl.importer(
-                artifact_uri=task.output,
-                artifact_class=dsl.Artifact,
-                metadata={
-                    task.output: task2.output,
-                    'other': [task.output, task2.output]
-                })
+            # task = func()
+            # task2 = func2()
+            # dsl.importer(
+            #     artifact_uri=task.output,
+            #     artifact_class=dsl.Artifact,
+            #     metadata={
+            #         task.output: task2.output,
+            #         'other': [task.output, task2.output]
+            #     })
             dsl.importer(
                 artifact_uri=uri_param,
                 artifact_class=dsl.Artifact,
-                metadata={task.output: uri_param})
+                metadata={'task.output': uri_param})
 
         with tempfile.TemporaryDirectory() as tmpdir:
             package_path = os.path.join(tmpdir, 'output.json')
