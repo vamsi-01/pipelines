@@ -326,6 +326,12 @@ def create_artifact_instance(
 
     artifact_cls = artifact_types._SCHEMA_TITLE_TO_TYPE.get(
         schema_title) or artifact_cls or artifact_types.Artifact
+    if hasattr(artifact_cls, '_from_executor_fields'):
+        return artifact_cls._from_executor_fields(
+            uri=runtime_artifact.get('uri', ''),
+            name=runtime_artifact.get('name', ''),
+            metadata=runtime_artifact.get('metadata', {}),
+        )
     return artifact_cls(
         uri=runtime_artifact.get('uri', ''),
         name=runtime_artifact.get('name', ''),
