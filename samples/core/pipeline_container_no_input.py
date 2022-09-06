@@ -31,8 +31,17 @@ def pipeline_container_no_input():
     container_no_input()
 
 
-if __name__ == '__main__':
-    # execute only if run as a script
-    compiler.Compiler().compile(
-        pipeline_func=pipeline_container_no_input,
-        package_path='pipeline_container_no_input.yaml')
+def verify(run) -> None:
+    assert run.status == Succeeded
+    # t.assertEqual(
+    #     {
+    #         'container-no-input':
+    #             KfpTask(
+    #                 name='container-no-input',
+    #                 type='system.ContainerExecution',
+    #                 state=Execution.State.COMPLETE,
+    #                 inputs=TaskInputs(parameters={}, artifacts=[]),
+    #                 outputs=TaskOutputs(parameters={}, artifacts=[]))
+    #     },
+    #     tasks,
+    # )

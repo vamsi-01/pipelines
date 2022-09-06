@@ -102,27 +102,27 @@ echo "KFP images cloudbuild jobs submitted"
 time source "${DIR}/deploy-cluster.sh"
 echo "cluster deployed"
 
-# Install Argo CLI and test-runner service account
-time source "${DIR}/install-argo.sh"
-echo "argo installed"
+# # Install Argo CLI and test-runner service account
+# time source "${DIR}/install-argo.sh"
+# echo "argo installed"
 
-time source "${DIR}/check-build-image-status.sh"
-echo "KFP images built"
+# time source "${DIR}/check-build-image-status.sh"
+# echo "KFP images built"
 
 time source "${DIR}/deploy-pipeline-lite.sh"
 echo "KFP standalone deployed"
 
-echo "submitting argo workflow to run tests for commit ${COMMIT_SHA}..."
-ARGO_WORKFLOW=`argo submit ${DIR}/${WORKFLOW_FILE} \
--p image-build-context-gcs-uri="$remote_code_archive_uri" \
-${IMAGE_BUILDER_ARG} \
--p target-image-prefix="${GCR_IMAGE_BASE_DIR}/" \
--p test-results-gcs-dir="${TEST_RESULTS_GCS_DIR}" \
--p is-integration-test="${IS_INTEGRATION_TEST}" \
--n ${NAMESPACE} \
---serviceaccount test-runner \
--o name
-`
-echo "test workflow submitted successfully"
-time source "${DIR}/check-argo-status.sh"
-echo "test workflow completed"
+# echo "submitting argo workflow to run tests for commit ${COMMIT_SHA}..."
+# ARGO_WORKFLOW=`argo submit ${DIR}/${WORKFLOW_FILE} \
+# -p image-build-context-gcs-uri="$remote_code_archive_uri" \
+# ${IMAGE_BUILDER_ARG} \
+# -p target-image-prefix="${GCR_IMAGE_BASE_DIR}/" \
+# -p test-results-gcs-dir="${TEST_RESULTS_GCS_DIR}" \
+# -p is-integration-test="${IS_INTEGRATION_TEST}" \
+# -n ${NAMESPACE} \
+# --serviceaccount test-runner \
+# -o name
+# `
+# echo "test workflow submitted successfully"
+# time source "${DIR}/check-argo-status.sh"
+# echo "test workflow completed"

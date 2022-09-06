@@ -27,5 +27,4 @@ def my_pipeline(
 
     with dsl.ParallelFor(static_loop_arguments) as item:
         concat_task = concat_op(a=item.a, b=item.b)
-        concat_task.after(print_task)
         print_task_2 = print_op(text=concat_task.output)

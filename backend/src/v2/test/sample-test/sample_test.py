@@ -30,9 +30,11 @@ import kfp.deprecated as kfp_v1
 import kfp_server_api
 import pytest
 import yaml
+import mlmd_client
 
 KFP_ENDPOINT = os.environ['KFP_ENDPOINT']
-SOURCE_CHANGE = os.environ['SOURCE_CHANGE']
+# TODO change
+SOURCE_CHANGE = os.environ.get('SOURCE_CHANGE', 'sdk')
 CLIENT_MAP = {
     'v1': kfp_v1.Client(KFP_ENDPOINT),
     'v2': client.Client(KFP_ENDPOINT)
@@ -105,21 +107,19 @@ def collect_pipeline_func(
                 f'Pipeline function or component "{function_name}" not found in module {filename}.'
             )
 
-        return getattr(module, function_name)
+        pipeline = getattr(module, function_name)
+        # pop module in case reimporting from a module with the same name for a different pipeline test
+        sys.modules.pop(module.__name__)
+        return pipeline
 
     finally:
         del sys.path[0]
 
 
-def pop_module(path: str):
-    # pop module in case reimporting from a module with the same name for a different pipeline test
-    module = os.path.splitext(os.path.split(path)[1])[0]
-    sys.modules.pop(module)
-
-
 def run(test_case: TestCase) -> Tuple[str, client.client.RunPipelineResult]:
     full_path = os.path.join(PROJECT_ROOT, test_case.path)
     pipeline_func = collect_pipeline_func(full_path, test_case.pipeline)
+    # TODO: remove
     enable_caching = True
     # enable_caching = SOURCE_CHANGE.lower() == 'sdk'
     client = CLIENT_MAP[test_case.version]
@@ -129,7 +129,6 @@ def run(test_case: TestCase) -> Tuple[str, client.client.RunPipelineResult]:
     print(
         f'\nRunning {test_case.version} pipeline {test_case.pipeline} from {test_case.path}:\n\t{run_url}'
     )
-    pop_module(test_case.path)
     return run_url, run_result
 
 
@@ -143,7 +142,9 @@ def compile(test_case: TestCase) -> None:
         compiler.compile(pipeline_func, package_path=output_path)
 
 
-def wait(run_result: client.client.RunPipelineResult) -> kfp_server_api.ApiRun:
+def wait(
+        run_result: client.client.RunPipelineResult
+) -> kfp_server_api.ApiRunDetail:
     total_retries = 0
     backoff_timeline = [5, 30, 60]
     max_retries = len(backoff_timeline)
@@ -170,9 +171,22 @@ def wait(run_result: client.client.RunPipelineResult) -> kfp_server_api.ApiRun:
     return inner_wait(run_result)
 
 
+def get_verification_func(test_case: TestCase) -> Callable:
+    dirname, filename = os.path.split(test_case.path)
+    sys.path.insert(0, os.path.join(dirname, 'verification'))
+    try:
+        module_name = os.path.splitext(f'verify_{filename}')[0]
+        module = __import__(module_name, fromlist=['verify'])
+        if not hasattr(module, 'verify'):
+            raise ValueError('Function "verify" not found.')
+        sys.modules.pop(module.__name__)
+        return module.verify
+    finally:
+        del sys.path[0]
+
+
 config = get_config()
 test_cases = transform_config_to_test_case_parameters(config)
-# test_cases = test_cases
 
 
 @pytest.mark.asyncio_cooperative
@@ -181,12 +195,19 @@ async def test(test_case: TestCase) -> None:
     """Asynchronously runs all samples and test that they succeed."""
 
     event_loop = asyncio.get_running_loop()
+    print(test_case)
     if test_case.execute:
         run_url, run_result = run(test_case)
-        api_run = await event_loop.run_in_executor(None, wait, run_result)
-        assert api_run.run.status == (
-            'Failed' if test_case.expect_failure else 'Succeeded'
-        ), f'Pipeline {test_case.path}-{test_case.pipeline} ended with incorrect status: {api_run.run.status}. More info: {run_url}.'
+        api_run_detail = await event_loop.run_in_executor(
+            None, wait, run_result)
+        verify_func = get_verification_func(test_case)
+        # verify_func(api_run_detail)
+        tasks = mlmd_client.MlmdClient().get_taskss(api_run_detail.run.id)
+        print(tasks)
+
+        # assert api_run.run.status == (
+        #     'Failed' if test_case.expect_failure else 'Succeeded'
+        # ), f'Pipeline {test_case.path}-{test_case.pipeline} ended with incorrect status: {api_run.run.status}. More info: {run_url}.'
 
     else:
         compile(test_case)

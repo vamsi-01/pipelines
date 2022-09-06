@@ -31,7 +31,8 @@ do
    export "$KEY"="$VALUE"
 done
 
-export KFP_ENDPOINT="https://$(curl https://raw.githubusercontent.com/kubeflow/testing/master/test-infra/kfp/endpoint)"
+# export KFP_ENDPOINT="https://$(curl https://raw.githubusercontent.com/kubeflow/testing/master/test-infra/kfp/endpoint)"
+export KFP_ENDPOINT="https://2070ec0fab9cb1d7-dot-us-central1.pipelines.googleusercontent.com"
 
 if [ "$SOURCE_CHANGE" = sdk ]; then
   echo "Installing kfp from current commit..."
@@ -44,7 +45,7 @@ else
 fi
 
 if [ "$SOURCE_CHANGE" = backend ]; then
-  echo "Not sure what to do about this..."
+  echo "backend"
 else
   echo "Using existing endpoint ${KFP_ENDPOINT}"
 fi
