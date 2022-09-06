@@ -145,9 +145,9 @@ v2:
     pipeline: fail_pipeline
     expect_failure: true
   - path: samples/core/pipeline_container_no_input.py
-    name: pipeline_container_no_input
+    pipeline: pipeline_container_no_input
   - path: samples/core/two_step_pipeline_containerized.py
-    name: two_step_pipeline_containerized
+    pipeline: two_step_pipeline_containerized
   # TODO: uncomment when BE adds support (expected: 2.0.0beta.3 release)
   # - path: samples/core/placeholder_concat.py
   #   pipeline: pipeline_with_concat_placeholder
