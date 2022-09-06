@@ -96,6 +96,7 @@ def v2_sample_test(
         run_sample_op.container.image = build_samples_image_op.outputs['digest']
         run_sample_op.set_display_name(f'sample_{sample.name}')
         run_sample_op.set_retry(1, policy='Always')
+        run_sample_op.set_timeout(40 * _MINUTE)
 
         run_sample_op.container.add_env_variable(
             k8s_client.V1EnvVar(
@@ -107,7 +108,7 @@ def main(
         gcr_root: str,
         gcs_root: str,
         experiment: str = 'v2_sample_test',
-        timeout_mins: float = 40,
+        timeout_mins: float = 60,
         kfp_package_path:
     str = 'git+https://github.com/kubeflow/pipelines#egg=kfp&subdirectory=sdk/python',
         samples_config: str = os.path.join('samples', 'test', 'config.yaml'),

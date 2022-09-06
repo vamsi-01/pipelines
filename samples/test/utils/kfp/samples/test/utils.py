@@ -287,7 +287,7 @@ def _run_test(callback):
             enable_caching: bool = False,
             arguments: Optional[dict] = None,
             dry_run: bool = False,  # just compile the pipeline without running it
-            timeout: float = 20 * MINUTE,
+            timeout: float = 40 * MINUTE,
         ) -> kfp_server_api.ApiRunDetail:
             arguments = arguments or {}
 
