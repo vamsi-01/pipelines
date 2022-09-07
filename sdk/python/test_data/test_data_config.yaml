@@ -72,8 +72,6 @@ pipelines:
       execute: true
     - module: component_with_optional_inputs
       execute: true
-    - module: pipeline_with_gcpc_types
-      execute: false
     - module: pipeline_with_placeholders
       execute: true
     - module: pipeline_with_task_final_status
