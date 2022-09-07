@@ -101,6 +101,8 @@ pipelines:
       execute: false
     - module: pipeline_as_exit_task
       execute: false
+    - module: pipeline_with_custom_artifact_type
+      execute: false
 components:
   test_data_dir: sdk/python/test_data/components
   read: true
