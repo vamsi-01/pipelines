@@ -1,0 +1,194 @@
+components:
+  comp-make-dataset:
+    executorLabel: exec-make-dataset
+    inputDefinitions:
+      parameters:
+        text:
+          parameterType: STRING
+    outputDefinitions:
+      artifacts:
+        dataset:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+  comp-outer-make-dataset:
+    dag:
+      outputs:
+        artifacts:
+          Output:
+            artifactSelectors:
+            - outputArtifactKey: dataset
+              producerSubtask: make-dataset
+      tasks:
+        make-dataset:
+          cachingOptions:
+            enableCache: true
+          componentRef:
+            name: comp-make-dataset
+          inputs:
+            parameters:
+              text:
+                componentInputParameter: text
+          taskInfo:
+            name: make-dataset
+    inputDefinitions:
+      parameters:
+        text:
+          parameterType: STRING
+    outputDefinitions:
+      artifacts:
+        Output:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+  comp-outer-train-model:
+    dag:
+      outputs:
+        artifacts:
+          model:
+            artifactSelectors:
+            - outputArtifactKey: model
+              producerSubtask: train-model
+      tasks:
+        train-model:
+          cachingOptions:
+            enableCache: true
+          componentRef:
+            name: comp-train-model
+          inputs:
+            artifacts:
+              dataset:
+                componentInputArtifact: dataset
+            parameters:
+              epochs:
+                componentInputParameter: epochs
+          taskInfo:
+            name: train-model
+    inputDefinitions:
+      artifacts:
+        dataset:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+      parameters:
+        epochs:
+          parameterType: NUMBER_INTEGER
+    outputDefinitions:
+      artifacts:
+        model:
+          artifactType:
+            schemaTitle: system.Model
+            schemaVersion: 0.0.1
+  comp-train-model:
+    executorLabel: exec-train-model
+    inputDefinitions:
+      artifacts:
+        dataset:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+      parameters:
+        epochs:
+          parameterType: NUMBER_INTEGER
+    outputDefinitions:
+      artifacts:
+        model:
+          artifactType:
+            schemaTitle: system.Model
+            schemaVersion: 0.0.1
+deploymentSpec:
+  executors:
+    exec-make-dataset:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - make_dataset
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==2.0.0-beta.4'\
+          \ && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          python3 -m kfp.components.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef make_dataset(text: str, dataset: Output[Dataset]):\n    with\
+          \ open(dataset.path, 'w') as f:\n        f.write(text)\n\n"
+        image: python:3.7
+    exec-train-model:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - train_model
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==2.0.0-beta.4'\
+          \ && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          python3 -m kfp.components.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef train_model(epochs: int, dataset: Input[Dataset], model: Output[Model]):\n\
+          \    with open(dataset.path) as f:\n        data = f.read()\n        # do\
+          \ training and evaluation\n        # save model to path\n        f.write('dummy_model')\n\
+          \n"
+        image: python:3.7
+pipelineInfo:
+  name: training-workflow
+root:
+  dag:
+    tasks:
+      outer-make-dataset:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-outer-make-dataset
+        inputs:
+          parameters:
+            text:
+              runtimeValue:
+                constant: my_dataset
+        taskInfo:
+          name: outer-make-dataset
+      outer-train-model:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-outer-train-model
+        dependentTasks:
+        - outer-make-dataset
+        inputs:
+          artifacts:
+            dataset:
+              taskOutputArtifact:
+                outputArtifactKey: Output
+                producerTask: outer-make-dataset
+          parameters:
+            epochs:
+              runtimeValue:
+                constant: 10.0
+        taskInfo:
+          name: outer-train-model
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.0.0-beta.4
