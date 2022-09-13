@@ -256,7 +256,7 @@ def get_short_type_name(type_name: str) -> str:
         return type_name
 
 
-def is_artifact(
+def is_artifact_class(
         artifact_class_or_instance: Union[type,
                                           artifact_types.Artifact]) -> bool:
     # we do not yet support non-pre-registered custom artifact types with instance_schema attribute

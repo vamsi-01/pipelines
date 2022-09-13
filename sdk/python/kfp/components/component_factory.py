@@ -139,7 +139,7 @@ def _annotation_to_type_struct(annotation):
         type_struct = type_utils.get_canonical_type_name_for_type(annotation)
         if type_struct:
             return type_struct
-        elif type_annotations.is_artifact(annotation):
+        elif type_annotations.is_artifact_class(annotation):
             schema_title = annotation.schema_title
         else:
             schema_title = str(annotation.__name__)
@@ -199,7 +199,7 @@ def extract_component_interface(
             # parameter_type is type_annotations.Artifact or one of its subclasses.
             parameter_type = type_annotations.get_io_artifact_class(
                 parameter_type)
-            if not type_annotations.is_artifact(parameter_type):
+            if not type_annotations.is_artifact_class(parameter_type):
                 raise ValueError(
                     f'Input[T] and Output[T] are only supported when T is an artifact . Found `{io_name} with type {parameter_type}`'
                 )
@@ -230,7 +230,7 @@ def extract_component_interface(
         ]:
             io_name = _maybe_make_unique(io_name, output_names)
             output_names.add(io_name)
-            if type_annotations.is_artifact(parameter_type):
+            if type_annotations.is_artifact_class(parameter_type):
                 schema_version = parameter_type.schema_version
             else:
                 schema_version = None
@@ -240,7 +240,7 @@ def extract_component_interface(
         else:
             io_name = _maybe_make_unique(io_name, input_names)
             input_names.add(io_name)
-            if type_annotations.is_artifact(parameter_type):
+            if type_annotations.is_artifact_class(parameter_type):
                 schema_version = parameter_type.schema_version
             else:
                 schema_version = None
