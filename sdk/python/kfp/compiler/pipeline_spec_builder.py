@@ -297,10 +297,16 @@ def build_task_spec_for_task(
                 input_name].runtime_value.constant.string_value = input_value
 
         elif isinstance(input_value, (str, int, float, bool, dict, list)):
+            # need to register the task's outputs
+            # need to write to those outputs
+            if is_aggregated_for_loop_output(input_value):
+                channel = input_value[0]
+                parent_dag = ...
 
-            pipeline_task_spec.inputs.parameters[
-                input_name].runtime_value.constant.CopyFrom(
-                    to_protobuf_value(input_value))
+            else:
+                pipeline_task_spec.inputs.parameters[
+                    input_name].runtime_value.constant.CopyFrom(
+                        to_protobuf_value(input_value))
 
         else:
             raise ValueError(
@@ -309,6 +315,19 @@ def build_task_spec_for_task(
                 f'Got {input_value} of type {type(input_value)}.')
 
     return pipeline_task_spec
+
+
+def is_aggregated_for_loop_output(input_value: Any) -> bool:
+    is_list_of_param_channels = isinstance(input_value, list) and isinstance(
+        input_value[0], pipeline_channel.PipelineParameterChannel)
+    if not is_list_of_param_channels:
+        return False
+    # todo check is from a for-loop group
+    all_from_same_task = all(
+        inp.task_name == input_value[0].task_name for inp in input_value)
+    if not all_from_same_task:
+        raise TypeError('Got aggregated parallel for inputs from ')
+    return True
 
 
 def build_component_spec_for_exit_task(
@@ -1624,3 +1643,12 @@ def write_pipeline_spec_to_file(pipeline_spec: pipeline_spec_pb2.PipelineSpec,
     else:
         raise ValueError(
             f'The output path {package_path} should end with ".yaml".')
+
+
+@dsl.pipeline
+def my_pipeline():
+    outputs = [
+        my_comp(text=identity(string=item).output, integer=10).output
+        for item in dsl.ParallelFor(['a', 'b'])
+    ]
+    contains(string='a', items=outputs)

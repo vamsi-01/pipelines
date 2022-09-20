@@ -429,12 +429,12 @@ def get_dependencies(
 
             # a task cannot depend on a task created in a for loop group since individual PipelineTask variables are reassigned after each loop iteration
             dependent_group = group_name_to_group.get(upstream_groups[0], None)
-            if isinstance(dependent_group,
-                          (tasks_group.ParallelFor, tasks_group.Condition,
-                           tasks_group.ExitHandler)):
-                raise RuntimeError(
-                    f'Task {task.name} cannot dependent on any task inside'
-                    f' the group: {upstream_groups[0]}.')
+            # if isinstance(dependent_group,
+            #               (tasks_group.ParallelFor, tasks_group.Condition,
+            #                tasks_group.ExitHandler)):
+            #     raise RuntimeError(
+            #         f'Task {task.name} cannot dependent on any task inside'
+            #         f' the group: {upstream_groups[0]}.')
 
             dependencies[downstream_groups[0]].add(upstream_groups[0])
 
