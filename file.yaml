@@ -1,0 +1,8 @@
+parameters:
+  key:
+    valueFromOneof:
+      parameterSelectors:
+      - outputParameterKey: '1'
+        producerSubtask: hi
+      - outputParameterKey: '2'
+        producerSubtask: bye

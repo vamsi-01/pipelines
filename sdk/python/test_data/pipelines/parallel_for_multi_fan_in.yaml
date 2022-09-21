@@ -25,13 +25,25 @@ components:
                 componentInputParameter: pipelinechannel--loop-item-param-1
           taskInfo:
             name: identity
+        identity-2:
+          cachingOptions:
+            enableCache: true
+          componentRef:
+            name: comp-identity-2
+          inputs:
+            parameters:
+              string:
+                componentInputParameter: pipelinechannel--loop-item-param-1
+          taskInfo:
+            name: identity-2
       # 2) wire up the output from the task in the loop
       outputs:
         parameters:
           pipelinechannel--loop-output-1:
-            valueFromParameter:
-              producerSubtask: identity
-              outputParameterKey: Output
+            valueFromOneof:
+              parameterSelectors:
+                - outputParameterKey: Output
+                  producerSubtask: identity
     inputDefinitions:
       parameters:
         pipelinechannel--loop-item-param-1:
@@ -43,6 +55,16 @@ components:
           parameterType: LIST
   comp-identity:
     executorLabel: exec-identity
+    inputDefinitions:
+      parameters:
+        string:
+          parameterType: STRING
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: STRING
+  comp-identity-2:
+    executorLabel: exec-identity-2
     inputDefinitions:
       parameters:
         string:
@@ -77,10 +99,37 @@ deploymentSpec:
 
             '
           - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-            \ *\n\ndef contains(string: str, items: List[str]) -> bool:\n    print(items)\n    print(type(items))\n    return\
+            \ *\n\ndef contains(string: str, items: List[str]) -> bool:\n    return\
             \ string in items\n\n"
         image: python:3.7
     exec-identity:
+      container:
+        args:
+          - --executor_input
+          - "{{$}}"
+          - --function_to_execute
+          - identity
+        command:
+          - sh
+          - -c
+          - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+            \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+            \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==2.0.0-beta.4'\
+            \ && \"$0\" \"$@\"\n"
+          - sh
+          - -ec
+          - 'program_path=$(mktemp -d)
+
+            printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+            python3 -m kfp.components.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+            '
+          - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+            \ *\n\ndef identity(string: str) -> str:\n    print(string)\n    return\
+            \ string\n\n"
+        image: python:3.7
+    exec-identity-2:
       container:
         args:
           - --executor_input

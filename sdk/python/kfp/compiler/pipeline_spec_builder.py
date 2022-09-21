@@ -1643,12 +1643,3 @@ def write_pipeline_spec_to_file(pipeline_spec: pipeline_spec_pb2.PipelineSpec,
     else:
         raise ValueError(
             f'The output path {package_path} should end with ".yaml".')
-
-
-@dsl.pipeline
-def my_pipeline():
-    outputs = [
-        my_comp(text=identity(string=item).output, integer=10).output
-        for item in dsl.ParallelFor(['a', 'b'])
-    ]
-    contains(string='a', items=outputs)

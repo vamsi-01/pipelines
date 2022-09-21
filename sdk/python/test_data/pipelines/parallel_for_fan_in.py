@@ -30,17 +30,14 @@ def contains(string: str, items: List[str]) -> bool:
 
 @dsl.pipeline
 def my_pipeline():
-    outputs = []
+    # outputs = []
     with dsl.ParallelFor(['a', 'b']) as item:
-        result = identity(string=item)
-        outputs.append(result.output)
-    contains(string='a', items=outputs)
+        result1 = identity(string=item)
+        result2 = identity(string=item)
+        # outputs.append(result1.output)
+        # outputs.append(result2.output)
+    contains(string='a', items=['c', 'd'])
 
-
-# if __name__ == '__main__':
-#     compiler.Compiler().compile(
-#         pipeline_func=my_pipeline,
-#         package_path=__file__.replace('.py', '.yaml'))
 
 if __name__ == '__main__':
     import datetime
@@ -50,7 +47,7 @@ if __name__ == '__main__':
     from google.cloud import aiplatform
 
     warnings.filterwarnings('ignore')
-    ir_file = __file__.replace('.py', '.yaml')
+    ir_file = '/Users/cjmccarthy/workspace/pipelines/sdk/python/test_data/pipelines/parallel_for_multi_fan_in.yaml'
     # compiler.Compiler().compile(pipeline_func=my_pipeline, package_path=ir_file)
     pipeline_name = __file__.split('/')[-1].replace('_', '-').replace('.py', '')
     display_name = datetime.datetime.now().strftime('%m-%d-%Y-%H-%M-%S')
