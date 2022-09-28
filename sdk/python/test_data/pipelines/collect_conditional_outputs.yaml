@@ -1,0 +1,250 @@
+components:
+  comp-condition-1:
+    dag:
+      tasks:
+        process-positive:
+          cachingOptions:
+            enableCache: true
+          componentRef:
+            name: comp-process-positive
+          inputs:
+            parameters:
+              num:
+                componentInputParameter: pipelinechannel--num
+          taskInfo:
+            name: process-positive
+      # 2) wire up the output from the task in the loop
+      outputs:
+        parameters:
+          pipeline-channel--positive-condition-output-1:
+            valueFromParameter:
+              producerSubtask: process-positive
+              outputParameterKey: Output
+    inputDefinitions:
+      parameters:
+        pipelinechannel--num:
+          parameterType: NUMBER_INTEGER
+    # 1) create a loop outputDefinitions entry for each aggregation that is done
+    outputDefinitions:
+      parameters:
+        pipeline-channel--positive-condition-output-1:
+          parameterType: NUMBER_INTEGER
+  comp-condition-2:
+    dag:
+      tasks:
+        process-negative:
+          cachingOptions:
+            enableCache: true
+          componentRef:
+            name: comp-process-negative
+          inputs:
+            parameters:
+              num:
+                componentInputParameter: pipelinechannel--num
+          taskInfo:
+            name: process-negative
+      # 2) wire up the output from the task in the loop
+      outputs:
+        parameters:
+          pipeline-channel--negative-condition-output-1:
+            valueFromParameter:
+              producerSubtask: process-negative
+              outputParameterKey: Output
+    inputDefinitions:
+      parameters:
+        pipelinechannel--num:
+          parameterType: NUMBER_INTEGER
+    # 1) create a loop outputDefinitions entry for each aggregation that is done
+    outputDefinitions:
+      parameters:
+        pipeline-channel--negative-condition-output-1:
+          parameterType: NUMBER_INTEGER
+  comp-double:
+    executorLabel: exec-double
+    inputDefinitions:
+      parameters:
+        num:
+          parameterType: NUMBER_INTEGER
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: NUMBER_INTEGER
+  comp-inner:
+    dag:
+      outputs:
+        parameters:
+          Output:
+            valueFromOneof:
+              parameterSelectors:
+                - outputParameterKey: pipeline-channel--positive-condition-output-1
+                  producerSubtask: condition-1
+                - outputParameterKey: pipeline-channel--negative-condition-output-1
+                  producerSubtask: condition-2
+      tasks:
+        condition-1:
+          componentRef:
+            name: comp-condition-1
+          inputs:
+            parameters:
+              pipelinechannel--num:
+                componentInputParameter: num
+          taskInfo:
+            name: positive-condition
+          triggerPolicy:
+            condition: int(inputs.parameter_values['pipelinechannel--num']) > 0
+        condition-2:
+          componentRef:
+            name: comp-condition-2
+          inputs:
+            parameters:
+              pipelinechannel--num:
+                componentInputParameter: num
+          taskInfo:
+            name: negative-condition
+          triggerPolicy:
+            condition: int(inputs.parameter_values['pipelinechannel--num']) < 0
+    inputDefinitions:
+      parameters:
+        num:
+          parameterType: NUMBER_INTEGER
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: NUMBER_INTEGER
+  comp-process-negative:
+    executorLabel: exec-process-negative
+    inputDefinitions:
+      parameters:
+        num:
+          parameterType: NUMBER_INTEGER
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: NUMBER_INTEGER
+  comp-process-positive:
+    executorLabel: exec-process-positive
+    inputDefinitions:
+      parameters:
+        num:
+          parameterType: NUMBER_INTEGER
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: NUMBER_INTEGER
+deploymentSpec:
+  executors:
+    exec-double:
+      container:
+        args:
+          - --executor_input
+          - "{{$}}"
+          - --function_to_execute
+          - double
+        command:
+          - sh
+          - -c
+          - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+            \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+            \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==2.0.0-beta.4'\
+            \ && \"$0\" \"$@\"\n"
+          - sh
+          - -ec
+          - 'program_path=$(mktemp -d)
+
+            printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+            python3 -m kfp.components.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+            '
+          - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+            \ *\n\ndef double(num: int) -> int:\n    return 2 * num\n\n"
+        image: python:3.7
+    exec-process-negative:
+      container:
+        args:
+          - --executor_input
+          - "{{$}}"
+          - --function_to_execute
+          - process_negative
+        command:
+          - sh
+          - -c
+          - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+            \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+            \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==2.0.0-beta.4'\
+            \ && \"$0\" \"$@\"\n"
+          - sh
+          - -ec
+          - 'program_path=$(mktemp -d)
+
+            printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+            python3 -m kfp.components.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+            '
+          - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+            \ *\n\ndef process_negative(num: int) -> int:\n    return num\n\n"
+        image: python:3.7
+    exec-process-positive:
+      container:
+        args:
+          - --executor_input
+          - "{{$}}"
+          - --function_to_execute
+          - process_positive
+        command:
+          - sh
+          - -c
+          - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+            \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+            \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==2.0.0-beta.4'\
+            \ && \"$0\" \"$@\"\n"
+          - sh
+          - -ec
+          - 'program_path=$(mktemp -d)
+
+            printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+            python3 -m kfp.components.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+            '
+          - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+            \ *\n\ndef process_positive(num: int) -> int:\n    return num\n\n"
+        image: python:3.7
+pipelineInfo:
+  name: my-pipeline
+root:
+  dag:
+    tasks:
+      double:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-double
+        dependentTasks:
+          - inner
+        inputs:
+          parameters:
+            num:
+              taskOutputParameter:
+                outputParameterKey: Output
+                producerTask: inner
+        taskInfo:
+          name: double
+      inner:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-inner
+        inputs:
+          parameters:
+            num:
+              componentInputParameter: num
+        taskInfo:
+          name: inner
+  inputDefinitions:
+    parameters:
+      num:
+        parameterType: NUMBER_INTEGER
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.0.0-beta.4
