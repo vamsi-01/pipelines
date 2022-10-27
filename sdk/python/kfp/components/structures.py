@@ -252,10 +252,10 @@ class ContainerSpec(base_model.BaseModel):
     image: str
     """Container image."""
 
-    command: Optional[List[placeholders.CommandLineElement]] = None
+    command: Optional[List[str]] = None
     """Container entrypoint."""
 
-    args: Optional[List[placeholders.CommandLineElement]] = None
+    args: Optional[List[str]] = None
     """Arguments to the container entrypoint."""
 
 
@@ -264,13 +264,13 @@ class ContainerSpecImplementation(base_model.BaseModel):
     image: str
     """Container image."""
 
-    command: Optional[List[placeholders.CommandLineElement]] = None
+    command: Optional[List[str]] = None
     """Container entrypoint."""
 
-    args: Optional[List[placeholders.CommandLineElement]] = None
+    args: Optional[List[str]] = None
     """Arguments to the container entrypoint."""
 
-    env: Optional[Mapping[str, placeholders.CommandLineElement]] = None
+    env: Optional[Mapping[str, str]] = None
     """Environment variables to be passed to the container."""
 
     resources: Optional[ResourceSpec] = None
@@ -313,22 +313,22 @@ class ContainerSpecImplementation(base_model.BaseModel):
         Returns:
             ContainerSpecImplementation: The ContainerSpecImplementation instance.
         """
-        args = container_dict.get('args')
-        if args is not None:
-            args = [
-                placeholders.maybe_convert_placeholder_string_to_placeholder(
-                    arg) for arg in args
-            ]
-        command = container_dict.get('command')
-        if command is not None:
-            command = [
-                placeholders.maybe_convert_placeholder_string_to_placeholder(c)
-                for c in command
-            ]
+        # args = container_dict.get('args')
+        # if args is not None:
+        #     args = [
+        #         placeholders.maybe_convert_placeholder_string_to_placeholder(
+        #             arg) for arg in args
+        #     ]
+        # command = container_dict.get('command')
+        # if command is not None:
+        #     command = [
+        #         placeholders.maybe_convert_placeholder_string_to_placeholder(c)
+        #         for c in command
+        #     ]
         return ContainerSpecImplementation(
             image=container_dict['image'],
-            command=command,
-            args=args,
+            command=container_dict['command'],
+            args=container_dict['args'],
             env=None,  # can only be set on tasks
             resources=None)  # can only be set on tasks
 
@@ -467,9 +467,9 @@ class Implementation(base_model.BaseModel):
             return Implementation(graph=pipeline_spec)
 
 
-def _check_valid_placeholder_reference(
-        valid_inputs: List[str], valid_outputs: List[str],
-        placeholder: placeholders.CommandLineElement) -> None:
+def _check_valid_placeholder_reference(valid_inputs: List[str],
+                                       valid_outputs: List[str],
+                                       placeholder: str) -> None:
     """Validates input/output placeholders refer to an existing input/output.
 
     Args:
@@ -571,10 +571,10 @@ class ComponentSpec(base_model.BaseModel):
         valid_outputs = [] if self.outputs is None else list(
             self.outputs.keys())
 
-        for arg in itertools.chain(
-            (self.implementation.container.command or []),
-            (self.implementation.container.args or [])):
-            _check_valid_placeholder_reference(valid_inputs, valid_outputs, arg)
+        # for arg in itertools.chain(
+        #     (self.implementation.container.command or []),
+        #     (self.implementation.container.args or [])):
+        #     _check_valid_placeholder_reference(valid_inputs, valid_outputs, arg)
 
     @classmethod
     def from_v1_component_spec(

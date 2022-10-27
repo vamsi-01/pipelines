@@ -12,257 +12,118 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Contains tests for kfp.components.placeholders."""
+from absl.testing import parameterized
+from kfp.components import placeholders
 
-# class TestExecutorInputPlaceholder(parameterized.TestCase):
 
-#     @parameterized.parameters([
-#         ('{{$}}', placeholders.ExecutorInputPlaceholder()),
-#     ])
-#     def test_to_from_placeholder(
-#             self, placeholder_string: str,
-#             placeholder_obj: placeholders.ExecutorInputPlaceholder):
-#         self.assertEqual(
-#             placeholders.ExecutorInputPlaceholder._from_placeholder_string(
-#                 placeholder_string), placeholder_obj)
-#         self.assertEqual(placeholder_obj._to_placeholder_string(),
-#                          placeholder_string)
+class TestExecutorInputPlaceholder(parameterized.TestCase):
 
-# class TestInputValuePlaceholder(parameterized.TestCase):
+    def test(self):
+        self.assertEqual('{{$}}', placeholders.ExecutorInputPlaceholder())
 
-#     @parameterized.parameters([
-#         ("{{$.inputs.parameters['input1']}}",
-#          placeholders.InputValuePlaceholder('input1')),
-#     ])
-#     def test_to_from_placeholder(
-#             self, placeholder_string: str,
-#             placeholder_obj: placeholders.InputValuePlaceholder):
-#         self.assertEqual(
-#             placeholders.InputValuePlaceholder._from_placeholder_string(
-#                 placeholder_string), placeholder_obj)
-#         self.assertEqual(placeholder_obj._to_placeholder_string(),
-#                          placeholder_string)
 
-#     @parameterized.parameters([
-#         ("{{$.inputs.parameters[''input1'']}}",
-#          placeholders.InputValuePlaceholder('input1')),
-#         ('{{$.inputs.parameters["input1"]}}',
-#          placeholders.InputValuePlaceholder('input1')),
-#     ])
-#     def test_from_placeholder_special_quote_case(
-#             self, placeholder_string: str,
-#             placeholder_obj: placeholders.InputValuePlaceholder):
-#         self.assertEqual(
-#             placeholders.InputValuePlaceholder._from_placeholder_string(
-#                 placeholder_string), placeholder_obj)
+class TestInputValuePlaceholder(parameterized.TestCase):
 
-# class TestInputPathPlaceholder(parameterized.TestCase):
+    def test(self):
+        self.assertEqual("{{$.inputs.parameters['input1']}}",
+                         placeholders.InputValuePlaceholder('input1'))
 
-#     @parameterized.parameters([
-#         ("{{$.inputs.artifacts['input1'].path}}",
-#          placeholders.InputPathPlaceholder('input1')),
-#     ])
-#     def test_to_from_placeholder(
-#             self, placeholder_string: str,
-#             placeholder_obj: placeholders.InputPathPlaceholder):
-#         self.assertEqual(
-#             placeholders.InputPathPlaceholder._from_placeholder_string(
-#                 placeholder_string), placeholder_obj)
-#         self.assertEqual(placeholder_obj._to_placeholder_string(),
-#                          placeholder_string)
 
-# class TestInputUriPlaceholder(parameterized.TestCase):
+class TestInputPathPlaceholder(parameterized.TestCase):
 
-#     @parameterized.parameters([
-#         ("{{$.inputs.artifacts['input1'].uri}}",
-#          placeholders.InputUriPlaceholder('input1')),
-#     ])
-#     def test_to_from_placeholder(
-#             self, placeholder_string: str,
-#             placeholder_obj: placeholders.InputUriPlaceholder):
-#         self.assertEqual(
-#             placeholders.InputUriPlaceholder._from_placeholder_string(
-#                 placeholder_string), placeholder_obj)
-#         self.assertEqual(placeholder_obj._to_placeholder_string(),
-#                          placeholder_string)
+    def test(self):
+        self.assertEqual("{{$.inputs.artifacts['input1'].path}}",
+                         placeholders.InputPathPlaceholder('input1'))
 
-# class TestInputMetadataPlaceholder(parameterized.TestCase):
 
-#     @parameterized.parameters([
-#         ("{{$.inputs.artifacts['input1'].metadata}}",
-#          placeholders.InputMetadataPlaceholder('input1')),
-#     ])
-#     def test_to_from_placeholder(
-#             self, placeholder_string: str,
-#             placeholder_obj: placeholders.InputMetadataPlaceholder):
-#         self.assertEqual(
-#             placeholders.InputMetadataPlaceholder._from_placeholder_string(
-#                 placeholder_string), placeholder_obj)
-#         self.assertEqual(placeholder_obj._to_placeholder_string(),
-#                          placeholder_string)
+class TestInputUriPlaceholder(parameterized.TestCase):
 
-# class TestOutputPathPlaceholder(parameterized.TestCase):
+    def test(self):
+        self.assertEqual("{{$.inputs.artifacts['input1'].uri}}",
+                         placeholders.InputUriPlaceholder('input1'))
 
-#     @parameterized.parameters([
-#         ("{{$.outputs.artifacts['output1'].path}}",
-#          placeholders.OutputPathPlaceholder('output1')),
-#     ])
-#     def test_to_from_placeholder(
-#             self, placeholder_string: str,
-#             placeholder_obj: placeholders.OutputPathPlaceholder):
-#         self.assertEqual(
-#             placeholders.OutputPathPlaceholder._from_placeholder_string(
-#                 placeholder_string), placeholder_obj)
-#         self.assertEqual(placeholder_obj._to_placeholder_string(),
-#                          placeholder_string)
 
-# class TestOutputParameterPlaceholder(parameterized.TestCase):
+class TestInputMetadataPlaceholder(parameterized.TestCase):
 
-#     @parameterized.parameters([
-#         ("{{$.outputs.parameters['output1'].output_file}}",
-#          placeholders.OutputParameterPlaceholder('output1')),
-#     ])
-#     def test_to_from_placeholder(
-#             self, placeholder_string: str,
-#             placeholder_obj: placeholders.OutputParameterPlaceholder):
-#         self.assertEqual(
-#             placeholders.OutputParameterPlaceholder._from_placeholder_string(
-#                 placeholder_string), placeholder_obj)
-#         self.assertEqual(placeholder_obj._to_placeholder_string(),
-#                          placeholder_string)
+    def test(self):
+        self.assertEqual("{{$.inputs.artifacts['input1'].metadata}}",
+                         placeholders.InputMetadataPlaceholder('input1'))
 
-# class TestOutputUriPlaceholder(parameterized.TestCase):
 
-#     @parameterized.parameters([
-#         ("{{$.outputs.artifacts['output1'].uri}}",
-#          placeholders.OutputUriPlaceholder('output1')),
-#     ])
-#     def test_to_from_placeholder(
-#             self, placeholder_string: str,
-#             placeholder_obj: placeholders.OutputUriPlaceholder):
-#         self.assertEqual(
-#             placeholders.OutputUriPlaceholder._from_placeholder_string(
-#                 placeholder_string), placeholder_obj)
-#         self.assertEqual(placeholder_obj._to_placeholder_string(),
-#                          placeholder_string)
+class TestOutputPathPlaceholder(parameterized.TestCase):
 
-# class TestOutputMetadataPlaceholder(parameterized.TestCase):
+    def test(self):
+        self.assertEqual("{{$.outputs.artifacts['output1'].path}}",
+                         placeholders.OutputPathPlaceholder('output1'))
 
-#     @parameterized.parameters([
-#         ("{{$.outputs.artifacts['output1'].metadata}}",
-#          placeholders.OutputMetadataPlaceholder('output1')),
-#     ])
-#     def test_to_from_placeholder(
-#             self, placeholder_string: str,
-#             placeholder_obj: placeholders.OutputMetadataPlaceholder):
-#         self.assertEqual(
-#             placeholders.OutputMetadataPlaceholder._from_placeholder_string(
-#                 placeholder_string), placeholder_obj)
-#         self.assertEqual(placeholder_obj._to_placeholder_string(),
-#                          placeholder_string)
 
-# class TestIfPresentPlaceholderStructure(parameterized.TestCase):
+class TestOutputParameterPlaceholder(parameterized.TestCase):
 
-#     def test_else_transform(self):
-#         obj = placeholders.IfPresentPlaceholder(
-#             then='then', input_name='input_name', else_=['something'])
-#         self.assertEqual(obj.else_, ['something'])
+    def test(self):
+        self.assertEqual("{{$.outputs.parameters['output1'].output_file}}",
+                         placeholders.OutputParameterPlaceholder('output1'))
 
-#         obj = placeholders.IfPresentPlaceholder(
-#             then='then', input_name='input_name', else_=[])
-#         self.assertEqual(obj.else_, None)
 
-#     @parameterized.parameters([
-#         ('{"IfPresent": {"InputName": "output1", "Then": "then", "Else": "something"}}',
-#          placeholders.IfPresentPlaceholder(
-#              input_name='output1', then='then', else_='something')),
-#         ('{"IfPresent": {"InputName": "output1", "Then": "then"}}',
-#          placeholders.IfPresentPlaceholder(input_name='output1', then='then')),
-#         ('{"IfPresent": {"InputName": "output1", "Then": "then"}}',
-#          placeholders.IfPresentPlaceholder('output1', 'then')),
-#         ('{"IfPresent": {"InputName": "output1", "Then": ["then"], "Else": ["something"]}}',
-#          placeholders.IfPresentPlaceholder(
-#              input_name='output1', then=['then'], else_=['something'])),
-#         ('{"IfPresent": {"InputName": "output1", "Then": ["then", {"IfPresent": {"InputName": "output1", "Then": ["then"], "Else": ["something"]}}], "Else": ["something"]}}',
-#          placeholders.IfPresentPlaceholder(
-#              input_name='output1',
-#              then=[
-#                  'then',
-#                  placeholders.IfPresentPlaceholder(
-#                      input_name='output1', then=['then'], else_=['something'])
-#              ],
-#              else_=['something'])),
-#     ])
-#     def test_to_from_placeholder(
-#             self, placeholder_string: str,
-#             placeholder_obj: placeholders.ConcatPlaceholder):
-#         self.assertEqual(
-#             placeholders.IfPresentPlaceholder._from_placeholder_string(
-#                 placeholder_string), placeholder_obj)
-#         self.assertEqual(placeholder_obj._to_placeholder_string(),
-#                          placeholder_string)
+class TestOutputUriPlaceholder(parameterized.TestCase):
 
-# class TestConcatPlaceholder(parameterized.TestCase):
+    def test(self):
+        self.assertEqual("{{$.outputs.artifacts['output1'].uri}}",
+                         placeholders.OutputUriPlaceholder('output1'))
 
-#     @parameterized.parameters([
-#         ('{"Concat": ["a", "b"]}', placeholders.ConcatPlaceholder(['a', 'b'])),
-#         ('{"Concat": ["a", {"Concat": ["b", "c"]}]}',
-#          placeholders.ConcatPlaceholder(
-#              ['a', placeholders.ConcatPlaceholder(['b', 'c'])])),
-#         ('{"Concat": ["a", {"Concat": ["b", {"IfPresent": {"InputName": "output1", "Then": ["then"], "Else": ["something"]}}]}]}',
-#          placeholders.ConcatPlaceholder([
-#              'a',
-#              placeholders.ConcatPlaceholder([
-#                  'b',
-#                  placeholders.IfPresentPlaceholder(
-#                      input_name='output1', then=['then'], else_=['something'])
-#              ])
-#          ]))
-#     ])
-#     def test_to_from_placeholder(
-#             self, placeholder_string: str,
-#             placeholder_obj: placeholders.ConcatPlaceholder):
-#         self.assertEqual(
-#             placeholders.ConcatPlaceholder._from_placeholder_string(
-#                 placeholder_string), placeholder_obj)
-#         self.assertEqual(placeholder_obj._to_placeholder_string(),
-#                          placeholder_string)
 
-#     @parameterized.parameters([
-#         "{{$.inputs.parameters[''input1'']}}+{{$.inputs.parameters[''input2'']}}",
-#         '{"Concat": ["a", "b"]}', '{"Concat": ["a", {"Concat": ["b", "c"]}]}',
-#         "{{$.inputs.parameters[''input1'']}}something{{$.inputs.parameters[''input2'']}}",
-#         "{{$.inputs.parameters[''input_prefix'']}}some value",
-#         "some value{{$.inputs.parameters[''input_suffix'']}}",
-#         "some value{{$.inputs.parameters[''input_infix'']}}some value"
-#     ])
-#     def test_is_match(self, placeholder: str):
-#         self.assertTrue(placeholders.ConcatPlaceholder._is_match(placeholder))
+class TestOutputMetadataPlaceholder(parameterized.TestCase):
 
-#     @parameterized.parameters([
-#         ("{{$.inputs.parameters[''input1'']}}something{{$.inputs.parameters[''input2'']}}",
-#          [
-#              "{{$.inputs.parameters[''input1'']}}", 'something',
-#              "{{$.inputs.parameters[''input2'']}}"
-#          ]),
-#         ("{{$.inputs.parameters[''input_prefix'']}}some value",
-#          ["{{$.inputs.parameters[''input_prefix'']}}", 'some value']),
-#         ("some value{{$.inputs.parameters[''input_suffix'']}}",
-#          ['some value', "{{$.inputs.parameters[''input_suffix'']}}"]),
-#         ("some value{{$.inputs.parameters[''input_infix'']}}some value", [
-#             'some value', "{{$.inputs.parameters[''input_infix'']}}",
-#             'some value'
-#         ]),
-#         ("{{$.inputs.parameters[''input1'']}}+{{$.inputs.parameters[''input2'']}}",
-#          [
-#              "{{$.inputs.parameters[''input1'']}}",
-#              "{{$.inputs.parameters[''input2'']}}"
-#          ])
-#     ])
-#     def test_split_cel_concat_string(self, placeholder: str,
-#                                      expected: List[str]):
-#         self.assertEqual(
-#             placeholders.ConcatPlaceholder._split_cel_concat_string(
-#                 placeholder), expected)
+    def test(self):
+        self.assertEqual("{{$.outputs.artifacts['output1'].metadata}}",
+                         placeholders.OutputMetadataPlaceholder('output1'))
+
+
+class TestIfPresentPlaceholderStructure(parameterized.TestCase):
+    # TODO test with nested
+
+    @parameterized.parameters([
+        (placeholders.IfPresentPlaceholder(
+            input_name='input1', then=['echo', 'hello']), {
+                'IfPresent': {
+                    'InputName': 'input1',
+                    'Then': ['echo', 'hello']
+                }
+            }),
+        (placeholders.IfPresentPlaceholder(
+            input_name='input1',
+            then=['echo', 'hello'],
+            else_=['echo', 'goodbye']), {
+                'IfPresent': {
+                    'InputName': 'input1',
+                    'Then': ['echo', 'hello'],
+                    'Else': ['echo', 'goodbye']
+                }
+            }),
+    ])
+    def test(self, actual: str, expected: str):
+        self.assertEqual(actual, expected)
+
+
+class TestConcatPlaceholder(parameterized.TestCase):
+    # TODO test with nested
+    @parameterized.parameters([(placeholders.ConcatPlaceholder(['a', 'b', 'c']),
+                                {
+                                    'Concat': ['a', 'b', 'c']
+                                })])
+    def test(self, actual: str, expected: str):
+        self.assertEqual(actual, expected)
+
+    def test2(self):
+        actual = placeholders.ConcatPlaceholder([
+            'my-prefix-',
+            placeholders.IfPresentPlaceholder(
+                input_name='input1',
+                then=[placeholders.ConcatPlaceholder(['infix-', 'input1'])])
+        ])
+        expected = """'{"Concat": ["my-prefix-", {"IfPresent": {"InputName": "input1", "Then":
+          [{"Concat": ["infix-", "{{$.inputs.parameters[''input1'']}}"]}]}}]}'"""
+        self.assertEqual(actual, expected)
+
 
 # class TestProcessCommandArg(unittest.TestCase):
 

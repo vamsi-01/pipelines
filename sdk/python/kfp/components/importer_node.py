@@ -84,8 +84,7 @@ def importer(
             component_inputs[unique_name] = structures.InputSpec(
                 type=d.channel_type)
 
-            return placeholders.InputValuePlaceholder(
-                input_name=unique_name)._to_placeholder_string()
+            return placeholders.InputValuePlaceholder(input_name=unique_name)
 
         elif isinstance(d, dict):
             # use this instead of list comprehension to ensure compiles are identical across Python versions
@@ -121,8 +120,7 @@ def importer(
         name='importer',
         implementation=structures.Implementation(
             importer=structures.ImporterSpec(
-                artifact_uri=placeholders.InputValuePlaceholder(
-                    URI_KEY)._to_placeholder_string(),
+                artifact_uri=placeholders.InputValuePlaceholder(URI_KEY),
                 schema_title=type_utils.create_bundled_artifact_type(
                     artifact_class.schema_title, artifact_class.schema_version),
                 schema_version=artifact_class.schema_version,
