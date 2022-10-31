@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Contains tests for kfp.components.placeholders."""
+import textwrap
 from typing import Any
 
 from absl.testing import parameterized
-from kfp import dsl
 from kfp import components
+from kfp import dsl
 from kfp.components import placeholders
-import textwrap
 
 
 class TestExecutorInputPlaceholder(parameterized.TestCase):
@@ -251,16 +251,6 @@ class TestContainerPlaceholdersTogether(parameterized.TestCase):
             placeholders.ConcatPlaceholder([
                 'b',
                 placeholders.IfPresentPlaceholder(
-                    input_name='output1', then=['then'], else_=['something'])
-            ])
-        ]),
-         '{"Concat": ["a", {"Concat": ["b", {"IfPresent": {"InputName": "output1", "Then": ["then"], "Else": ["something"]}}]}]}'
-        ),
-        (placeholders.ConcatPlaceholder([
-            'a',
-            placeholders.ConcatPlaceholder([
-                'b',
-                placeholders.IfPresentPlaceholder(
                     input_name='output1', then='then', else_='something')
             ])
         ]),
@@ -291,12 +281,45 @@ class TestContainerPlaceholdersTogether(parameterized.TestCase):
          """{"Concat": ["a", {"IfPresent": {"InputName": "output1", "Then": {"Concat": ["--", "flag"]}, "Else": "{{$.inputs.artifacts['input2'].path}}"}}, "c"]}"""
         ),
     ])
-    def test(self, placeholder_obj: placeholders.IfPresentPlaceholder,
-             placeholder: str):
-        self.assertEqual(placeholder_obj._to_string(), placeholder)
+    def test_valid(self, placeholder_obj: placeholders.IfPresentPlaceholder,
+                   placeholder: str):
+        self.assertEqual(placeholder_obj.to_string(), placeholder)
 
-    def test_only_single_element_concat_inside_if_present(self):
-        ...
+    def test_only_single_element_ifpresent_inside_concat_outer(self):
+        with self.assertRaises(ValueError):
+            placeholders.ConcatPlaceholder([
+                'b',
+                placeholders.IfPresentPlaceholder(
+                    input_name='output1', then=['then'], else_=['something'])
+            ])
+
+    def test_only_single_element_ifpresent_inside_concat_recursive(self):
+        with self.assertRaises(ValueError):
+            placeholders.ConcatPlaceholder([
+                'a',
+                placeholders.ConcatPlaceholder([
+                    'b',
+                    placeholders.IfPresentPlaceholder(
+                        input_name='output1',
+                        then=['then'],
+                        else_=['something'])
+                ])
+            ])
+
+        with self.assertRaises(ValueError):
+            placeholders.ConcatPlaceholder([
+                'a',
+                placeholders.ConcatPlaceholder([
+                    'b',
+                    placeholders.IfPresentPlaceholder(
+                        input_name='output1',
+                        then=placeholders.ConcatPlaceholder([
+                            placeholders.IfPresentPlaceholder(
+                                input_name='a', then=['b'])
+                        ]),
+                        else_='something')
+                ])
+            ])
 
 
 class TestConvertCommandLineElementToStringOrStruct(parameterized.TestCase):
