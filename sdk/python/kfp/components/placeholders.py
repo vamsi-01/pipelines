@@ -338,17 +338,31 @@ def maybe_convert_v1_yaml_placeholder_to_v2_placeholder(
         if_ = arg['if']
         input_name = utils.sanitize_input_name(if_['cond']['isPresent'])
         then_ = if_['then']
-        else_ = if_.get('else', [])
-        return IfPresentPlaceholder(
-            input_name=input_name,
-            then=[
-                maybe_convert_v1_yaml_placeholder_to_v2_placeholder(
-                    val, component_dict=component_dict) for val in then_
-            ],
-            else_=[
-                maybe_convert_v1_yaml_placeholder_to_v2_placeholder(
-                    val, component_dict=component_dict) for val in else_
-            ])
+        else_ = if_.get('else')
+        if else_ is not None and isinstance(then_, list) != isinstance(
+                else_, list):
+            raise ValueError(
+                "'then' and 'else_' arguments to if-present placeholder must be consistent: both either list of strings or placeholders or single string or placeholder. Got mixed usage of list and single element."
+            )
+
+        if isinstance(then_, list):
+            return IfPresentPlaceholder(
+                input_name=input_name,
+                then=[
+                    maybe_convert_v1_yaml_placeholder_to_v2_placeholder(
+                        val, component_dict=component_dict) for val in then_
+                ],
+                else_=[
+                    maybe_convert_v1_yaml_placeholder_to_v2_placeholder(
+                        val, component_dict=component_dict) for val in else_
+                ] if else_ else None)
+        else:
+            return IfPresentPlaceholder(
+                input_name=input_name,
+                then=maybe_convert_v1_yaml_placeholder_to_v2_placeholder(
+                    then_, component_dict=component_dict),
+                else_=maybe_convert_v1_yaml_placeholder_to_v2_placeholder(
+                    else_ or None, component_dict=component_dict))
 
     elif 'concat' in arg:
 
