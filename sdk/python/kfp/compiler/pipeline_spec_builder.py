@@ -57,7 +57,8 @@ def _additional_input_name_for_pipeline_channel(
         channel_or_name)
 
 
-def to_protobuf_value(value: type_utils.PARAMETER_TYPES) -> struct_pb2.Value:
+def to_protobuf_value(
+        value: Union[type_utils.PARAMETER_TYPES, None]) -> struct_pb2.Value:
     """Creates a google.protobuf.struct_pb2.Value message out of a provide
     value.
 
@@ -70,7 +71,9 @@ def to_protobuf_value(value: type_utils.PARAMETER_TYPES) -> struct_pb2.Value:
     Raises:
         ValueError if the given value is not one of the parameter types.
     """
-    if isinstance(value, str):
+    if value is None:
+        return struct_pb2.Value(null_value=None)
+    elif isinstance(value, str):
         return struct_pb2.Value(string_value=value)
     elif isinstance(value, (int, float)):
         return struct_pb2.Value(number_value=value)
@@ -86,7 +89,7 @@ def to_protobuf_value(value: type_utils.PARAMETER_TYPES) -> struct_pb2.Value:
                 values=[to_protobuf_value(v) for v in value]))
     else:
         raise ValueError('Value must be one of the following types: '
-                         'str, int, float, bool, dict, and list. Got: '
+                         'None, str, int, float, bool, dict, and list. Got: '
                          f'"{value}" of type "{type(value)}".')
 
 
@@ -351,6 +354,7 @@ def build_component_spec_for_task(
                 input_name].parameter_type = pipeline_spec_pb2.ParameterType.STRUCT
             continue
 
+        # TODO(cjmccarthy)
         # skip inputs not present, as a workaround to support optional inputs.
         if input_name not in task.inputs and input_spec.default is None:
             continue
@@ -610,7 +614,6 @@ def build_component_spec_for_group(
     component_spec = pipeline_spec_pb2.ComponentSpec()
 
     for channel in pipeline_channels:
-
         input_name = (
             channel.name if is_root_group else
             _additional_input_name_for_pipeline_channel(channel))
@@ -621,6 +624,7 @@ def build_component_spec_for_group(
                     type_utils.bundled_artifact_to_artifact_proto(
                         channel.channel_type))
         else:
+            print(channel.value)
             # channel is one of PipelineParameterChannel, LoopArgument, or
             # LoopArgumentVariable.
             component_spec.input_definitions.parameters[

@@ -254,7 +254,7 @@ class PipelineTask:
                         inputs_dict[input_name].type):
                     return arg._to_placeholder_string()
                 input_spec = inputs_dict[input_name]
-                if input_spec.default is None:
+                if input_spec._optional is None:
                     raise ValueError(
                         f'No value provided for input: {input_name}.')
                 else:
@@ -271,7 +271,7 @@ class PipelineTask:
                 if input_name in args:
                     return arg._to_placeholder_string()
                 input_spec = inputs_dict[input_name]
-                if input_spec.default is None:
+                if input_spec._optional is None:
                     raise ValueError(
                         f'No value provided for input: {input_name}.')
 

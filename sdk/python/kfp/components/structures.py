@@ -15,7 +15,6 @@
 
 import ast
 import collections
-import functools
 import itertools
 import re
 from typing import Any, Dict, List, Mapping, Optional, Union
@@ -56,17 +55,20 @@ class InputSpec(InputSpec_, base_model.BaseModel):
     Attributes:
         type: The type of the input.
         default (optional): the default value for the input.
-        _optional: Wether the input is optional. An input is optional when it has an explicit default value.
+        optional: Wether the input is optional. An input is optional when it has an explicit default value.
     """
+    type: Union[str, dict]
+    _optional: Optional[Any] = None
+    _optional: Optional[bool] = False
 
-    @functools.wraps(InputSpec_.__init__)
-    def __init__(self, *args, **kwargs) -> None:
-        """InputSpec constructor, which can access the arguments passed to the
-        constructor for setting ._optional value."""
-        if args:
-            raise ValueError('InputSpec does not accept positional arguments.')
-        super().__init__(*args, **kwargs)
-        self._optional = 'default' in kwargs
+    def _validate_optional_and_default(self) -> None:
+        # without this, default = None could mean one of two things: a default of None or a sentinel to indicate that there is no default
+        # this is validation is to encourage unambiguous usage of these two parameters throughout the code base, even though it will not catch the accidental case of a true default of None and optional = False
+        # note that default of None is lost in compilation, since Valu
+        if self._optional and not self._optional:
+            raise ValueError(
+                '_optional must be explicitly set to True if there is a default.'
+            )
 
     @classmethod
     def from_ir_component_inputs_dict(
@@ -117,7 +119,7 @@ class InputSpec(InputSpec_, base_model.BaseModel):
         if isinstance(other, InputSpec):
             return type_utils.get_canonical_name_for_outer_generic(
                 self.type) == type_utils.get_canonical_name_for_outer_generic(
-                    other.type) and self.default == other.default
+                    other.type) and self._optional == other._optional
         else:
             return False
 
@@ -629,6 +631,8 @@ class ComponentSpec(base_model.BaseModel):
         inputs = {}
         for spec in component_dict.get('inputs', []):
             type_ = spec.get('type')
+            optional = spec.get('optional') or 'default' in spec
+            default = spec.get('default')
 
             if isinstance(type_, str) and type_ == 'PipelineTaskFinalStatus':
                 inputs[utils.sanitize_input_name(
@@ -637,7 +641,6 @@ class ComponentSpec(base_model.BaseModel):
 
             elif isinstance(type_, str) and type_.lower(
             ) in type_utils._PARAMETER_TYPES_MAPPING:
-                default = spec.get('default')
                 type_enum = type_utils._PARAMETER_TYPES_MAPPING[type_.lower()]
                 ir_parameter_type_name = pipeline_spec_pb2.ParameterType.ParameterTypeEnum.Name(
                     type_enum)
@@ -646,7 +649,7 @@ class ComponentSpec(base_model.BaseModel):
                 inputs[utils.sanitize_input_name(spec['name'])] = InputSpec(
                     type=in_memory_parameter_type_name,
                     default=default,
-                )
+                    _optional=optional)
                 continue
 
             elif isinstance(type_, str) and re.match(
@@ -669,12 +672,13 @@ class ComponentSpec(base_model.BaseModel):
             else:
                 raise ValueError(f'Unknown input: {type_}')
 
-            if spec.get('optional', False):
+            if optional:
                 # handles a v1 edge-case where a user marks an artifact input as optional with no default value. some of these v1 component YAMLs exist.
                 inputs[utils.sanitize_input_name(spec['name'])] = InputSpec(
                     type=type_utils.create_bundled_artifact_type(
                         schema_title, schema_version),
-                    default=None,
+                    default=default,
+                    _optional=optional,
                 )
             else:
                 inputs[utils.sanitize_input_name(spec['name'])] = InputSpec(
@@ -873,7 +877,7 @@ class ComponentSpec(base_model.BaseModel):
             pipeline_channel.create_pipeline_channel(
                 name=input_name,
                 channel_type=input_spec.type,
-                value=input_spec.default,
+                value=input_spec._optional,
             ) for input_name, input_spec in pipeline_inputs.items()
         ]
         group.name = uuid.uuid4().hex

@@ -563,7 +563,8 @@ class TestInputSpec(unittest.TestCase):
             structures.InputSpec(type='String', default=None))
         self.assertNotEqual(
             structures.InputSpec(type='String', default=None),
-            structures.InputSpec(type='String', default='test'))
+            structures.InputSpec(
+                type='String', default='test', _optional=False))
         self.assertEqual(
             structures.InputSpec(type='List', default=None),
             structures.InputSpec(type='typing.List', default=None))
@@ -574,17 +575,19 @@ class TestInputSpec(unittest.TestCase):
             structures.InputSpec(type='List'),
             structures.InputSpec(type='typing.List[typing.Dict[str, str]]'))
 
-    def test_optional(self):
-        input_spec = structures.InputSpec(type='String', default='test')
-        self.assertEqual(input_spec.default, 'test')
+    def test_optional_and_default(self):
+        input_spec = structures.InputSpec(
+            type='String', default='test', _optional=True)
+        self.assertEqual(input_spec._optional, 'test')
         self.assertEqual(input_spec._optional, True)
 
-        input_spec = structures.InputSpec(type='String', default=None)
-        self.assertEqual(input_spec.default, None)
-        self.assertEqual(input_spec._optional, True)
+        input_spec = structures.InputSpec(
+            type='String', default=None, _optional=True)
+        self.assertEqual(input_spec._optional, None)
+        self.assertEqual(input_spec._optional, False)
 
         input_spec = structures.InputSpec(type='String')
-        self.assertEqual(input_spec.default, None)
+        self.assertEqual(input_spec._optional, None)
         self.assertEqual(input_spec._optional, False)
 
     def test_from_ir_component_inputs_dict(self):
@@ -592,13 +595,13 @@ class TestInputSpec(unittest.TestCase):
         input_spec = structures.InputSpec.from_ir_component_inputs_dict(
             parameter_dict)
         self.assertEqual(input_spec.type, 'String')
-        self.assertEqual(input_spec.default, None)
+        self.assertEqual(input_spec._optional, None)
 
         parameter_dict = {'parameterType': 'NUMBER_INTEGER'}
         input_spec = structures.InputSpec.from_ir_component_inputs_dict(
             parameter_dict)
         self.assertEqual(input_spec.type, 'Integer')
-        self.assertEqual(input_spec.default, None)
+        self.assertEqual(input_spec._optional, None)
 
         parameter_dict = {
             'defaultValue': 'default value',
@@ -607,12 +610,12 @@ class TestInputSpec(unittest.TestCase):
         input_spec = structures.InputSpec.from_ir_component_inputs_dict(
             parameter_dict)
         self.assertEqual(input_spec.type, 'String')
-        self.assertEqual(input_spec.default, 'default value')
+        self.assertEqual(input_spec._optional, 'default value')
 
         input_spec = structures.InputSpec.from_ir_component_inputs_dict(
             parameter_dict)
         self.assertEqual(input_spec.type, 'String')
-        self.assertEqual(input_spec.default, 'default value')
+        self.assertEqual(input_spec._optional, 'default value')
 
         artifact_dict = {
             'artifactType': {

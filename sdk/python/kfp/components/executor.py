@@ -95,7 +95,8 @@ class Executor():
                                            {}).get('parameterValues', None)
 
         if parameter_values is not None:
-            return parameter_values.get(parameter_name, None)
+            value = parameter_values.get(parameter_name, None)
+            return None if value == 'null' else value
 
         return None
 
