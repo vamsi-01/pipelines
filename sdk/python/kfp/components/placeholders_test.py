@@ -92,7 +92,7 @@ class TestOutputMetadataPlaceholder(parameterized.TestCase):
             "{{$.outputs.artifacts['output1'].metadata}}")
 
 
-class TestIfPresentPlaceholderStructure(parameterized.TestCase):
+class TestIfPresentPlaceholder(parameterized.TestCase):
 
     @parameterized.parameters([
         (placeholders.IfPresentPlaceholder(
@@ -163,6 +163,46 @@ class TestIfPresentPlaceholderStructure(parameterized.TestCase):
             """)
         with self.assertRaisesRegex(ValueError, 'must be consistent'):
             components.load_component_from_text(v1_comp)
+
+    def test_if_present_with_single_element_simple(self):
+
+        @dsl.container_component
+        def container_component(a: str):
+            return dsl.ContainerSpec(
+                image='alpine',
+                command=[
+                    placeholders.IfPresentPlaceholder(
+                        input_name='a', then='b', else_='c')
+                ])
+
+        container_component.pipeline_spec
+
+    def test_if_present_with_single_element_parameter_reference(self):
+
+        @dsl.container_component
+        def container_component(a: str):
+            return dsl.ContainerSpec(
+                image='alpine',
+                command=[
+                    placeholders.IfPresentPlaceholder(
+                        input_name='a', then=a, else_='c')
+                ])
+
+        container_component.pipeline_spec
+
+    def test_if_present_with_single_element_artifact_reference(self):
+
+        @dsl.container_component
+        def container_component(a: dsl.Input[dsl.Artifact]):
+            return dsl.ContainerSpec(
+                image='alpine',
+                command=[
+                    placeholders.IfPresentPlaceholder(
+                        input_name='a', then=a.path, else_='c')
+                ])
+
+        container_component.pipeline_spec
+
 
 class TestConcatPlaceholder(parameterized.TestCase):
 
