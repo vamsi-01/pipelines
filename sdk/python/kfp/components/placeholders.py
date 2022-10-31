@@ -139,8 +139,26 @@ class ConcatPlaceholder(Placeholder):
     """
 
     def __init__(self, items: List['CommandLineElement']) -> None:
-        # """Elements to concatenate."""
         self.items = items
+        self.validate_inner_if_present_is_single_element()
+
+    def validate_inner_if_present_is_single_element(self) -> None:
+        print(self.items)
+        for item in self.items:
+            print(item)
+            if isinstance(item, ConcatPlaceholder):
+                item.validate_inner_if_present_is_single_element()
+
+            elif isinstance(item, IfPresentPlaceholder):
+                if isinstance(item.then, list) or isinstance(item.else_, list):
+                    raise ValueError(
+                        f'Cannot use {IfPresentPlaceholder.__name__} within {ConcatPlaceholder.__name__} when `then` and `else_` arguments to {IfPresentPlaceholder.__name__} are lists. Please use a single element for `then` and `else_` only.'
+                    )
+                else:
+                    if isinstance(item.then, ConcatPlaceholder):
+                        item.then.validate_inner_if_present_is_single_element()
+                    if isinstance(item.else_, ConcatPlaceholder):
+                        item.else_.validate_inner_if_present_is_single_element()
 
     def to_dict(self) -> Dict[str, Any]:
         return {
