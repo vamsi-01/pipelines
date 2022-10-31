@@ -100,14 +100,6 @@ class TestIfPresentPlaceholderStructure(parameterized.TestCase):
             input_name='input1', then='then', else_='something'),
          '{"IfPresent": {"InputName": "input1", "Then": "then", "Else": "something"}}'
         ),
-        (placeholders.IfPresentPlaceholder(
-            input_name='input1', then='then', else_=['something']),
-         '{"IfPresent": {"InputName": "input1", "Then": "then", "Else": ["something"]}}'
-        ),
-        (placeholders.IfPresentPlaceholder(
-            input_name='input1', then=['then'], else_='something'),
-         '{"IfPresent": {"InputName": "input1", "Then": ["then"], "Else": "something"}}'
-        ),
     ])
     def test_strings_and_lists(
             self, placeholder_obj: placeholders.IfPresentPlaceholder,
@@ -138,6 +130,14 @@ class TestIfPresentPlaceholderStructure(parameterized.TestCase):
             self, placeholder_obj: placeholders.IfPresentPlaceholder,
             placeholder: str):
         self.assertEqual(placeholder_obj.to_string(), placeholder)
+
+    def test_then_and_else_consistent_structure_exception(self):
+        with self.assertRaisesRegex(ValueError, 'must be consistent'):
+            placeholders.IfPresentPlaceholder(
+                input_name='a', then=['b'], else_='c')
+        with self.assertRaisesRegex(ValueError, 'must be consistent'):
+            placeholders.IfPresentPlaceholder(
+                input_name='a', then='b', else_=['c'])
 
 
 class TestConcatPlaceholder(parameterized.TestCase):
@@ -230,6 +230,9 @@ class TestContainerPlaceholdersTogether(parameterized.TestCase):
     def test(self, placeholder_obj: placeholders.IfPresentPlaceholder,
              placeholder: str):
         self.assertEqual(placeholder_obj.to_string(), placeholder)
+
+    def test_only_single_element_concat_inside_if_present(self):
+        ...
 
 
 class TestConvertCommandLineElementToStringOrStruct(parameterized.TestCase):
