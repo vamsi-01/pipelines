@@ -15,7 +15,10 @@
 from typing import Any
 
 from absl.testing import parameterized
+from kfp import dsl
+from kfp import components
 from kfp.components import placeholders
+import textwrap
 
 
 class TestExecutorInputPlaceholder(parameterized.TestCase):
@@ -139,6 +142,27 @@ class TestIfPresentPlaceholderStructure(parameterized.TestCase):
             placeholders.IfPresentPlaceholder(
                 input_name='a', then='b', else_=['c'])
 
+    def test_then_and_else_consistent_when_loading_from_v1(self):
+
+        v1_comp = textwrap.dedent("""\
+            name: component_nested
+            implementation:
+              container:
+                args:
+                - concat:
+                    - --arg1
+                    - if:
+                        cond:
+                            isPresent: input_prefix
+                        then: {inputValue: input_prefix}
+                        else:
+                          - default
+                image: alpine
+            inputs:
+            - {name: input_prefix, optional: false, type: String}
+            """)
+        with self.assertRaisesRegex(ValueError, 'must be consistent'):
+            components.load_component_from_text(v1_comp)
 
 class TestConcatPlaceholder(parameterized.TestCase):
 
