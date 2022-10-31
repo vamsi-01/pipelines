@@ -194,6 +194,12 @@ class IfPresentPlaceholder(Placeholder):
         else_: Optional[Union['CommandLineElement',
                               List['CommandLineElement']]] = None,
     ) -> None:
+        if else_ is not None and isinstance(then, list) != isinstance(
+                else_, list):
+            raise ValueError(
+                f"'then' and 'else_' arguments to {self.__class__.__name__} must be consistent: both either list of strings or placeholders or single string or placeholder. Got mixed usage of list and single element."
+            )
+
         self.input_name = input_name
         self.then = then
         self.else_ = else_
