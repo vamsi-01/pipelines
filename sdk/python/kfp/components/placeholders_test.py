@@ -14,12 +14,10 @@
 """Contains tests for kfp.components.placeholders."""
 import os
 import tempfile
-import textwrap
 from typing import Any
 
 from absl.testing import parameterized
 from kfp import compiler
-from kfp import components
 from kfp import dsl
 from kfp.components import placeholders
 
@@ -144,28 +142,6 @@ class TestIfPresentPlaceholder(parameterized.TestCase):
         with self.assertRaisesRegex(ValueError, 'must be consistent'):
             placeholders.IfPresentPlaceholder(
                 input_name='a', then='b', else_=['c'])
-
-    def test_then_and_else_consistent_when_loading_from_v1(self):
-
-        v1_comp = textwrap.dedent("""\
-            name: component_nested
-            implementation:
-              container:
-                args:
-                - concat:
-                    - --arg1
-                    - if:
-                        cond:
-                            isPresent: input_prefix
-                        then: {inputValue: input_prefix}
-                        else:
-                          - default
-                image: alpine
-            inputs:
-            - {name: input_prefix, optional: false, type: String}
-            """)
-        with self.assertRaisesRegex(ValueError, 'must be consistent'):
-            components.load_component_from_text(v1_comp)
 
     def test_if_present_with_single_element_simple_can_be_compiled(self):
 
