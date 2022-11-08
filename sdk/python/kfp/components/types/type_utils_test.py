@@ -16,6 +16,8 @@ import unittest
 
 from absl.testing import parameterized
 import kfp
+from kfp.components import pipeline_channel
+from kfp.components import structures
 from kfp.components.types import artifact_types
 from kfp.components.types import type_utils
 from kfp.components.types.type_utils import InconsistentTypeException
@@ -171,72 +173,122 @@ class TypeUtilsTest(parameterized.TestCase):
     @parameterized.parameters(
         # param True
         {
-            'given_type': 'String',
-            'expected_type': 'String',
-            'is_compatible': True,
+            'argument_value':
+                'text',
+            'input_spec':
+                structures.InputSpec(
+                    type='String',
+                    default=None,
+                    optional=False,
+                    is_artifact_list=False),
+            'is_compatible':
+                True,
         },
         # param False
         {
-            'given_type': 'String',
-            'expected_type': 'Integer',
-            'is_compatible': False,
+            'argument_value':
+                'text',
+            'input_spec':
+                structures.InputSpec(
+                    type='Integer',
+                    default=None,
+                    optional=False,
+                    is_artifact_list=False),
+            'is_compatible':
+                False,
         },
         # param Artifact compat, irrespective of version
         {
-            'given_type': 'system.Artifact@1.0.0',
-            'expected_type': 'system.Model@0.0.1',
-            'is_compatible': True,
+            'argument_value':
+                pipeline_channel.PipelineArtifactChannel(
+                    name='artifact',
+                    channel_type='system.Artifact@0.0.1',
+                    task_name='upstream'),
+            'input_spec':
+                structures.InputSpec('system.Model@0.0.1'),
+            'is_compatible':
+                True,
         },
         # param Artifact compat, irrespective of version, other way
         {
-            'given_type': 'system.Metrics@1.0.0',
-            'expected_type': 'system.Artifact@0.0.1',
-            'is_compatible': True,
+            'argument_value':
+                pipeline_channel.PipelineArtifactChannel(
+                    name='artifact',
+                    channel_type='system.Metrics@0.0.1',
+                    task_name='upstream'),
+            'input_spec':
+                structures.InputSpec('system.Artifact@0.0.1'),
+            'is_compatible':
+                True,
         },
         # different schema_title incompat, irrespective of version
         {
-            'given_type': 'system.Metrics@1.0.0',
-            'expected_type': 'system.Dataset@1.0.0',
-            'is_compatible': False,
+            'argument_value':
+                pipeline_channel.PipelineArtifactChannel(
+                    name='artifact',
+                    channel_type='system.Metrics@1.0.0',
+                    task_name='upstream'),
+            'input_spec':
+                structures.InputSpec('system.Dataset@1.0.0'),
+            'is_compatible':
+                False,
         },
         # different major version incompat
         {
-            'given_type': 'system.Metrics@1.0.0',
-            'expected_type': 'system.Metrics@2.1.1',
-            'is_compatible': False,
+            'argument_value':
+                pipeline_channel.PipelineArtifactChannel(
+                    name='artifact',
+                    channel_type='system.Metrics@1.0.0',
+                    task_name='upstream'),
+            'input_spec':
+                structures.InputSpec('system.Metrics@2.1.1'),
+            'is_compatible':
+                False,
         },
         # namespace must match
         {
-            'given_type': 'google.Model@1.0.0',
-            'expected_type': 'system.Model@1.0.0',
-            'is_compatible': False,
+            'argument_value':
+                pipeline_channel.PipelineArtifactChannel(
+                    name='artifact',
+                    channel_type='google.Model@1.0.0',
+                    task_name='upstream'),
+            'input_spec':
+                structures.InputSpec('system.Model@1.0.0'),
+            'is_compatible':
+                False,
         },
         # system.Artifact compatible works across namespace
         {
-            'given_type': 'google.Model@1.0.0',
-            'expected_type': 'system.Artifact@1.0.0',
-            'is_compatible': True,
+            'argument_value':
+                pipeline_channel.PipelineArtifactChannel(
+                    name='artifact',
+                    channel_type='google.Model@1.0.0',
+                    task_name='upstream'),
+            'input_spec':
+                structures.InputSpec('system.Artifact@1.0.0'),
+            'is_compatible':
+                True,
         },
     )
     def test_verify_type_compatibility(
         self,
-        given_type: Union[str, dict],
-        expected_type: Union[str, dict],
+        argument_value: Any,
+        input_spec: structures.InputSpec,
         is_compatible: bool,
     ):
         if is_compatible:
             self.assertTrue(
                 type_utils.verify_type_compatibility(
-                    given_type=given_type,
-                    expected_type=expected_type,
+                    argument_value=argument_value,
+                    input_spec=input_spec,
                     input_name='input_name',
                     component_name='component_name',
                 ))
         else:
             with self.assertRaises(InconsistentTypeException):
                 type_utils.verify_type_compatibility(
-                    given_type=given_type,
-                    expected_type=expected_type,
+                    argument_value=argument_value,
+                    input_spec=input_spec,
                     input_name='input_name',
                     component_name='component_name',
                 )

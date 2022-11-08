@@ -18,6 +18,7 @@ from typing import Any, Optional, Type, Union
 import warnings
 
 import kfp
+from kfp.components import structures
 from kfp.components import task_final_status
 from kfp.components.types import artifact_types
 from kfp.components.types import type_annotations
@@ -175,10 +176,37 @@ class InconsistentTypeWarning(Warning):
     """InconsistentTypeWarning is issued when two types are not consistent."""
 
 
+def convert_argument_value_to_canonical_type(argument_value: Any) -> str:
+    # avoid circular imports
+    from kfp.components import pipeline_channel
+
+    argument_type = None
+
+    if isinstance(argument_value, pipeline_channel.PipelineChannel):
+        argument_type = argument_value.channel_type
+    elif isinstance(argument_value, str):
+        argument_type = 'String'
+    elif isinstance(argument_value, bool):
+        argument_type = 'Boolean'
+    elif isinstance(argument_value, int):
+        argument_type = 'Integer'
+    elif isinstance(argument_value, float):
+        argument_type = 'Float'
+    elif isinstance(argument_value, dict):
+        argument_type = 'Dict'
+    elif isinstance(argument_value, list):
+        argument_type = 'List'
+    else:
+        raise ValueError(
+            'Input argument supports only the following types: '
+            'str, int, float, bool, dict, and list. Got: '
+            f'"{argument_value}" of type "{type(argument_value)}".')
+    return argument_type
+
+
 def verify_type_compatibility(
-    given_type: str,
-    expected_type: str,
-    # error_message_prefix: str,
+    argument_value: Any,
+    input_spec: structures.InputSpec,
     input_name: str,
     component_name: str,
 ) -> bool:
@@ -196,27 +224,29 @@ def verify_type_compatibility(
     Raises:
         InconsistentTypeException if types are incompatible and TYPE_CHECK==True.
     """
+    parameter_type = input_spec.type
+    argument_type = convert_argument_value_to_canonical_type(argument_value)
     # Special handling for PipelineTaskFinalStatus, treat it as Dict type.
-    if is_task_final_status_type(given_type):
-        given_type = 'Dict'
+    if is_task_final_status_type(argument_type):
+        argument_type = 'Dict'
 
     types_are_compatible = False
-    is_parameter = is_parameter_type(str(given_type))
+    is_parameter = is_parameter_type(str(argument_type))
 
     # handle parameters
     if is_parameter:
         # Normalize parameter type names.
-        if is_parameter_type(given_type):
-            given_type = get_parameter_type_name(given_type)
-        if is_parameter_type(expected_type):
-            expected_type = get_parameter_type_name(expected_type)
+        if is_parameter_type(argument_type):
+            argument_type = get_parameter_type_name(argument_type)
+        if is_parameter_type(parameter_type):
+            parameter_type = get_parameter_type_name(parameter_type)
 
         types_are_compatible = check_parameter_type_compatibility(
-            given_type, expected_type)
+            argument_type, parameter_type)
     else:
         # handle artifacts
-        given_schema_title, given_schema_version = given_type.split('@')
-        expected_schema_title, expected_schema_version = expected_type.split(
+        given_schema_title, given_schema_version = argument_type.split('@')
+        expected_schema_title, expected_schema_version = parameter_type.split(
             '@')
         if artifact_types.Artifact.schema_title in {
                 given_schema_title, expected_schema_title
@@ -230,7 +260,7 @@ def verify_type_compatibility(
 
     # maybe raise, maybe warn, return bool
     if not types_are_compatible:
-        error_text = f'Incompatible argument passed to the input "{input_name}" of component "{component_name}": Argument type "{given_type}" is incompatible with the input type "{expected_type}"'
+        error_text = f'Incompatible argument passed to the input "{input_name}" of component "{component_name}": Argument type "{argument_type}" is incompatible with the input type "{parameter_type}"'
         if kfp.TYPE_CHECK:
             raise InconsistentTypeException(error_text)
         else:

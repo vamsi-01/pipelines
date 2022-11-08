@@ -84,32 +84,10 @@ class PipelineTask:
                     f' {input_name}.')
 
             input_spec = component_spec.inputs[input_name]
-            input_type = input_spec.type
-            argument_type = None
-
-            if isinstance(argument_value, pipeline_channel.PipelineChannel):
-                argument_type = argument_value.channel_type
-            elif isinstance(argument_value, str):
-                argument_type = 'String'
-            elif isinstance(argument_value, bool):
-                argument_type = 'Boolean'
-            elif isinstance(argument_value, int):
-                argument_type = 'Integer'
-            elif isinstance(argument_value, float):
-                argument_type = 'Float'
-            elif isinstance(argument_value, dict):
-                argument_type = 'Dict'
-            elif isinstance(argument_value, list):
-                argument_type = 'List'
-            else:
-                raise ValueError(
-                    'Input argument supports only the following types: '
-                    'str, int, float, bool, dict, and list. Got: '
-                    f'"{argument_value}" of type "{type(argument_value)}".')
 
             type_utils.verify_type_compatibility(
-                given_type=argument_type,
-                expected_type=input_type,
+                argument_value=argument_value,
+                input_spec=input_spec,
                 input_name=input_name,
                 component_name=component_spec.name,
             )
