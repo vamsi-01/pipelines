@@ -33,40 +33,38 @@ class Executor():
         self._input = executor_input
         self._input_artifacts: Dict[str, artifact_types.Artifact] = {}
         self._output_artifacts: Dict[str, artifact_types.Artifact] = {}
-
         for name, artifacts in self._input.get('inputs',
                                                {}).get('artifacts', {}).items():
             artifacts_list = artifacts.get('artifacts')
             if artifacts_list:
-                self._input_artifacts[name] = self.make_artifact(
-                    artifacts_list[0],
+                self._input_artifacts[name] = self.make_artifacts(
                     name,
-                    self._func,
+                    artifacts_list,
                 )
-
         for name, artifacts in self._input.get('outputs',
                                                {}).get('artifacts', {}).items():
             artifacts_list = artifacts.get('artifacts')
             if artifacts_list:
-                output_artifact = self.make_artifact(
-                    artifacts_list[0],
+                self._output_artifacts[name] = self.make_artifacts(
                     name,
-                    self._func,
+                    artifacts_list,
                 )
-                self._output_artifacts[name] = output_artifact
-                self.makedirs_recursively(output_artifact.path)
+                # self.makedirs_recursively(output_artifact.path)
 
         self._return_annotation = inspect.signature(
             self._func).return_annotation
         self._executor_output = {}
 
-    def make_artifact(
+    def artifact_is_artifact_list(self, artifact_annotation: Any) -> bool:
+        inner = artifact_annotation.__args__[0]
+        return hasattr(inner, '__origin__') and inner.__origin__ == list
+
+    def make_artifacts(
         self,
-        runtime_artifact: Dict,
         name: str,
-        func: Callable,
-    ) -> Any:
-        annotation = func.__annotations__.get(name)
+        artifact_list: Dict,
+    ) -> Union[Any, List[Any]]:
+        annotation = self._func.__annotations__.get(name)
         if isinstance(annotation, type_annotations.InputPath):
             schema_title, _ = annotation.type.split('@')
             if schema_title in artifact_types._SCHEMA_TITLE_TO_TYPE:
@@ -76,10 +74,24 @@ class Executor():
                 raise TypeError(
                     f'Invalid type argument to {type_annotations.InputPath.__name__}: {annotation.type}'
                 )
+            return create_artifact_instance(
+                artifact_list[0], artifact_cls=artifact_cls)
+
+        # standard Input/Output[<Artifact>] annotation
+        is_artifact_list = annotation.__origin__ == list
+        print(is_artifact_list)
+        if is_artifact_list:
+            artifact_cls = annotation.__origin__.__args__[0]
+            return [
+                create_artifact_instance(
+                    runtime_artifact,
+                    artifact_cls=type_annotations.get_io_artifact_class(
+                        annotation)) for runtime_artifact in artifact_list
+            ]
         else:
-            artifact_cls = annotation
-        return create_artifact_instance(
-            runtime_artifact, artifact_cls=artifact_cls)
+            return create_artifact_instance(
+                artifact_list[0],
+                artifact_cls=type_annotations.get_io_artifact_class(annotation))
 
     def makedirs_recursively(self, path: str) -> None:
         os.makedirs(os.path.dirname(path), exist_ok=True)

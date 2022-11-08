@@ -1002,6 +1002,56 @@ class ExecutorTest(unittest.TestCase):
                 }
             })
 
+    def test_input_list_of_artifacts_basic(self):
+        executor_input = """\
+        {
+          "inputs": {
+            "artifacts": {
+              "i": {
+                "artifacts": [
+                  {
+                    "metadata": {},
+                    "name": "projects/123/locations/us-central1/metadataStores/default/artifacts/123",
+                    "type": {
+                      "schemaTitle": "system.Artifact"
+                    },
+                    "uri": "gs://some-bucket/input_artifact_one/0"
+                  },
+                  {
+                    "metadata": {},
+                    "name": "projects/123/locations/us-central1/metadataStores/default/artifacts/123",
+                    "type": {
+                      "schemaTitle": "system.Artifact"
+                    },
+                    "uri": "gs://some-bucket/input_artifact_one/1"
+                  }
+                ]
+              }
+            }
+          },
+          "outputs": {
+            "outputFile": "%(test_dir)s/output_metadata.json"
+          }
+        }
+        """
+        from kfp import dsl
+
+        @dsl.component
+        def test_func(i: Input[List[Dataset]]):
+            self.assertIsInstance(i, list)
+            self.assertIsInstance(i[0], Dataset)
+            # self.assertEqual(input_artifact_one.uri,
+            #                  'gs://some-bucket/input_artifact_one')
+            # self.assertEqual(
+            #     input_artifact_one.path,
+            #     os.path.join(self._test_dir, 'some-bucket/input_artifact_one'))
+            # self.assertEqual(
+            #     input_artifact_one.name,
+            #     'projects/123/locations/us-central1/metadataStores/default/artifacts/123'
+            # )
+
+        self.execute_and_load_output_metadata(test_func, executor_input)
+
 
 class VertexDataset:
     schema_title = 'google.VertexDataset'
