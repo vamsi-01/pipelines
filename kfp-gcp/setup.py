@@ -1,4 +1,4 @@
-# Copyright 2018-2022 The Kubeflow Authors
+# Copyright 2022 The Kubeflow Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,19 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# `kfp` is a namespace package.
-# https://packaging.python.org/guides/packaging-namespace-packages/#pkgutil-style-namespace-packages
-__path__ = __import__('pkgutil').extend_path(__path__, __name__)
+import setuptools
 
-__version__ = '2.0.0-beta.6'
-import types
-
-TYPE_CHECK = True
-
-from kfp.client import Client
-
-PLATFORM_PACKAGES = []
-
-
-def use_platform_package(pkg: types.ModuleType) -> None:
-    PLATFORM_PACKAGES.append(pkg)
+setuptools.setup(
+    name='kfp-gcp',
+    version='0.0.1',
+    description='',
+    author='',
+    author_email='',
+    url='',
+    packages=setuptools.find_namespace_packages(include=['kfp.*']),
+    python_requires='>=3.7.0',
+    install_requires=[],
+    include_package_data=False,
+)

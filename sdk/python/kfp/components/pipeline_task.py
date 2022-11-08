@@ -14,10 +14,13 @@
 """Pipeline task class and operations."""
 
 import copy
+import functools
 import itertools
 import re
+import types
 from typing import Any, Dict, List, Mapping, Optional, Union
 
+import kfp
 from kfp.components import constants
 from kfp.components import pipeline_channel
 from kfp.components import placeholders
@@ -31,6 +34,19 @@ def create_pipeline_task(
     args: Mapping[str, Any],
 ) -> 'PipelineTask':
     return PipelineTask(component_spec=component_spec, args=args)
+
+
+class ProviderManager:
+
+    def __init__(self, provider: types.ModuleType,
+                 task: 'PipelineTask') -> None:
+        self.provider = provider
+        self.task = task
+
+    def __getattribute__(self, __name: str) -> Any:
+        fn = object.__getattribute__(self, 'provider')
+        task = object.__getattribute__(self, 'task')
+        return functools.partial(getattr(fn, __name), task)
 
 
 class PipelineTask:
@@ -72,7 +88,6 @@ class PipelineTask:
         """Initilizes a PipelineTask instance."""
         # import within __init__ to avoid circular import
         from kfp.components.tasks_group import TasksGroup
-
         self.parent_task_group: Union[None, TasksGroup] = None
         args = args or {}
 
@@ -167,6 +182,15 @@ class PipelineTask:
             value for _, value in args.items()
             if not isinstance(value, pipeline_channel.PipelineChannel)
         ])
+
+        self.platform_configuration = {}
+
+    def __getattribute__(self, provider_name: str):
+        for prov in kfp.PLATFORM_PACKAGES:
+            if prov.__name__.split('.')[1] == provider_name:
+                return ProviderManager(prov, self)
+
+        return object.__getattribute__(self, provider_name)
 
     @property
     def name(self) -> str:
