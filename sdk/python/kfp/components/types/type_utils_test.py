@@ -229,14 +229,16 @@ class TypeUtilsTest(parameterized.TestCase):
                 type_utils.verify_type_compatibility(
                     given_type=given_type,
                     expected_type=expected_type,
-                    error_message_prefix='',
+                    input_name='input_name',
+                    component_name='component_name',
                 ))
         else:
             with self.assertRaises(InconsistentTypeException):
                 type_utils.verify_type_compatibility(
                     given_type=given_type,
                     expected_type=expected_type,
-                    error_message_prefix='',
+                    input_name='input_name',
+                    component_name='component_name',
                 )
 
     @parameterized.parameters(

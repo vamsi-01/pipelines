@@ -110,9 +110,8 @@ class PipelineTask:
             type_utils.verify_type_compatibility(
                 given_type=argument_type,
                 expected_type=input_type,
-                error_message_prefix=(
-                    'Incompatible argument passed to the input '
-                    f'"{input_name}" of component "{component_spec.name}": '),
+                input_name=input_name,
+                component_name=component_spec.name,
             )
 
         self.component_spec = component_spec

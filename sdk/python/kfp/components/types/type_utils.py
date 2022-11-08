@@ -178,14 +178,17 @@ class InconsistentTypeWarning(Warning):
 def verify_type_compatibility(
     given_type: str,
     expected_type: str,
-    error_message_prefix: str,
+    # error_message_prefix: str,
+    input_name: str,
+    component_name: str,
 ) -> bool:
     """Verifies the given argument type is compatible with the expected type.
 
     Args:
         given_type: The type of the argument passed to the input.
         expected_type: The declared type of the input.
-        error_message_prefix: The prefix for the error message.
+        input_name: The name of the input to which the argument was passed.
+        component_name: The name of the component to which the argument was passed.
 
     Returns:
         True if types are compatible, and False if otherwise.
@@ -193,7 +196,6 @@ def verify_type_compatibility(
     Raises:
         InconsistentTypeException if types are incompatible and TYPE_CHECK==True.
     """
-
     # Special handling for PipelineTaskFinalStatus, treat it as Dict type.
     if is_task_final_status_type(given_type):
         given_type = 'Dict'
@@ -228,7 +230,7 @@ def verify_type_compatibility(
 
     # maybe raise, maybe warn, return bool
     if not types_are_compatible:
-        error_text = error_message_prefix + f'Argument type "{given_type}" is incompatible with the input type "{expected_type}"'
+        error_text = f'Incompatible argument passed to the input "{input_name}" of component "{component_name}": Argument type "{given_type}" is incompatible with the input type "{expected_type}"'
         if kfp.TYPE_CHECK:
             raise InconsistentTypeException(error_text)
         else:
