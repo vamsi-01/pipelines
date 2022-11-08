@@ -18,7 +18,6 @@ from typing import Any, Optional, Type, Union
 import warnings
 
 import kfp
-from kfp.components import structures
 from kfp.components import task_final_status
 from kfp.components.types import artifact_types
 from kfp.components.types import type_annotations
@@ -206,7 +205,7 @@ def convert_argument_value_to_canonical_type(argument_value: Any) -> str:
 
 def verify_type_compatibility(
     argument_value: Any,
-    input_spec: structures.InputSpec,
+    input_spec: 'structures.InputSpec',
     input_name: str,
     component_name: str,
 ) -> bool:
