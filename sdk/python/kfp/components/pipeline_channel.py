@@ -18,6 +18,7 @@ import json
 import re
 from typing import Dict, List, Optional, Union
 
+from kfp.components import structures
 from kfp.components.types import type_utils
 
 
@@ -239,6 +240,7 @@ class PipelineArtifactChannel(PipelineChannel):
             ValueError: If name or task_name contains invalid characters.
             TypeError: If the channel type is not an artifact type.
         """
+
         if type_utils.is_parameter_type(channel_type):
             raise TypeError(f'{channel_type} is not an artifact type.')
 
@@ -251,7 +253,7 @@ class PipelineArtifactChannel(PipelineChannel):
 
 def create_pipeline_channel(
     name: str,
-    channel_type: Union[str, Dict],
+    io_spec: Union[structures.InputSpec, structures.OutputSpec],
     task_name: Optional[str] = None,
     value: Optional[type_utils.PARAMETER_TYPES] = None,
 ) -> PipelineChannel:
@@ -259,25 +261,24 @@ def create_pipeline_channel(
 
     Args:
         name: The name of the channel.
-        channel_type: The type of the channel, which decides whether it is an
-            PipelineParameterChannel or PipelineArtifactChannel
+        io_spec: InputSpec or OutputSpec corresponding to the channel.
         task_name: Optional; the task that produced the channel.
         value: Optional; the realized value for a channel.
 
     Returns:
         A PipelineParameterChannel or PipelineArtifactChannel object.
     """
-    if type_utils.is_parameter_type(channel_type):
+    if type_utils.is_parameter_type(io_spec.type):
         return PipelineParameterChannel(
             name=name,
-            channel_type=channel_type,
+            channel_type=io_spec.type,
             task_name=task_name,
             value=value,
         )
     else:
         return PipelineArtifactChannel(
             name=name,
-            channel_type=channel_type,
+            channel_type=io_spec.type,
             task_name=task_name,
         )
 
