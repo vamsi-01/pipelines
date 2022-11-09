@@ -31,7 +31,7 @@ class Placeholder(abc.ABC):
     def __str__(self) -> str:
         """Used for creating readable error messages when a placeholder doesn't
         refer to an existing input or output."""
-        return self.__class__.__name__
+        return self._to_string()
 
     def __eq__(self, other: Any) -> bool:
         """Used for comparing placeholders in tests."""

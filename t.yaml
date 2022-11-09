@@ -1,0 +1,36 @@
+components:
+  comp-echo-bool:
+    executorLabel: exec-echo-bool
+    inputDefinitions:
+      parameters:
+        boolean:
+          defaultValue: 1.0
+          parameterType: BOOLEAN
+deploymentSpec:
+  executors:
+    exec-echo-bool:
+      container:
+        command:
+        - sh
+        - -c
+        - echo InputValuePlaceholder
+        image: alpine
+pipelineInfo:
+  name: my-pipeline
+root:
+  dag:
+    tasks:
+      echo-bool:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-echo-bool
+        taskInfo:
+          name: echo-bool
+  inputDefinitions:
+    parameters:
+      string:
+        defaultValue: string
+        parameterType: STRING
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.0.0-beta.6
