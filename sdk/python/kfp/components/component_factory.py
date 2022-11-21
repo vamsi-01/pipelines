@@ -17,10 +17,12 @@ import itertools
 import pathlib
 import re
 import textwrap
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple, Union
 import warnings
 
 import docstring_parser
+from kfp import compiler
+from kfp.components import base_component
 from kfp.components import container_component
 from kfp.components import graph_component
 from kfp.components import placeholders
@@ -36,7 +38,7 @@ _DEFAULT_BASE_IMAGE = 'python:3.7'
 
 
 @dataclasses.dataclass
-class ComponentInfo():
+class ComponentInfo:
     """A dataclass capturing registered components.
 
     This will likely be subsumed/augmented with BaseComponent.
@@ -44,9 +46,9 @@ class ComponentInfo():
     name: str
     function_name: str
     func: Callable
-    target_image: str
+    target_image: Union[str, None]
     module_path: pathlib.Path
-    component_spec: structures.ComponentSpec
+    component: base_component.BaseComponent
     output_component_file: Optional[str] = None
     base_image: str = _DEFAULT_BASE_IMAGE
     packages_to_install: Optional[List[str]] = None
@@ -424,13 +426,17 @@ def create_component_from_func(
     module_path.resolve()
 
     component_name = _python_function_name_to_component_name(func.__name__)
+
+    python_comp = python_component.PythonComponent(
+        component_spec=component_spec, python_func=func)
+
     component_info = ComponentInfo(
         name=component_name,
         function_name=func.__name__,
         func=func,
         target_image=target_image,
         module_path=module_path,
-        component_spec=component_spec,
+        component=python_comp,
         output_component_file=output_component_file,
         base_image=base_image,
         packages_to_install=packages_to_install)
@@ -439,10 +445,9 @@ def create_component_from_func(
         REGISTERED_MODULES[component_name] = component_info
 
     if output_component_file:
-        component_spec.save_to_component_yaml(output_component_file)
+        compiler.Compiler().compile(python_comp, output_component_file)
 
-    return python_component.PythonComponent(
-        component_spec=component_spec, python_func=func)
+    return python_comp
 
 
 def create_container_component_from_func(

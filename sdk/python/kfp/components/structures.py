@@ -822,17 +822,6 @@ class ComponentSpec:
         else:
             return ComponentSpec.from_pipeline_spec_dict(json_component)
 
-    def save_to_component_yaml(self, output_file: str) -> None:
-        """Saves ComponentSpec into IR YAML file.
-
-        Args:
-            output_file: File path to store the component yaml.
-        """
-        from kfp.compiler import pipeline_spec_builder as builder
-
-        pipeline_spec = self.to_pipeline_spec()
-        builder.write_pipeline_spec_to_file(pipeline_spec, output_file)
-
 
 def normalize_time_string(duration: str) -> str:
     """Normalizes a time string.

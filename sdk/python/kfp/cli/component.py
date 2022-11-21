@@ -23,6 +23,7 @@ from typing import List, Optional
 import warnings
 
 import click
+from kfp import compiler
 
 _DOCKER_IS_PRESENT = True
 try:
@@ -257,8 +258,8 @@ class ComponentBuilder():
             container_filename = (
                 self._context_directory / _COMPONENT_METADATA_DIR / filename)
             container_filename.parent.mkdir(exist_ok=True, parents=True)
-            component_info.component_spec.save_to_component_yaml(
-                str(container_filename))
+            compiler.Compiler().compile(component_info.component,
+                                        str(container_filename))
 
     def generate_kfp_config(self):
         config = kfp_config.KFPConfig(config_directory=self._context_directory)
