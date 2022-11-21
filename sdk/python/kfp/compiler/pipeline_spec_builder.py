@@ -13,7 +13,6 @@
 # limitations under the License.
 """Functions for creating PipelineSpec proto objects."""
 
-from collections import namedtuple
 import functools
 import json
 from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
@@ -1528,6 +1527,7 @@ def create_pipeline_spec(
     pipeline: pipeline_context.Pipeline,
     component_spec: structures.ComponentSpec,
     pipeline_outputs: Optional[Any] = None,
+    is_compiled_component: bool = False,
 ) -> pipeline_spec_pb2.PipelineSpec:
     """Creates a pipeline spec object.
 
@@ -1552,10 +1552,15 @@ def create_pipeline_spec(
     # Schema version 2.1.0 is required for kfp-pipeline-spec>0.1.13
     pipeline_spec.schema_version = '2.1.0'
 
-    pipeline_spec.root.CopyFrom(
-        _build_component_spec_from_component_spec_structure(component_spec))
-    _build_dag_outputs(
-        component_spec=pipeline_spec.root, dag_outputs=pipeline_outputs)
+    root_component_spec = _build_component_spec_from_component_spec_structure(
+        component_spec)
+    pipeline_spec.root.CopyFrom(root_component_spec)
+
+    if is_compiled_component:
+        pipeline_spec.root.ClearField('output_definitions')
+    else:
+        _build_dag_outputs(
+            component_spec=pipeline_spec.root, dag_outputs=pipeline_outputs)
 
     root_group = pipeline.groups[0]
 
@@ -1647,27 +1652,39 @@ def component_to_one_step_pipeline(
     elif isinstance(component, container_component.ContainerComponent):
         function = component.pipeline_func
         # so that a -> dsl.ContainerSpec isn't applied in functools.wraps below
-        function.__annotations__.pop('return', None)
     else:
         raise ValueError(
             f'Function component_to_one_step_pipeline received unknown argument to component: {component}'
         )
-    output_keys = list((component.component_spec.outputs or {}).keys())
-
-    Outputs = namedtuple('Outputs', output_keys)
+    function.__annotations__.pop('return', None)
 
     @functools.wraps(function)
     def pipeline_wrapper(*args_list):
         kwargs = {arg.name: arg for arg in args_list}
         task = component(**kwargs)
-        if task._outputs:
-            return Outputs(**{
-                output_key: task.outputs[output_key]
-                for output_key in output_keys
-            })
+
+        # # uncomment to surface component outputs to the pipeline
+        # output_keys = list((component.component_spec.outputs or {}).keys())
+        # Outputs = namedtuple('Outputs', output_keys)
+        # if task._outputs:
+        #     return Outputs(**{
+        #         output_key: task.outputs[output_key]
+        #         for output_key in output_keys
+        #     })
+
+    import inspect
+    signature = inspect.signature(pipeline_wrapper)
+    component_input_parameters = [
+        p for name, p in signature.parameters.items()
+        if name in (component.component_spec.inputs or {})
+    ]
+    signature.replace(parameters=component_input_parameters)
+
+    pipeline_wrapper.__signature__ = signature
 
     return graph_component.GraphComponent(
         component.component_spec,
         pipeline_wrapper,
         component.component_spec.name,
+        is_compiled_component=True,
     )

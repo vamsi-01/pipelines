@@ -36,6 +36,7 @@ class GraphComponent(base_component.BaseComponent):
         component_spec: structures.ComponentSpec,
         pipeline_func: Callable,
         name: str,
+        is_compiled_component: bool = False,
     ):
         super().__init__(component_spec=component_spec)
         self.pipeline_func = pipeline_func
@@ -62,7 +63,8 @@ class GraphComponent(base_component.BaseComponent):
         pipeline_spec = builder.create_pipeline_spec(
             pipeline=dsl_pipeline,
             component_spec=self.component_spec,
-            pipeline_outputs=pipeline_outputs,
+            pipeline_outputs=pipeline_outputs if is_compiled_component else [],
+            is_compiled_component=is_compiled_component,
         )
 
         pipeline_root = getattr(pipeline_func, 'pipeline_root', None)
