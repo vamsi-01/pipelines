@@ -13,13 +13,10 @@
 # limitations under the License.
 """Tests for kfp.components.structures."""
 
-import os
-import tempfile
 import textwrap
 import unittest
 
 from absl.testing import parameterized
-from kfp import compiler
 from kfp import dsl
 from kfp.components import component_factory
 from kfp.components import placeholders
@@ -215,42 +212,6 @@ class StructuresTest(parameterized.TestCase):
                 inputs={'input1': structures.InputSpec(type='String')},
                 outputs={'output1': structures.OutputSpec(type='String')},
             )
-
-    def test_simple_component_spec_save_to_component_yaml(self):
-        # tests writing old style (less verbose) and reading in new style (more verbose)
-        original_component_spec = structures.ComponentSpec(
-            name='component_1',
-            implementation=structures.Implementation(
-                container=structures.ContainerSpecImplementation(
-                    image='alpine',
-                    command=[
-                        'sh', '-c', 'set -ex\necho "$0" > "$1"',
-                        "{{$.inputs.parameters['input1']}}",
-                        "{{$.outputs.parameters['output1'].output_file}}"
-                    ],
-                )),
-            inputs={'input1': structures.InputSpec(type='String')},
-            outputs={'output1': structures.OutputSpec(type='String')},
-        )
-        from kfp.components import base_component
-
-        class TestComponent(base_component.BaseComponent):
-
-            def execute(self, **kwargs):
-                pass
-
-        test_component = TestComponent(component_spec=original_component_spec)
-        with tempfile.TemporaryDirectory() as tempdir:
-            output_path = os.path.join(tempdir, 'component.yaml')
-            compiler.Compiler().compile(test_component, output_path)
-
-            # test that it can be read back correctly
-            with open(output_path, 'r') as f:
-                contents = f.read()
-            new_component_spec = structures.ComponentSpec.load_from_component_yaml(
-                contents)
-
-        self.assertEqual(original_component_spec, new_component_spec)
 
     def test_simple_component_spec_load_from_v2_component_yaml(self):
         component_yaml_v2 = textwrap.dedent("""\
