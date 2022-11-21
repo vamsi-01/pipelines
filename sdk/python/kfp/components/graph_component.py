@@ -13,7 +13,6 @@
 # limitations under the License.
 """Pipeline as a component (aka graph component)."""
 
-import inspect
 from typing import Callable
 import uuid
 
@@ -42,14 +41,11 @@ class GraphComponent(base_component.BaseComponent):
         self.pipeline_func = pipeline_func
         self.name = name
 
-        args_list = []
-        signature = inspect.signature(pipeline_func)
-
-        for arg_name in signature.parameters:
-            input_spec = component_spec.inputs[arg_name]
-            args_list.append(
-                pipeline_channel.create_pipeline_channel(
-                    name=arg_name, channel_type=input_spec.type))
+        args_list = [
+            pipeline_channel.create_pipeline_channel(
+                name=arg_name, channel_type=input_spec.type)
+            for arg_name, input_spec in (component_spec.inputs or {}).items()
+        ]
 
         with pipeline_context.Pipeline(
                 self.component_spec.name) as dsl_pipeline:

@@ -13,6 +13,8 @@
 # limitations under the License.
 """Functions for creating PipelineSpec proto objects."""
 
+from collections import namedtuple
+import functools
 import json
 from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
 import warnings
@@ -21,11 +23,14 @@ from google.protobuf import json_format
 from google.protobuf import struct_pb2
 import kfp
 from kfp.compiler import compiler_utils
+from kfp.components import container_component
 from kfp.components import for_loop
+from kfp.components import graph_component
 from kfp.components import pipeline_channel
 from kfp.components import pipeline_context
 from kfp.components import pipeline_task
 from kfp.components import placeholders
+from kfp.components import python_component
 from kfp.components import structures
 from kfp.components import tasks_group
 from kfp.components import utils
@@ -1549,7 +1554,6 @@ def create_pipeline_spec(
 
     pipeline_spec.root.CopyFrom(
         _build_component_spec_from_component_spec_structure(component_spec))
-
     _build_dag_outputs(
         component_spec=pipeline_spec.root, dag_outputs=pipeline_outputs)
 
@@ -1631,3 +1635,39 @@ def write_pipeline_spec_to_file(pipeline_spec: pipeline_spec_pb2.PipelineSpec,
     else:
         raise ValueError(
             f'The output path {package_path} should end with ".yaml".')
+
+
+def component_to_one_step_pipeline(
+    component: Union[python_component.PythonComponent,
+                     container_component.ContainerComponent]
+) -> graph_component.GraphComponent:
+
+    if isinstance(component, python_component.PythonComponent):
+        function = component.python_func
+    elif isinstance(component, container_component.ContainerComponent):
+        function = component.pipeline_func
+        # so that a -> dsl.ContainerSpec isn't applied in functools.wraps below
+        function.__annotations__.pop('return', None)
+    else:
+        raise ValueError(
+            f'Function component_to_one_step_pipeline received unknown argument to component: {component}'
+        )
+    output_keys = list((component.component_spec.outputs or {}).keys())
+
+    Outputs = namedtuple('Outputs', output_keys)
+
+    @functools.wraps(function)
+    def pipeline_wrapper(*args_list):
+        kwargs = {arg.name: arg for arg in args_list}
+        task = component(**kwargs)
+        if task._outputs:
+            return Outputs(**{
+                output_key: task.outputs[output_key]
+                for output_key in output_keys
+            })
+
+    return graph_component.GraphComponent(
+        component.component_spec,
+        pipeline_wrapper,
+        component.component_spec.name,
+    )
