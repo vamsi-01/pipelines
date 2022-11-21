@@ -15,6 +15,7 @@
 
 from typing import Callable
 
+from kfp.compiler import pipeline_spec_builder
 from kfp.components import base_component
 from kfp.components import structures
 
@@ -36,3 +37,8 @@ class ContainerComponent(base_component.BaseComponent):
         # As its name suggests, this class backs (custom) container components.
         # Its `execute()` method uses `docker run` for local component execution
         raise NotImplementedError
+
+    @property
+    def pipeline_spec(self):
+        return pipeline_spec_builder.component_to_one_step_pipeline(
+            self).pipeline_spec

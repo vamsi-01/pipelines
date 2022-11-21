@@ -16,6 +16,7 @@
 from typing import Callable
 
 from kfp import components
+from kfp.compiler import pipeline_spec_builder
 from kfp.components import structures
 
 
@@ -40,3 +41,8 @@ class PythonComponent(components.BaseComponent):
     def execute(self, **kwargs):
         """Executes the Python function that defines the component."""
         return self.python_func(**kwargs)
+
+    @property
+    def pipeline_spec(self):
+        return pipeline_spec_builder.component_to_one_step_pipeline(
+            self).pipeline_spec
