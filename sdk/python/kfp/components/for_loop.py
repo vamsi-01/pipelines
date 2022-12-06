@@ -278,3 +278,31 @@ class LoopArgumentVariable(pipeline_channel.PipelineChannel):
             The name of this loop arg variable.
         """
         return f'{loop_arg_name}{self.SUBVAR_NAME_DELIMITER}{subvar_name}'
+
+
+class Collected(pipeline_channel.PipelineChannel):
+    """Used for collecting outputs from tasks created within a dsl.ParallelFor loop.
+    Args:
+        output: The output from a task created in a dsl.ParallelFor loop that you wish to collect.
+
+    Example:
+      ::
+
+        @dsl.pipeline
+        def my_pipeline(frameworks: List[str]):
+            with dsl.ParallelFor(frameworks) as framework:
+                model_task = train_model(framework=framework)
+            best_model_task = select_best(
+                models=dsl.Collected(model_task.outputs['model']))
+    """
+
+    # TODO: positional only arguments?
+    def __init__(self, output: pipeline_channel.PipelineChannel) -> None:
+        # TODO: handle artifact channel
+        self._output = output
+        # TODO: maybe need to set to parent DAG? unsure
+        super().__init__(
+            name=f'pipelinechannel--{self._output.full_name}',
+            task_name=self._output.task_name,
+            channel_type='List',
+        )
