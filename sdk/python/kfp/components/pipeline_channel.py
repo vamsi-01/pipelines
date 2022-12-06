@@ -96,6 +96,11 @@ class PipelineChannel(abc.ABC):
         # (i.e. None => '' => None)
         self.task_name = task_name or None
 
+        from kfp.components import pipeline_context
+
+        self.producer_task = pipeline_context.Pipeline.get_default_pipeline(
+        ).tasks[self.task_name] if self.task_name else None
+
     @property
     def full_name(self) -> str:
         """Unique name for the PipelineChannel."""
