@@ -17,7 +17,6 @@ import functools
 from typing import Callable, Optional
 
 from kfp.components import component_factory
-from kfp.components import graph_component
 from kfp.components import pipeline_task
 from kfp.components import tasks_group
 from kfp.components import utils
@@ -134,7 +133,6 @@ class Pipeline:
         return self
 
     def __exit__(self, *unused_args):
-
         Pipeline._default_pipeline = None
         pipeline_task.PipelineTask._register_task_handler = (
             self._old_register_task_handler)
@@ -167,7 +165,7 @@ class Pipeline:
 
         self.tasks[task_name] = task
         if add_to_group:
-            task.parent_task_group = self.groups[-1]
+            task.parent_group = self.groups[-1]
             self.groups[-1].tasks.append(task)
 
         return task_name

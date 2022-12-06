@@ -298,11 +298,44 @@ class Collected(pipeline_channel.PipelineChannel):
 
     # TODO: positional only arguments?
     def __init__(self, output: pipeline_channel.PipelineChannel) -> None:
-        # TODO: handle artifact channel
         self._output = output
-        # TODO: maybe need to set to parent DAG? unsure
         super().__init__(
-            name=f'pipelinechannel--{self._output.full_name}',
+            name=self._output.name,
             task_name=self._output.task_name,
             channel_type='List',
+            # channel_type=self._output.channel_type,
         )
+
+        # from kfp.components import tasks_group
+        # # for group in task_or_group:
+        # while not (isinstance(task_or_group, tasks_group.TasksGroup) and
+        #            task_or_group.is_root):
+        #     if isinstance(task_or_group, tasks_group.ParallelFor):
+        #         task_or_group.additional_outputs.append(self._output)
+        #     task_or_group = task_or_group.parent_group
+        # # TODO: handle artifact channel
+        # # TODO: maybe need to set to parent DAG? unsure
+
+        #     task_or_group = task_or_group.parent_group
+
+        # print(self._output.producer_task.parent_group.additional_outputs)
+
+
+# # # when __exit__ is called, you may wish to
+
+# groups = [ParallelFor, ParallelFor]
+
+# def pipeline():  # 0
+#     # wire loop-outputs
+#     with ParallelFor:  #enter 1   # 1
+#         # wire t-outputs
+#         with ParallelFor:  #enter 2  # 2
+#             t = prod()  # 3
+#     t2 = cons(t.output)
+
+# depth = 0
+
+# # groups.pop()
+# # # if recently_exited and
+# # # if see collected:
+# # # step through recently exited

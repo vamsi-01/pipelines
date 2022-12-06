@@ -14,7 +14,7 @@
 """Definition for TasksGroup."""
 
 import enum
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 from kfp.components import for_loop
 from kfp.components import pipeline_channel
@@ -65,6 +65,27 @@ class TasksGroup:
         self.display_name = name
         self.dependencies = []
         self.is_root = is_root
+
+        self.pipeline = pipeline_context.Pipeline.get_default_pipeline()
+        self.parent_group = self.pipeline.groups[-1] if self.pipeline else None
+        self.outputs_to_surface: List[pipeline_channel.PipelineChannel] = []
+
+        self.depth = 0 if self.pipeline is None else len(self.pipeline.groups)
+
+    def add_output_to_surface(
+        self, channel: pipeline_channel.PipelineChannel
+    ) -> pipeline_channel.PipelineChannel:
+        """Adds an inner task's pipeline channel to be surfaced by this tasks
+        group, then returns the channel created by this tasks group."""
+        self.outputs_to_surface.append(channel)
+        new_name = pipeline_channel._additional_input_name_for_pipeline_channel(
+            self.name)
+        # TODO: support artifacts
+        new_channel = pipeline_channel.PipelineParameterChannel(
+            name=channel.name,
+            channel_type=channel.channel_type,
+            task_name=self.name)
+        return for_loop.Collected(output=new_channel)
 
     def __enter__(self):
         if not pipeline_context.Pipeline.get_default_pipeline():

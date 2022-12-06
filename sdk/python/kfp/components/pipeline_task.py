@@ -76,8 +76,28 @@ class PipelineTask:
         # import within __init__ to avoid circular import
         from kfp.components.tasks_group import TasksGroup
 
-        self.parent_task_group: Union[None, TasksGroup] = None
+        self.parent_group: Union[None, TasksGroup] = None
+        from kfp.components import pipeline_context
+        self.pipeline = pipeline_context.Pipeline.get_default_pipeline()
+        self.depth = 0 if self.pipeline is None else len(self.pipeline.groups)
+
         args = args or {}
+        print('HERE')
+        for input_name, input_value in args.items():
+            if input_value.producer_task is not None:
+                consumer_depth = self.depth
+                producer_depth = input_value.producer_task.depth
+                parent_group = input_value.producer_task.parent_group
+                while producer_depth != consumer_depth:
+                    producer_depth -= 1
+                    parent_output = parent_group.add_output_to_surface(
+                        input_value)
+                    # input_value = for_loop.Collected()
+
+        # producer_depth = input_value.producer_task.depth
+        # parent_group = input_value.producer_task.parent_group
+        # input_value
+        # import copy
 
         for input_name, argument_value in args.items():
 
@@ -92,6 +112,7 @@ class PipelineTask:
 
             if isinstance(argument_value, pipeline_channel.PipelineChannel):
                 argument_type = argument_value.channel_type
+                # argument_value.consumer_task = self
             elif isinstance(argument_value, str):
                 argument_type = 'String'
             elif isinstance(argument_value, bool):
@@ -120,14 +141,6 @@ class PipelineTask:
 
         self.component_spec = component_spec
 
-        self._task_spec = structures.TaskSpec(
-            name=self._register_task_handler(),
-            inputs={input_name: value for input_name, value in args.items()},
-            dependent_tasks=[],
-            component_ref=component_spec.name,
-            enable_caching=True,
-        )
-
         self.importer_spec = None
         self.container_spec = None
         self.pipeline_spec = None
@@ -151,6 +164,14 @@ class PipelineTask:
             self.importer_spec.artifact_uri = args['uri']
         else:
             self.pipeline_spec = self.component_spec.implementation.graph
+        self.name = self._register_task_handler()
+        self._task_spec = structures.TaskSpec(
+            name=self.name,
+            inputs={input_name: value for input_name, value in args.items()},
+            dependent_tasks=[],
+            component_ref=component_spec.name,
+            enable_caching=True,
+        )
 
         self._outputs = {
             output_name: pipeline_channel.create_pipeline_channel(
@@ -170,14 +191,6 @@ class PipelineTask:
             value for _, value in args.items()
             if not isinstance(value, pipeline_channel.PipelineChannel)
         ])
-
-    @property
-    def name(self) -> str:
-        """The name of the task.
-
-        Unique within its parent group.
-        """
-        return self._task_spec.name
 
     @property
     def inputs(

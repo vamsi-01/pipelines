@@ -17,7 +17,6 @@ def print_list_of_nums(nums: List[int]) -> None:
 def my_pipeline(nums: List[int] = [1, 2, 3]):
     with dsl.ParallelFor(nums) as num:
         task = double(num=num)
-        print(task.output.producer_task)
     print_list_of_nums(nums=dsl.Collected(task.output))
 
 

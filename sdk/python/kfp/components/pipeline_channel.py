@@ -97,9 +97,20 @@ class PipelineChannel(abc.ABC):
         self.task_name = task_name or None
 
         from kfp.components import pipeline_context
+        self.pipeline = pipeline_context.Pipeline.get_default_pipeline()
+        if self.pipeline:
+            if self.task_name in self.pipeline.tasks:
+                self.producer_task = self.pipeline.tasks[self.task_name]
+            else:
+                groups = self.pipeline.groups[0].groups
+                while groups:
+                    group = groups.pop()
+                    if self.task_name == group.name:
+                        self.producer_task = group
+                        break
+                # groups.extend(group.groups[:-1])
 
-        self.producer_task = pipeline_context.Pipeline.get_default_pipeline(
-        ).tasks[self.task_name] if self.task_name else None
+        # self.consumer_task = None
 
     @property
     def full_name(self) -> str:
@@ -367,3 +378,22 @@ def extract_pipeline_channels_from_any(
     # TODO(chensun): extract PipelineChannel from v2 container spec?
 
     return []
+
+
+def _additional_input_name_for_pipeline_channel(
+        channel_or_name: Union[PipelineChannel, str]) -> str:
+    """Gets the name for an additional (compiler-injected) input."""
+
+    # Adding a prefix to avoid (reduce chance of) name collision between the
+    # original component inputs and the injected input.
+    return 'pipelinechannel--' + (
+        channel_or_name.full_name
+        if isinstance(channel_or_name, PipelineChannel) else channel_or_name)
+    # from kfp.components import tasks_group
+    # if isinstance(channel_or_name, PipelineChannel):
+    #     suffix = channel_or_name.full_name
+    # elif isinstance(channel_or_name, tasks_group.TasksGroup):
+    #     suffix = channel_or_name.name
+    # else:
+    #     suffix = channel_or_name
+    # return 'pipelinechannel--' + suffix
