@@ -12,11 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Tests for kfpmponents.for_loop."""
+from typing import Dict, List
 import unittest
 
 from absl.testing import parameterized
+from kfp import dsl
 from kfp.components import for_loop
 from kfp.components import pipeline_channel
+
+
+@dsl.component
+def make_list_of_dict() -> List[Dict[str, str]]:
+    return [{'k': 'v'}]
 
 
 class ForLoopTest(parameterized.TestCase):
@@ -83,7 +90,7 @@ class ForLoopTest(parameterized.TestCase):
                 pipeline_channel.PipelineParameterChannel(
                     name='output1',
                     channel_type='List[Dict[str, str]]',
-                    task_name='task1',
+                    producer_task=make_list_of_dict(),
                 ),
             'expected_serialization_value':
                 '{{channel:task=task1;name=output1-loop-item;type=Dict[str, str];}}',

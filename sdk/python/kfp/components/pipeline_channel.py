@@ -54,10 +54,8 @@ class PipelineChannel(abc.ABC):
     Attributes:
         name: The name of the pipeline channel.
         channel_type: The type of the pipeline channel.
-        task_name: The name of the task that produces the pipeline channel.
-            None means it is not produced by any task, so if None, either user
-            constructs it directly (for providing an immediate value), or it is
-            a pipeline function argument.
+        producer_task: The task that produces the pipeline
+            channel. None if the channel is from a pipeline parameter.
         pattern: The serialized string regex pattern this pipeline channel
             created from.
     """
@@ -67,7 +65,7 @@ class PipelineChannel(abc.ABC):
         self,
         name: str,
         channel_type: Union[str, Dict],
-        task_name: Optional[str] = None,
+        producer_task: Optional['PipelineTask'] = None,
     ):
         """Initializes a PipelineChannel instance.
 
@@ -75,9 +73,8 @@ class PipelineChannel(abc.ABC):
             name: The name of the pipeline channel. The name will be sanitized
                 to be k8s compatible.
             channel_type: The type of the pipeline channel.
-            task_name: Optional; The name of the task that produces the pipeline
-                channel. If provided, the task name will be sanitized to be k8s
-                compatible.
+            producer_task: The task that produces the pipeline
+                channel. None if the channel is from a pipeline parameter.
 
         Raises:
             ValueError: If name or task_name contains invalid characters.
@@ -94,7 +91,8 @@ class PipelineChannel(abc.ABC):
         # ensure value is None even if empty string or empty list/dict
         # so that serialization and unserialization remain consistent
         # (i.e. None => '' => None)
-        self.task_name = task_name or None
+        self.producer_task = producer_task
+        self.task_name = producer_task._task_spec.name if producer_task else None
 
     @property
     def full_name(self) -> str:
@@ -158,26 +156,13 @@ class PipelineChannel(abc.ABC):
 
 
 class PipelineParameterChannel(PipelineChannel):
-    """Represents a pipeline parameter channel.
-
-    Attributes:
-      name: The name of the pipeline channel.
-      channel_type: The type of the pipeline channel.
-      task_name: The name of the task that produces the pipeline channel.
-        None means it is not produced by any task, so if None, either user
-        constructs it directly (for providing an immediate value), or it is a
-        pipeline function argument.
-      pattern: The serialized string regex pattern this pipeline channel created
-        from.
-      value: The actual value of the pipeline channel. If provided, the
-        pipeline channel is "resolved" immediately.
-    """
+    """Represents a pipeline parameter channel."""
 
     def __init__(
         self,
         name: str,
         channel_type: Union[str, Dict],
-        task_name: Optional[str] = None,
+        producer_task: Optional['PipelineTask'] = None,
         value: Optional[type_utils.PARAMETER_TYPES] = None,
     ):
         """Initializes a PipelineArtifactChannel instance.
@@ -185,8 +170,8 @@ class PipelineParameterChannel(PipelineChannel):
         Args:
           name: The name of the pipeline channel.
           channel_type: The type of the pipeline channel.
-          task_name: Optional; The name of the task that produces the pipeline
-            channel.
+          producer_task: The task that produces the pipeline
+            channel. None if the channel is from a pipeline parameter.
           value: Optional; The actual value of the pipeline channel.
 
         Raises:
@@ -194,7 +179,7 @@ class PipelineParameterChannel(PipelineChannel):
           ValueError: If both task_name and value are set.
           TypeError: If the channel type is not a parameter type.
         """
-        if task_name and value:
+        if producer_task and value:
             raise ValueError('task_name and value cannot be both set.')
 
         if not type_utils.is_parameter_type(channel_type):
@@ -205,35 +190,26 @@ class PipelineParameterChannel(PipelineChannel):
         super(PipelineParameterChannel, self).__init__(
             name=name,
             channel_type=channel_type,
-            task_name=task_name,
+            producer_task=producer_task,
         )
 
 
 class PipelineArtifactChannel(PipelineChannel):
-    """Represents a pipeline artifact channel.
-
-    Attributes:
-      name: The name of the pipeline channel.
-      channel_type: The type of the pipeline channel.
-      task_name: The name of the task that produces the pipeline channel.
-        A pipeline artifact channel is always produced by some task.
-      pattern: The serialized string regex pattern this pipeline channel created
-        from.
-    """
+    """Represents a pipeline artifact channel."""
 
     def __init__(
         self,
         name: str,
         channel_type: Union[str, Dict],
-        task_name: Optional[str],
+        producer_task: Optional['PipelineTask'] = None,
     ):
         """Initializes a PipelineArtifactChannel instance.
 
         Args:
             name: The name of the pipeline channel.
             channel_type: The type of the pipeline channel.
-            task_name: Optional; the name of the task that produces the pipeline
-                channel.
+          producer_task: The task that produces the pipeline
+            channel. None if the channel is from a pipeline parameter.
 
         Raises:
             ValueError: If name or task_name contains invalid characters.
@@ -245,14 +221,14 @@ class PipelineArtifactChannel(PipelineChannel):
         super(PipelineArtifactChannel, self).__init__(
             name=name,
             channel_type=channel_type,
-            task_name=task_name,
+            producer_task=producer_task,
         )
 
 
 def create_pipeline_channel(
     name: str,
     channel_type: Union[str, Dict],
-    task_name: Optional[str] = None,
+    producer_task: Optional['PipelineTask'] = None,
     value: Optional[type_utils.PARAMETER_TYPES] = None,
 ) -> PipelineChannel:
     """Creates a PipelineChannel object.
@@ -261,7 +237,8 @@ def create_pipeline_channel(
         name: The name of the channel.
         channel_type: The type of the channel, which decides whether it is an
             PipelineParameterChannel or PipelineArtifactChannel
-        task_name: Optional; the task that produced the channel.
+        producer_task: The task that produces the pipeline
+            channel. None if the channel is from a pipeline parameter.
         value: Optional; the realized value for a channel.
 
     Returns:
@@ -271,14 +248,14 @@ def create_pipeline_channel(
         return PipelineParameterChannel(
             name=name,
             channel_type=channel_type,
-            task_name=task_name,
+            producer_task=producer_task,
             value=value,
         )
     else:
         return PipelineArtifactChannel(
             name=name,
             channel_type=channel_type,
-            task_name=task_name,
+            producer_task=producer_task,
         )
 
 
@@ -312,13 +289,13 @@ def extract_pipeline_channels_from_string(
             pipeline_channel = PipelineParameterChannel(
                 name=name,
                 channel_type=channel_type,
-                task_name=task_name,
+                producer_task=task_name,
             )
         else:
             pipeline_channel = PipelineArtifactChannel(
                 name=name,
                 channel_type=channel_type,
-                task_name=task_name,
+                producer_task=task_name,
             )
         unique_channels.add(pipeline_channel)
 

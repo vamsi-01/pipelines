@@ -16,7 +16,23 @@
 import unittest
 
 from absl.testing import parameterized
+from kfp import dsl
 from kfp.components import pipeline_channel
+
+
+@dsl.component
+def make_int() -> int:
+    return 1
+
+
+@dsl.component
+def make_str() -> str:
+    return 'text'
+
+
+@dsl.component
+def make_artifact(a: dsl.Output[dsl.Artifact]):
+    pass
 
 
 class PipelineChannelTest(parameterized.TestCase):
@@ -45,7 +61,7 @@ class PipelineChannelTest(parameterized.TestCase):
             p = pipeline_channel.PipelineParameterChannel(
                 name='abc',
                 channel_type='Integer',
-                task_name='task1',
+                producer_task=make_int(),
                 value=123,
             )
 
@@ -70,7 +86,7 @@ class PipelineChannelTest(parameterized.TestCase):
             'pipeline_channel':
                 pipeline_channel.PipelineParameterChannel(
                     name='channel1',
-                    task_name='task1',
+                    producer_task=make_str(),
                     channel_type='String',
                 ),
             'str_repr':
@@ -92,7 +108,7 @@ class PipelineChannelTest(parameterized.TestCase):
                     channel_type={'type_a': {
                         'property_b': 'c'
                     }},
-                    task_name='task3',
+                    producer_task=make_artifact(),
                 ),
             'str_repr':
                 '{{channel:task=task3;name=channel3;type={"type_a": {"property_b": "c"}};}}',
@@ -112,7 +128,7 @@ class PipelineChannelTest(parameterized.TestCase):
                 pipeline_channel.PipelineArtifactChannel(
                     name='channel5',
                     channel_type='system.Artifact@0.0.1',
-                    task_name='task5',
+                    producer_task=make_artifact(),
                 ),
             'str_repr':
                 '{{channel:task=task5;name=channel5;type=system.Artifact@0.0.1;}}',

@@ -166,7 +166,7 @@ class LoopArgument(pipeline_channel.PipelineParameterChannel):
         return LoopArgument(
             items=channel,
             name_override=channel.name + '-' + cls.LOOP_ITEM_NAME_BASE,
-            task_name=channel.task_name,
+            producer_task=channel.producer_task,
             channel_type=_get_loop_item_type(channel.channel_type) or 'String',
         )
 
@@ -245,7 +245,7 @@ class LoopArgumentVariable(pipeline_channel.PipelineChannel):
                 loop_arg_name=loop_argument.name,
                 subvar_name=subvar_name,
             ),
-            task_name=loop_argument.task_name,
+            producer_task=loop_argument.producer_task,
             channel_type=_get_subvar_type(loop_argument.channel_type) or
             'String',
         )

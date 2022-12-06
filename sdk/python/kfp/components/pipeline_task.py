@@ -156,7 +156,7 @@ class PipelineTask:
             output_name: pipeline_channel.create_pipeline_channel(
                 name=output_name,
                 channel_type=output_spec.type,
-                task_name=self._task_spec.name,
+                producer_task=self,
             ) for output_name, output_spec in (
                 component_spec.outputs or {}).items()
         }

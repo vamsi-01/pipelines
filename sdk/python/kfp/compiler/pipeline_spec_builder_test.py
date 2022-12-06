@@ -18,10 +18,16 @@ import unittest
 from absl.testing import parameterized
 from google.protobuf import json_format
 from google.protobuf import struct_pb2
+from kfp import dsl
 from kfp.compiler import pipeline_spec_builder
 from kfp.components import pipeline_channel
 from kfp.pipeline_spec import pipeline_spec_pb2
 import yaml
+
+
+@dsl.component
+def comp() -> str:
+    return 'string'
 
 
 class PipelineSpecBuilderTest(parameterized.TestCase):
@@ -33,7 +39,8 @@ class PipelineSpecBuilderTest(parameterized.TestCase):
         {
             'channel':
                 pipeline_channel.PipelineParameterChannel(
-                    name='output1', task_name='task1', channel_type='String'),
+                    name='output1', producer_task=comp(),
+                    channel_type='String'),
             'expected':
                 'pipelinechannel--task1-output1',
         },
@@ -41,7 +48,7 @@ class PipelineSpecBuilderTest(parameterized.TestCase):
             'channel':
                 pipeline_channel.PipelineArtifactChannel(
                     name='output1',
-                    task_name='task1',
+                    producer_task=comp(),
                     channel_type='system.Artifact@0.0.1',
                 ),
             'expected':
