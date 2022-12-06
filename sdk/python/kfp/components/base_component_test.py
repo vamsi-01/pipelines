@@ -64,7 +64,7 @@ component_op = TestComponent(
 
 class BaseComponentTest(unittest.TestCase):
 
-    @patch.object(pipeline_task, 'create_pipeline_task', autospec=True)
+    @patch.object(pipeline_task, 'PipelineTask', autospec=True)
     def test_instantiate_component_with_keyword_arguments(
             self, mock_create_pipeline_task):
 
@@ -79,7 +79,7 @@ class BaseComponentTest(unittest.TestCase):
                 'input4': 3.21,
             })
 
-    @patch.object(pipeline_task, 'create_pipeline_task', autospec=True)
+    @patch.object(pipeline_task, 'PipelineTask', autospec=True)
     def test_instantiate_component_omitting_arguments_with_default(
             self, mock_create_pipeline_task):
 
