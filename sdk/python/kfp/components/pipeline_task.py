@@ -22,6 +22,7 @@ from kfp.components import constants
 from kfp.components import pipeline_channel
 from kfp.components import placeholders
 from kfp.components import structures
+from kfp.components import task
 from kfp.components import utils
 from kfp.components.types import type_utils
 
@@ -29,7 +30,7 @@ _register_task_handler = lambda task: utils.maybe_rename_for_k8s(
     task.component_spec.name)
 
 
-class PipelineTask:
+class PrimitiveTask(task.Task):
     """Represents a pipeline task (instantiated component).
 
     **Note:** ``PipelineTask`` should not be constructed by pipeline authors directly, but instead obtained via an instantiated component (see example).
@@ -66,9 +67,9 @@ class PipelineTask:
     ):
         """Initilizes a PipelineTask instance."""
         # import within __init__ to avoid circular import
-        from kfp.components.tasks_group import TasksGroup
+        from kfp.components.tasks_group import CompositeTask
 
-        self.parent_task_group: Union[None, TasksGroup] = None
+        self.parent_task_group: Union[None, CompositeTask] = None
         args = args or {}
 
         for input_name, argument_value in args.items():
@@ -236,7 +237,7 @@ class PipelineTask:
         ]
         return container_spec
 
-    def set_caching_options(self, enable_caching: bool) -> 'PipelineTask':
+    def set_caching_options(self, enable_caching: bool) -> 'PrimitiveTask':
         """Sets caching options for the task.
 
         Args:
@@ -248,7 +249,7 @@ class PipelineTask:
         self._task_spec.enable_caching = enable_caching
         return self
 
-    def set_cpu_limit(self, cpu: str) -> 'PipelineTask':
+    def set_cpu_limit(self, cpu: str) -> 'PrimitiveTask':
         """Sets CPU limit (maximum) for the task.
 
         Args:
@@ -275,7 +276,7 @@ class PipelineTask:
 
         return self
 
-    def set_gpu_limit(self, gpu: str) -> 'PipelineTask':
+    def set_gpu_limit(self, gpu: str) -> 'PrimitiveTask':
         """Sets GPU limit (maximum) for the task. Only applies if accelerator
         type is also set via .add_node_selector_constraint().
 
@@ -302,7 +303,7 @@ class PipelineTask:
 
         return self
 
-    def set_memory_limit(self, memory: str) -> 'PipelineTask':
+    def set_memory_limit(self, memory: str) -> 'PrimitiveTask':
         """Sets memory limit (maximum) for the task.
 
         Args:
@@ -358,11 +359,12 @@ class PipelineTask:
 
         return self
 
-    def set_retry(self,
-                  num_retries: int,
-                  backoff_duration: Optional[str] = None,
-                  backoff_factor: Optional[float] = None,
-                  backoff_max_duration: Optional[str] = None) -> 'PipelineTask':
+    def set_retry(
+            self,
+            num_retries: int,
+            backoff_duration: Optional[str] = None,
+            backoff_factor: Optional[float] = None,
+            backoff_max_duration: Optional[str] = None) -> 'PrimitiveTask':
         """Sets task retry parameters.
 
         Args:
@@ -382,7 +384,7 @@ class PipelineTask:
         )
         return self
 
-    def add_node_selector_constraint(self, accelerator: str) -> 'PipelineTask':
+    def add_node_selector_constraint(self, accelerator: str) -> 'PrimitiveTask':
         """Sets accelerator type to use when executing this task.
 
         Args:
@@ -406,7 +408,7 @@ class PipelineTask:
 
         return self
 
-    def set_display_name(self, name: str) -> 'PipelineTask':
+    def set_display_name(self, name: str) -> 'PrimitiveTask':
         """Sets display name for the task.
 
         Args:
@@ -418,7 +420,7 @@ class PipelineTask:
         self._task_spec.display_name = name
         return self
 
-    def set_env_variable(self, name: str, value: str) -> 'PipelineTask':
+    def set_env_variable(self, name: str, value: str) -> 'PrimitiveTask':
         """Sets environment variable for the task.
 
         Args:
@@ -434,7 +436,7 @@ class PipelineTask:
             self.container_spec.env = {name: value}
         return self
 
-    def after(self, *tasks) -> 'PipelineTask':
+    def after(self, *tasks) -> 'PrimitiveTask':
         """Specifies an explicit dependency on other tasks by requiring this
         task be executed after other tasks finish completion.
 

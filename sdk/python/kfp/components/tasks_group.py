@@ -30,7 +30,7 @@ class TasksGroupType(str, enum.Enum):
     EXIT_HANDLER = 'exit-handler'
 
 
-class TasksGroup:
+class CompositeTask:
     """Represents a logical group of tasks and groups of TasksGroups.
 
     This class is the base class for groups of tasks, such as tasks
@@ -96,7 +96,7 @@ class TasksGroup:
             group.remove_task_recursive(task)
 
 
-class ExitHandler(TasksGroup):
+class ExitHandler(CompositeTask):
     """A class for setting an exit handler task that is invoked upon exiting a
     group of other tasks.
 
@@ -138,7 +138,7 @@ class ExitHandler(TasksGroup):
         self.exit_task = exit_task
 
 
-class Condition(TasksGroup):
+class Condition(CompositeTask):
     """A class for creating conditional control flow within a pipeline
     definition.
 
@@ -168,7 +168,7 @@ class Condition(TasksGroup):
         self.condition = condition
 
 
-class ParallelFor(TasksGroup):
+class ParallelFor(CompositeTask):
     """A class for creating parallelized for loop control flow over a static
     set of items within a pipeline definition.
 

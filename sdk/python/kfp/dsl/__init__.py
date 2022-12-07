@@ -43,7 +43,7 @@ __all__ = [
     'Metrics',
     'Model',
     'SlicedClassificationMetrics',
-    'PipelineTask',
+    'PrimitiveTask',
 ]
 
 try:
@@ -57,7 +57,7 @@ from kfp.components.component_decorator import component
 from kfp.components.container_component_decorator import container_component
 from kfp.components.importer_node import importer
 from kfp.components.pipeline_context import pipeline
-from kfp.components.pipeline_task import PipelineTask
+from kfp.components.pipeline_task import PrimitiveTask
 from kfp.components.placeholders import ConcatPlaceholder
 from kfp.components.placeholders import IfPresentPlaceholder
 from kfp.components.structures import ContainerSpec
