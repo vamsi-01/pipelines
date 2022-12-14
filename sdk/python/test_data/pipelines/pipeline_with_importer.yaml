@@ -35,6 +35,7 @@ components:
     inputDefinitions:
       parameters:
         pipelinechannel--dataset2:
+          isOptional: true
           parameterType: STRING
         pipelinechannel--train-scalar:
           parameterType: STRING
@@ -233,6 +234,7 @@ root:
     parameters:
       dataset2:
         defaultValue: gs://ml-pipeline-playground/shakespeare2.txt
+        isOptional: true
         parameterType: STRING
 schemaVersion: 2.1.0
 sdkVersion: kfp-2.0.0-beta.8

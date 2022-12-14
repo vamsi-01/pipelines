@@ -32,6 +32,7 @@ components:
     inputDefinitions:
       parameters:
         pipelinechannel--message:
+          isOptional: true
           parameterType: STRING
   comp-exit-op:
     executorLabel: exec-exit-op
@@ -176,6 +177,7 @@ root:
     parameters:
       message:
         defaultValue: Hello World!
+        isOptional: true
         parameterType: STRING
 schemaVersion: 2.1.0
 sdkVersion: kfp-2.0.0-beta.8
