@@ -20,6 +20,7 @@ import json
 import re
 from typing import Dict, List, Optional, Union
 
+from kfp.components import structures
 from kfp.components.types import type_utils
 
 
@@ -170,7 +171,6 @@ class PipelineParameterChannel(PipelineChannel):
         constructs it directly (for providing an immediate value), or it is a
         pipeline function argument.
       pattern: The serialized string regex pattern this pipeline channel created
-        from.
       value: The actual value of the pipeline channel. If provided, the
         pipeline channel is "resolved" immediately.
     """
@@ -180,7 +180,12 @@ class PipelineParameterChannel(PipelineChannel):
         name: str,
         channel_type: Union[str, Dict],
         task_name: Optional[str] = None,
+<<<<<<< Updated upstream
+        default_value: Optional[type_utils.PARAMETER_TYPES] = None,
+=======
         value: Optional[type_utils.PARAMETER_TYPES] = None,
+        optional: bool = False,
+>>>>>>> Stashed changes
     ):
         """Initializes a PipelineArtifactChannel instance.
 
@@ -189,7 +194,12 @@ class PipelineParameterChannel(PipelineChannel):
           channel_type: The type of the pipeline channel.
           task_name: Optional; The name of the task that produces the pipeline
             channel.
+<<<<<<< Updated upstream
+          default_value: Optional; The actual value of the pipeline channel.
+=======
           value: Optional; The actual value of the pipeline channel.
+          optional: Whether the parameter is an optional input.
+>>>>>>> Stashed changes
 
         Raises:
           ValueError: If name or task_name contains invalid characters.
@@ -202,7 +212,12 @@ class PipelineParameterChannel(PipelineChannel):
         if not type_utils.is_parameter_type(channel_type):
             raise TypeError(f'{channel_type} is not a parameter type.')
 
+<<<<<<< Updated upstream
+        self.default_value = default_value
+=======
+        self.optional = optional
         self.value = value
+>>>>>>> Stashed changes
 
         super(PipelineParameterChannel, self).__init__(
             name=name,
@@ -219,8 +234,6 @@ class PipelineArtifactChannel(PipelineChannel):
       channel_type: The type of the pipeline channel.
       task_name: The name of the task that produces the pipeline channel.
         A pipeline artifact channel is always produced by some task.
-      pattern: The serialized string regex pattern this pipeline channel created
-        from.
     """
 
     def __init__(
@@ -253,35 +266,53 @@ class PipelineArtifactChannel(PipelineChannel):
 
 def create_pipeline_channel(
     name: str,
-    channel_type: Union[str, Dict],
+    spec: Union[structures.InputSpec, structures.OutputSpec],
     task_name: Optional[str] = None,
-    value: Optional[type_utils.PARAMETER_TYPES] = None,
 ) -> PipelineChannel:
     """Creates a PipelineChannel object.
 
     Args:
         name: The name of the channel.
-        channel_type: The type of the channel, which decides whether it is an
+        spec: The InputSpec or OutputSpec corresponding to this channel. This
+            determines whether the constructed channel is a
             PipelineParameterChannel or PipelineArtifactChannel
         task_name: Optional; the task that produced the channel.
-        value: Optional; the realized value for a channel.
 
     Returns:
         A PipelineParameterChannel or PipelineArtifactChannel object.
     """
-    if type_utils.is_parameter_type(channel_type):
-        return PipelineParameterChannel(
-            name=name,
-            channel_type=channel_type,
-            task_name=task_name,
-            value=value,
-        )
+    if isinstance(spec, structures.InputSpec):
+        if type_utils.is_parameter_type(spec.type):
+            return PipelineParameterChannel(
+                name=name,
+                channel_type=spec.type,
+                task_name=task_name,
+<<<<<<< Updated upstream
+                default_value=spec.default,
+=======
+                value=spec.default,
+                optional=spec.optional,
+>>>>>>> Stashed changes
+            )
+        else:
+            return PipelineArtifactChannel(
+                name=name,
+                channel_type=spec.type,
+                task_name=task_name,
+            )
     else:
-        return PipelineArtifactChannel(
-            name=name,
-            channel_type=channel_type,
-            task_name=task_name,
-        )
+        if type_utils.is_parameter_type(spec.type):
+            return PipelineParameterChannel(
+                name=name,
+                channel_type=spec.type,
+                task_name=task_name,
+            )
+        else:
+            return PipelineArtifactChannel(
+                name=name,
+                channel_type=spec.type,
+                task_name=task_name,
+            )
 
 
 def extract_pipeline_channels_from_string(
