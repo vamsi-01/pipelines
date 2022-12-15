@@ -181,7 +181,6 @@ class PipelineParameterChannel(PipelineChannel):
         channel_type: Union[str, Dict],
         task_name: Optional[str] = None,
         value: Optional[type_utils.PARAMETER_TYPES] = None,
-        optional: bool = False,
     ):
         """Initializes a PipelineArtifactChannel instance.
 
@@ -191,7 +190,6 @@ class PipelineParameterChannel(PipelineChannel):
           task_name: Optional; The name of the task that produces the pipeline
             channel.
           value: Optional; The actual value of the pipeline channel.
-          optional: Whether the parameter is an optional input.
 
         Raises:
           ValueError: If name or task_name contains invalid characters.
@@ -204,7 +202,6 @@ class PipelineParameterChannel(PipelineChannel):
         if not type_utils.is_parameter_type(channel_type):
             raise TypeError(f'{channel_type} is not a parameter type.')
 
-        self.optional = optional
         self.value = value
 
         super(PipelineParameterChannel, self).__init__(
@@ -222,7 +219,6 @@ class PipelineArtifactChannel(PipelineChannel):
       channel_type: The type of the pipeline channel.
       task_name: The name of the task that produces the pipeline channel.
         A pipeline artifact channel is always produced by some task.
-      optional: Whether the artifact is an optional input.
     """
 
     def __init__(
@@ -230,7 +226,6 @@ class PipelineArtifactChannel(PipelineChannel):
         name: str,
         channel_type: Union[str, Dict],
         task_name: Optional[str],
-        optional: bool = False,
     ):
         """Initializes a PipelineArtifactChannel instance.
 
@@ -239,7 +234,6 @@ class PipelineArtifactChannel(PipelineChannel):
             channel_type: The type of the pipeline channel.
             task_name: Optional; the name of the task that produces the pipeline
                 channel.
-            optional: Whether the artifact is an optional input.
 
         Raises:
             ValueError: If name or task_name contains invalid characters.
@@ -247,8 +241,6 @@ class PipelineArtifactChannel(PipelineChannel):
         """
         if type_utils.is_parameter_type(channel_type):
             raise TypeError(f'{channel_type} is not an artifact type.')
-
-        self.optional = optional
 
         super(PipelineArtifactChannel, self).__init__(
             name=name,
@@ -274,35 +266,18 @@ def create_pipeline_channel(
     Returns:
         A PipelineParameterChannel or PipelineArtifactChannel object.
     """
-    if isinstance(spec, structures.InputSpec):
-        if type_utils.is_parameter_type(spec.type):
-            return PipelineParameterChannel(
-                name=name,
-                channel_type=spec.type,
-                task_name=task_name,
-                value=spec.default,
-                optional=spec.optional,
-            )
-        else:
-            return PipelineArtifactChannel(
-                name=name,
-                channel_type=spec.type,
-                task_name=task_name,
-                optional=spec.optional,
-            )
+    if type_utils.is_parameter_type(spec.type):
+        return PipelineParameterChannel(
+            name=name,
+            channel_type=spec.type,
+            task_name=task_name,
+        )
     else:
-        if type_utils.is_parameter_type(spec.type):
-            return PipelineParameterChannel(
-                name=name,
-                channel_type=spec.type,
-                task_name=task_name,
-            )
-        else:
-            return PipelineArtifactChannel(
-                name=name,
-                channel_type=spec.type,
-                task_name=task_name,
-            )
+        return PipelineArtifactChannel(
+            name=name,
+            channel_type=spec.type,
+            task_name=task_name,
+        )
 
 
 def extract_pipeline_channels_from_string(
