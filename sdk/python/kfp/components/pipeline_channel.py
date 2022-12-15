@@ -180,12 +180,8 @@ class PipelineParameterChannel(PipelineChannel):
         name: str,
         channel_type: Union[str, Dict],
         task_name: Optional[str] = None,
-<<<<<<< Updated upstream
-        default_value: Optional[type_utils.PARAMETER_TYPES] = None,
-=======
         value: Optional[type_utils.PARAMETER_TYPES] = None,
         optional: bool = False,
->>>>>>> Stashed changes
     ):
         """Initializes a PipelineArtifactChannel instance.
 
@@ -194,12 +190,8 @@ class PipelineParameterChannel(PipelineChannel):
           channel_type: The type of the pipeline channel.
           task_name: Optional; The name of the task that produces the pipeline
             channel.
-<<<<<<< Updated upstream
-          default_value: Optional; The actual value of the pipeline channel.
-=======
           value: Optional; The actual value of the pipeline channel.
           optional: Whether the parameter is an optional input.
->>>>>>> Stashed changes
 
         Raises:
           ValueError: If name or task_name contains invalid characters.
@@ -212,12 +204,8 @@ class PipelineParameterChannel(PipelineChannel):
         if not type_utils.is_parameter_type(channel_type):
             raise TypeError(f'{channel_type} is not a parameter type.')
 
-<<<<<<< Updated upstream
-        self.default_value = default_value
-=======
         self.optional = optional
         self.value = value
->>>>>>> Stashed changes
 
         super(PipelineParameterChannel, self).__init__(
             name=name,
@@ -287,12 +275,8 @@ def create_pipeline_channel(
                 name=name,
                 channel_type=spec.type,
                 task_name=task_name,
-<<<<<<< Updated upstream
-                default_value=spec.default,
-=======
                 value=spec.default,
                 optional=spec.optional,
->>>>>>> Stashed changes
             )
         else:
             return PipelineArtifactChannel(
