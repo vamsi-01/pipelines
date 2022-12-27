@@ -275,10 +275,17 @@ class LoopArgumentVariable(pipeline_channel.PipelineChannel):
 
 
 class Aggregated(pipeline_channel.PipelineChannel):
-    output_no = 0
+    # output_no = 0
 
     def __init__(self, output) -> None:
         self.output = output
+        super().__init__(
+            name=self.output.name,
+            channel_type=self.output.channel_type if isinstance(
+                self.output, pipeline_channel.PipelineArtifactChannel) else
+            'LIST',
+            task_name=self.output.task_name,
+        )
 
     def set_consumer_task(self, task: 'PipelineTask') -> None:
         modified_channel = self._traverse_parent_groups_and_set_outputs(

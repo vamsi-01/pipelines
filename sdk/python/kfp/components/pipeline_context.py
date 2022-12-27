@@ -14,10 +14,9 @@
 """Definition for Pipeline."""
 
 import functools
-from typing import Callable, Optional
+from typing import Callable, Dict, Optional
 
 from kfp.components import component_factory
-from kfp.components import graph_component
 from kfp.components import pipeline_task
 from kfp.components import tasks_group
 from kfp.components import utils
@@ -105,7 +104,7 @@ class Pipeline:
             name: The name of the pipeline.
         """
         self.name = name
-        self.tasks = {}
+        self.tasks: Dict[str, pipeline_task.PipelineTask] = {}
         # Add the root group.
         self.groups = [
             tasks_group.TasksGroup(

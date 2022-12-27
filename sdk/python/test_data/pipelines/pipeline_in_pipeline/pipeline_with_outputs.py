@@ -14,7 +14,6 @@
 import collections
 from typing import NamedTuple
 
-from kfp import compiler
 from kfp import dsl
 from kfp.dsl import Artifact
 from kfp.dsl import Output
@@ -52,14 +51,13 @@ def inner_pipeline(
     return output(task1.output, task2.output)
 
 
-@dsl.pipeline(name='pipeline-in-pipeline')
-def my_pipeline(msg: str = 'Hello') -> Artifact:
-    task1 = print_op1(msg=msg)
-    task2 = inner_pipeline(msg='world')
-    return task2.outputs['data']
+# @dsl.pipeline(name='pipeline-in-pipeline')
+# def my_pipeline(msg: str = 'Hello') -> Artifact:
+#     task1 = print_op1(msg=msg)
+#     task2 = inner_pipeline(msg='world')
+#     return task2.outputs['data']
 
-
-if __name__ == '__main__':
-    compiler.Compiler().compile(
-        pipeline_func=my_pipeline,
-        package_path=__file__.replace('.py', '.yaml'))
+# if __name__ == '__main__':
+#     compiler.Compiler().compile(
+#         pipeline_func=my_pipeline,
+#         package_path=__file__.replace('.py', '.yaml'))

@@ -15,7 +15,8 @@
 
 import json
 import typing
-from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
+from typing import (Any, DefaultDict, Dict, List, Mapping, Optional, Tuple,
+                    Union)
 import warnings
 
 from google.protobuf import json_format
@@ -137,6 +138,8 @@ def build_task_spec_for_task(
         pipeline_task_spec.retry_policy.CopyFrom(
             task._task_spec.retry_policy.to_proto())
 
+    print('task inputs', task.inputs)
+    print('tasks in current dag', tasks_in_current_dag)
     for input_name, input_value in task.inputs.items():
 
         if isinstance(
@@ -175,16 +178,29 @@ def build_task_spec_for_task(
         elif isinstance(
                 input_value,
             (pipeline_channel.PipelineParameterChannel, for_loop.Aggregated)):
+            print('THE ONE', input_value)
             if input_value.task_name:
                 # Value is produced by an upstream task.
                 if input_value.task_name in tasks_in_current_dag:
-                    # Dependent task within the same DAG.
-                    pipeline_task_spec.inputs.parameters[
-                        input_name].task_output_parameter.producer_task = (
-                            utils.sanitize_task_name(input_value.task_name))
-                    pipeline_task_spec.inputs.parameters[
-                        input_name].task_output_parameter.output_parameter_key = (
-                            input_value.name)
+                    if isinstance(input_value.task_or_group,
+                                  pipeline_task.PipelineTask):
+                        # Dependent task within the same DAG.
+                        pipeline_task_spec.inputs.parameters[
+                            input_name].task_output_parameter.producer_task = (
+                                utils.sanitize_task_name(input_value.task_name))
+                        pipeline_task_spec.inputs.parameters[
+                            input_name].task_output_parameter.output_parameter_key = (
+                                input_value.name)
+                    else:
+                        # Dependent task within the same DAG.
+                        pipeline_task_spec.inputs.parameters[
+                            input_name].task_output_parameter.producer_task = (
+                                utils.sanitize_task_name(input_value.task_name))
+                        component_input_parameter = (
+                            _additional_name_for_pipeline_channel(input_value))
+                        pipeline_task_spec.inputs.parameters[
+                            input_name].task_output_parameter.output_parameter_key = (
+                                component_input_parameter)
                 else:
                     # Dependent task not from the same DAG.
                     component_input_parameter = (
@@ -415,7 +431,6 @@ def _connect_dag_outputs(
 
     Args:
         component_spec: The component spec to modify its dag outputs.
-        output_name: The name of the dag output.
         output_channel: The pipeline channel selected for the dag output.
     """
     if isinstance(output_channel, pipeline_channel.PipelineArtifactChannel):
@@ -567,7 +582,7 @@ def _fill_in_component_input_default_value(
 
 def build_component_spec_for_group(
     input_pipeline_channels: List[pipeline_channel.PipelineChannel],
-    outputs_to_surface: Dict[str, pipeline_channel.PipelineChannel],
+    output_pipeline_channels: Dict[str, pipeline_channel.PipelineChannel],
 ) -> pipeline_spec_pb2.ComponentSpec:
     """Builds ComponentSpec for a TasksGroup.
 
@@ -595,7 +610,7 @@ def build_component_spec_for_group(
                 input_name].parameter_type = type_utils.get_parameter_type(
                     channel.channel_type)
 
-    for output_name, output in outputs_to_surface.items():
+    for output_name, output in output_pipeline_channels.items():
         if isinstance(output, pipeline_channel.PipelineArtifactChannel):
             component_spec.output_definitions.artifacts[
                 output_name].artifact_type.CopyFrom(
@@ -1041,7 +1056,10 @@ def build_spec_by_group(
     pipeline_spec: pipeline_spec_pb2.PipelineSpec,
     deployment_config: pipeline_spec_pb2.PipelineDeploymentConfig,
     group: tasks_group.TasksGroup,
-    inputs: Mapping[str, List[Tuple[pipeline_channel.PipelineChannel, str]]],
+    inputs: DefaultDict[str, List[Tuple[pipeline_channel.PipelineChannel,
+                                        str]]],
+    # TODO: can simplify inputs to not have producer task in tuple?
+    outputs: DefaultDict[str, List[pipeline_channel.PipelineChannel]],
     dependencies: Dict[str, List[compiler_utils.GroupOrTaskType]],
     rootgroup_name: str,
     task_name_to_parent_groups: Mapping[str,
@@ -1090,7 +1108,12 @@ def build_spec_by_group(
     for subgroup in subgroups:
 
         subgroup_inputs = inputs.get(subgroup.name, [])
-        subgroup_channels = [channel for channel, _ in subgroup_inputs]
+        subgroup_input_channels = [channel for channel, _ in subgroup_inputs]
+        subgroup_output_channels = {
+            _additional_name_for_pipeline_channel(channel): channel
+            for channel in outputs[subgroup.name]
+        }
+        print(subgroup_output_channels)
 
         subgroup_component_name = (utils.sanitize_component_name(subgroup.name))
 
@@ -1145,7 +1168,7 @@ def build_spec_by_group(
             # subgroups or tasks.
             loop_subgroup_channels = []
 
-            for channel in subgroup_channels:
+            for channel in subgroup_input_channels:
                 # Skip 'withItems' loop arguments if it's from an inner loop.
                 if isinstance(
                         channel,
@@ -1174,7 +1197,7 @@ def build_spec_by_group(
 
             subgroup_component_spec = build_component_spec_for_group(
                 input_pipeline_channels=loop_subgroup_channels,
-                outputs_to_surface=subgroup.outputs_to_surface,
+                output_pipeline_channels=subgroup_output_channels,
             )
 
             subgroup_task_spec = build_task_spec_for_group(
@@ -1185,13 +1208,13 @@ def build_spec_by_group(
             )
 
             _build_dag_outputs(subgroup_component_spec,
-                               subgroup.outputs_to_surface)
+                               subgroup_output_channels)
 
         elif isinstance(subgroup, tasks_group.Condition):
 
             # "Punch the hole", adding inputs needed by its subgroups or
             # tasks.
-            condition_subgroup_channels = list(subgroup_channels)
+            condition_subgroup_channels = list(subgroup_input_channels)
             for operand in [
                     subgroup.condition.left_operand,
                     subgroup.condition.right_operand,
@@ -1201,7 +1224,7 @@ def build_spec_by_group(
 
             subgroup_component_spec = build_component_spec_for_group(
                 input_pipeline_channels=condition_subgroup_channels,
-                outputs_to_surface=subgroup.outputs_to_surface,
+                output_pipeline_channels=subgroup_output_channels,
             )
 
             subgroup_task_spec = build_task_spec_for_group(
@@ -1212,18 +1235,18 @@ def build_spec_by_group(
             )
 
             _build_dag_outputs(subgroup_component_spec,
-                               subgroup.outputs_to_surface)
+                               subgroup_output_channels)
 
         elif isinstance(subgroup, tasks_group.ExitHandler):
 
             subgroup_component_spec = build_component_spec_for_group(
-                input_pipeline_channels=subgroup_channels,
-                outputs_to_surface={},
+                input_pipeline_channels=subgroup_input_channels,
+                output_pipeline_channels=subgroup_output_channels,
             )
 
             subgroup_task_spec = build_task_spec_for_group(
                 group=subgroup,
-                pipeline_channels=subgroup_channels,
+                pipeline_channels=subgroup_input_channels,
                 tasks_in_current_dag=tasks_in_current_dag,
                 is_parent_component_root=is_parent_component_root,
             )
@@ -1538,6 +1561,7 @@ def create_pipeline_spec(
         condition_channels=condition_channels,
         name_to_for_loop_group=name_to_for_loop_group,
     )
+    outputs = compiler_utils.get_outputs_for_all_groups(pipeline=pipeline)
     dependencies = compiler_utils.get_dependencies(
         pipeline=pipeline,
         task_name_to_parent_groups=task_name_to_parent_groups,
@@ -1552,6 +1576,7 @@ def create_pipeline_spec(
             deployment_config=deployment_config,
             group=group,
             inputs=inputs,
+            outputs=outputs,
             dependencies=dependencies,
             rootgroup_name=root_group.name,
             task_name_to_parent_groups=task_name_to_parent_groups,

@@ -81,11 +81,11 @@ class PipelineTask:
                     f'Component "{component_spec.name}" got an unexpected input:'
                     f' {input_name}.')
 
-            from kfp.components import for_loop
+            # from kfp.components import for_loop
 
-            if isinstance(argument_value, for_loop.Aggregated):
-                # see Aggregated code -- sets outputs for tasks parent groups
-                argument_value.set_consumer_task(self)
+            # if isinstance(argument_value, for_loop.Aggregated):
+            #     # see Aggregated code -- sets outputs for tasks parent groups
+            #     argument_value.set_consumer_task(self)
 
             input_type = component_spec.inputs[input_name].type
             argument_type = None

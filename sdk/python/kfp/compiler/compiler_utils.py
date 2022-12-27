@@ -333,6 +333,103 @@ def get_inputs_for_all_groups(
     return inputs
 
 
+def _make_new_channel_for_group(
+    name: str,
+    starting_channel: pipeline_channel.PipelineChannel,
+    task_name: 'TasksGroup',
+) -> pipeline_channel.PipelineChannel:
+    return starting_channel.__class__(
+        name,
+        channel_type=starting_channel.channel_type if isinstance(
+            starting_channel, pipeline_channel.PipelineArtifactChannel) else
+        'LIST',
+        task_name=task_name,
+    )
+
+
+output_no = 0
+
+
+def get_outputs_for_all_groups(pipeline: pipeline_context.Pipeline,):
+    from kfp.compiler import pipeline_spec_builder as builder
+    outputs = collections.defaultdict(dict)
+    for task in pipeline.tasks.values():
+        for channel in task.channel_inputs:
+            if isinstance(channel, for_loop.Aggregated):
+                original_output = channel.output
+                original_producer = original_output.task_or_group
+
+                producer_name = original_producer.name
+                output_key = original_output.name
+
+                assert isinstance(
+                    original_producer, pipeline_task.PipelineTask
+                ), 'The first output producer should always be a primitive task, not a TasksGroup.'
+
+                # iteratively surface outputs from the parent-group
+                parent_group = original_producer.parent_task_group
+                while task not in parent_group.tasks:
+                    surfacer_channel = _make_new_channel_for_group(
+                        name=output_key,
+                        starting_channel=original_output,
+                        task_name=producer_name)
+                    outputs[parent_group.name][builder] = surfacer_channel
+                    prev_parent_group_name = producer_name
+                    producer_name = parent_group.name
+                    parent_group = parent_group.parent_task_group
+
+                for channel in task._channel_inputs:
+                    if channel.task_name == original_output.task_name and channel.name == original_output.name:
+                        channel.task_name = prev_parent_group_name
+                # # surface the output from the last group to the consumer task
+                # surfacer_channel = _make_new_channel_for_group(
+                #     name=output_key,
+                #     starting_channel=original_output,
+                #     task_name=producer_name)
+
+                # outputs[original_producer.name].append(surfacer_channel)
+
+    from pprint import pprint
+    pprint(outputs)
+    return outputs
+    # print(group)
+    # for group in channel.task.parent_task_group:
+    #     print('group', group)
+    # outputs[t]
+    # if isinstance(channel, for_loop.Aggregated):
+    #     starting_channel = channel.output
+    #     # new_channel = _make_new_channel_for_group(
+    #     #     single_element_channel.name, single_element_channel,
+    #     #     single_element_channel.task_name)
+    #     producer_task = channel.task_or_group
+
+    #     parent_group = producer_task.parent_task_group
+    #     inner_name = channel.name
+    #     global output_no
+    #     output_no += 1
+    #     outer_name = f'output-{output_no}'
+
+    #     while task not in parent_group.tasks:
+    #         # iterately surface the producer task's outputs from the immediate
+    #         # parent group until the group we're surfacing is at the same
+    #         # level as the consumer task
+    # outputs[outer_name] = _make_new_channel_for_group(
+    #     inner_name,
+    #     channel,
+    #     producer_task.name,
+    # )
+
+    #         inner_name, outer_name = outer_name, f'output-{output_no}'
+    #         producer_task = parent_group
+    #         parent_group = parent_group.parent_task_group
+
+    #     outputs[task_make_new_channel_for_group(
+    #         f'output-{output_no}',
+    #         channel,
+    #         producer_task.name,
+    #     )
+
+
 def _get_uncommon_ancestors(
     task_name_to_parent_groups: Mapping[str, List[GroupOrTaskType]],
     group_name_to_parent_groups: Mapping[str, List[tasks_group.TasksGroup]],

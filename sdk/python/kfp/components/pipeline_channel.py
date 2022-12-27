@@ -97,20 +97,27 @@ class PipelineChannel(abc.ABC):
         # so that serialization and unserialization remain consistent
         # (i.e. None => '' => None)
         self.task_name = task_name or None
-        from kfp.compiler import compiler_utils
         from kfp.components import pipeline_context
-        pipeline = pipeline_context.Pipeline.get_default_pipeline()
+        self.pipeline = pipeline_context.Pipeline.get_default_pipeline()
+
+    @property
+    def task_or_group(self):
+        from kfp.compiler import compiler_utils
+
+        task_name = self.task_name
+        pipeline = self.pipeline
         if task_name and pipeline:
             if task_name in pipeline.tasks:
-                self.task_or_group = pipeline.tasks[task_name]
+                task_or_group = pipeline.tasks[task_name]
             else:
                 all_groups = compiler_utils.get_all_groups(pipeline.groups[0])
                 for group in all_groups:
                     if group.group_type != 'pipeline' and group.name == task_name:
-                        self.task_or_group = group
+                        task_or_group = group
 
         else:
-            self.task_or_group = None
+            task_or_group = None
+        return task_or_group
 
     @property
     def full_name(self) -> str:

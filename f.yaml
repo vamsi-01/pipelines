@@ -1,175 +1,166 @@
 # PIPELINE DEFINITION
-# Name: math-pipeline
-# Outputs:
-#    Output: int
+# Name: my-pipeline
+# Inputs:
+#    string: str [Default: 'string']
 components:
-  comp-add:
-    executorLabel: exec-add
-    inputDefinitions:
-      parameters:
-        nums:
-          parameterType: LIST
-    outputDefinitions:
-      parameters:
-        Output:
-          parameterType: NUMBER_INTEGER
-  comp-double:
-    executorLabel: exec-double
-    inputDefinitions:
-      parameters:
-        num:
-          parameterType: NUMBER_INTEGER
-    outputDefinitions:
-      parameters:
-        Output:
-          parameterType: NUMBER_INTEGER
-  comp-for-loop-2:
+  comp-condition-1:
     dag:
-      outputs:
-        parameters:
-          pipelinechannel--double-Output:
-            valueFromParameter:
-              outputParameterKey: Output
-              producerSubtask: double
       tasks:
-        for-loop-4:
+        for-loop-3:
           componentRef:
-            name: comp-for-loop-4
+            name: comp-for-loop-3
+          inputs:
+            parameters:
+              pipelinechannel--identity-Output:
+                componentInputParameter: pipelinechannel--identity-Output
+              pipelinechannel--string:
+                componentInputParameter: pipelinechannel--string
           parameterIterator:
-            itemInput: pipelinechannel--loop-item-param-3
+            itemInput: pipelinechannel--loop-item-param-2
             items:
               raw: '[1, 2, 3]'
           taskInfo:
-            name: for-loop-4
+            name: for-loop-3
     inputDefinitions:
       parameters:
-        pipelinechannel--loop-item-param-1:
-          parameterType: NUMBER_INTEGER
-    outputDefinitions:
-      parameters:
-        pipelinechannel--double-Output:
-          parameterType: NUMBER_INTEGER
-  comp-for-loop-4:
+        pipelinechannel--identity-Output:
+          parameterType: STRING
+        pipelinechannel--string:
+          parameterType: STRING
+  comp-for-loop-3:
     dag:
-      outputs:
-        parameters:
-          pipelinechannel--double-Output:
-            valueFromParameter:
-              outputParameterKey: Output
-              producerSubtask: double
       tasks:
-        double:
+        identity-2:
           cachingOptions:
             enableCache: true
           componentRef:
-            name: comp-double
+            name: comp-identity-2
           inputs:
             parameters:
-              num:
-                componentInputParameter: pipelinechannel--loop-item-param-3
+              string:
+                componentInputParameter: pipelinechannel--identity-Output
           taskInfo:
-            name: double
+            name: identity-2
     inputDefinitions:
       parameters:
-        pipelinechannel--loop-item-param-3:
+        pipelinechannel--identity-Output:
+          parameterType: STRING
+        pipelinechannel--loop-item-param-2:
           parameterType: NUMBER_INTEGER
+        pipelinechannel--string:
+          parameterType: STRING
+  comp-identity:
+    executorLabel: exec-identity
+    inputDefinitions:
+      parameters:
+        string:
+          parameterType: STRING
     outputDefinitions:
       parameters:
-        pipelinechannel--double-Output:
-          parameterType: NUMBER_INTEGER
-deploymentSpec:
-  executors:
-    exec-add:
-      container:
-        args:
-        - --executor_input
-        - '{{$}}'
-        - --function_to_execute
-        - add
-        command:
-        - sh
-        - -c
-        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
-          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
-          \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==2.0.0-beta.9'\
-          \ && \"$0\" \"$@\"\n"
-        - sh
-        - -ec
-        - 'program_path=$(mktemp -d)
-
-          printf "%s" "$0" > "$program_path/ephemeral_component.py"
-
-          python3 -m kfp.components.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
-
-          '
-        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef add(nums: List[List[int]]) -> int:\n    import itertools\n  \
-          \  return sum(itertools.chain(*nums))\n\n"
-        image: python:3.7
-    exec-double:
-      container:
-        args:
-        - --executor_input
-        - '{{$}}'
-        - --function_to_execute
-        - double
-        command:
-        - sh
-        - -c
-        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
-          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
-          \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==2.0.0-beta.9'\
-          \ && \"$0\" \"$@\"\n"
-        - sh
-        - -ec
-        - 'program_path=$(mktemp -d)
-
-          printf "%s" "$0" > "$program_path/ephemeral_component.py"
-
-          python3 -m kfp.components.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
-
-          '
-        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef double(num: int) -> int:\n    return 2 * num\n\n"
-        image: python:3.7
-pipelineInfo:
-  name: math-pipeline
-root:
-  dag:
-    outputs:
+        Output:
+          parameterType: STRING
+  comp-identity-2:
+    executorLabel: exec-identity-2
+    inputDefinitions:
+      parameters:
+        string:
+          parameterType: STRING
+    outputDefinitions:
       parameters:
         Output:
-          valueFromParameter:
-            outputParameterKey: Output
-            producerSubtask: add
+          parameterType: STRING
+deploymentSpec:
+  executors:
+    exec-identity:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - identity
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==2.0.0-beta.9'\
+          \ && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          python3 -m kfp.components.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef identity(string: str) -> str:\n    return string\n\n"
+        image: python:3.7
+    exec-identity-2:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - identity
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==2.0.0-beta.9'\
+          \ && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          python3 -m kfp.components.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef identity(string: str) -> str:\n    return string\n\n"
+        image: python:3.7
+pipelineInfo:
+  name: my-pipeline
+root:
+  dag:
     tasks:
-      add:
+      condition-1:
+        componentRef:
+          name: comp-condition-1
+        dependentTasks:
+        - identity
+        inputs:
+          parameters:
+            pipelinechannel--identity-Output:
+              taskOutputParameter:
+                outputParameterKey: Output
+                producerTask: identity
+            pipelinechannel--string:
+              componentInputParameter: string
+        taskInfo:
+          name: condition-1
+        triggerPolicy:
+          condition: inputs.parameter_values['pipelinechannel--string'] == 'string'
+      identity:
         cachingOptions:
           enableCache: true
         componentRef:
-          name: comp-add
-        dependentTasks:
-        - for-loop-2
+          name: comp-identity
         inputs:
           parameters:
-            nums:
-              taskOutputParameter:
-                outputParameterKey: pipelinechannel--for-loop-2-Output
-                producerTask: for-loop-2
+            string:
+              componentInputParameter: string
         taskInfo:
-          name: add
-      for-loop-2:
-        componentRef:
-          name: comp-for-loop-2
-        parameterIterator:
-          itemInput: pipelinechannel--loop-item-param-1
-          items:
-            raw: '[1, 2, 3]'
-        taskInfo:
-          name: for-loop-2
-  outputDefinitions:
+          name: identity
+  inputDefinitions:
     parameters:
-      Output:
-        parameterType: NUMBER_INTEGER
+      string:
+        defaultValue: string
+        isOptional: true
+        parameterType: STRING
 schemaVersion: 2.1.0
 sdkVersion: kfp-2.0.0-beta.9
