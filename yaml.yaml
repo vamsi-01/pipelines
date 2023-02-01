@@ -1,0 +1,71 @@
+{
+  "apiVersion": "v1",
+  "kind": "PersistentVolumeClaim",
+  "metadata": {
+    "annotations": {
+      "volume.beta.kubernetes.io/storage-provisioner": "pd.csi.storage.gke.io",
+      "volume.kubernetes.io/storage-provisioner": "pd.csi.storage.gke.io"
+    },
+    "creationTimestamp": "2023-02-01T16:43:05Z",
+    "finalizers": [
+      "kubernetes.io/pvc-protection"
+    ],
+    "managedFields": [
+      {
+        "apiVersion": "v1",
+        "fieldsType": "FieldsV1",
+        "fieldsV1": {
+          "f:metadata": {
+            "f:annotations": {
+              ".": {},
+              "f:volume.beta.kubernetes.io/storage-provisioner": {},
+              "f:volume.kubernetes.io/storage-provisioner": {}
+            }
+          }
+        },
+        "manager": "kube-controller-manager",
+        "operation": "Update",
+        "time": "2023-02-01T16:43:05Z"
+      },
+      {
+        "apiVersion": "v1",
+        "fieldsType": "FieldsV1",
+        "fieldsV1": {
+          "f:spec": {
+            "f:accessModes": {},
+            "f:resources": {
+              "f:requests": {
+                ".": {},
+                "f:storage": {}
+              }
+            },
+            "f:storageClassName": {},
+            "f:volumeMode": {}
+          }
+        },
+        "manager": "kubectl-create",
+        "operation": "Update",
+        "time": "2023-02-01T16:43:05Z"
+      }
+    ],
+    "name": "volume-pipeline-v7mkt-pvc1",
+    "namespace": "kubeflow",
+    "resourceVersion": "105850588",
+    "uid": "9b1d533d-22e7-466f-a15b-493c15a78b0a"
+  },
+  "spec": {
+    "accessModes": [
+      "ReadWriteMany"
+    ],
+    "resources": {
+      "requests": {
+        "storage": "1Gi"
+      }
+    },
+    "storageClassName": "standard",
+    "volumeMode": "Filesystem"
+  },
+  "status": {
+    "phase": "Pending"
+  }
+}
