@@ -3,50 +3,47 @@ import kfp.dsl as dsl
 
 @dsl.pipeline(name='volume-pipeline')
 def pipeline():
-    # create a PVC from a pre-existing volume
-    create_pvc_from_existing_vol = dsl.VolumeOp(
-        name='pre_existing_volume',
+    # dynamically create a PVC
+    dynamically_provisioned_vol = dsl.VolumeOp(
+        name='dynamically_provisioned_vol',
         generate_unique_name=True,
         resource_name='pvc1',
         size='5Gi',
-        storage_class='',
-        volume_name='nfs-pv',
-        modes=dsl.VOLUME_MODE_RWM,
+        storage_class='standard',
+        # volume_name='nfs-pv',
+        modes=dsl.VOLUME_MODE_RWO,
     )
 
-    # use PVC; write to file
-    task_a = dsl.ContainerOp(
-        name='step1_ingest',
+    # ingest data
+    ingest = dsl.ContainerOp(
+        name='ingest',
         image='alpine',
         command=['sh', '-c'],
         arguments=[
-            'mkdir /data/step1 && '
-            'echo hello > /data/step1/file1.txt'
+            'mkdir /mounted_data/step1 && '
+            'echo hello > /mounted_data/step1/file.txt'
         ],
-        pvolumes={'/data': create_pvc_from_existing_vol.volume},
+        pvolumes={
+            '/mounted_data': dynamically_provisioned_vol.volume
+        },
+    ).add_pod_annotation(name="pipelines.kubeflow.org/max_cache_staleness",
+                         value="P0D")
+
+    gunzip = dsl.ContainerOp(
+        name='unzip',
+        image='library/bash:4.4.23',
+        command=['sh', '-c'],
+        arguments=['cat /data/step1/file.txt'],
+        pvolumes={
+            # '/data': task_a.pvolume,
+            '/data': ingest.pvolume
+        },
     )
+    dynamically_provisioned_vol.delete().after(gunzip)
 
-    # # create PVC and dynamically provision volume
-    # create_pvc_task = dsl.VolumeOp(
-    #     name='create_volume',
-    #     generate_unique_name=True,
-    #     resource_name='pvc2',
-    #     size='1Gi',
-    #     storage_class='standard',
-    #     modes=dsl.VOLUME_MODE_RWO,
-    # )
-    # use the previous task's PVC and the newly created PVC
-    # task_b = dsl.ContainerOp(
-    #     name='step2_gunzip',
-    #     image='library/bash:4.4.23',
-    #     command=['sh', '-c'],
-    #     arguments=['cat /data/step1/file.txt'],
-    #     pvolumes={
-    #         # '/data': task_a.pvolume,
-    #         '/other_data': create_pvc_from_existing_vol.volume
-    #     },
-    # )
 
+# I expect the VolumeOp to create a PVC from nfs-pv
+# I expect 'step1_ingest' to use it
 
 if __name__ == '__main__':
     import warnings

@@ -2,13 +2,13 @@ apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
   generateName: volume-pipeline-
-  annotations: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.18, pipelines.kubeflow.org/pipeline_compilation_time: '2023-02-01T10:12:35.069567',
+  annotations: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.18, pipelines.kubeflow.org/pipeline_compilation_time: '2023-02-02T14:03:23.344920',
     pipelines.kubeflow.org/pipeline_spec: '{"name": "volume-pipeline"}'}
   labels: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.18}
 spec:
   entrypoint: volume-pipeline
   templates:
-  - name: pre-existing-volume
+  - name: dynamically-provisioned-vol
     resource:
       action: create
       manifest: |
@@ -18,53 +18,96 @@ spec:
           name: '{{workflow.name}}-pvc1'
         spec:
           accessModes:
-          - ReadWriteMany
+          - ReadWriteOnce
           resources:
             requests:
               storage: 5Gi
-          storageClassName: ''
-          volumeName: nfs-pv
+          storageClassName: standard
     outputs:
       parameters:
-      - name: pre-existing-volume-manifest
+      - name: dynamically-provisioned-vol-manifest
         valueFrom: {jsonPath: '{}'}
-      - name: pre-existing-volume-name
+      - name: dynamically-provisioned-vol-name
         valueFrom: {jsonPath: '{.metadata.name}'}
-      - name: pre-existing-volume-size
+      - name: dynamically-provisioned-vol-size
         valueFrom: {jsonPath: '{.status.capacity.storage}'}
     metadata:
       labels:
         pipelines.kubeflow.org/kfp_sdk_version: 1.8.18
         pipelines.kubeflow.org/pipeline-sdk-type: kfp
         pipelines.kubeflow.org/enable_caching: "true"
-  - name: step1-ingest
+  - name: ingest
     container:
-      args: [mkdir /data/step1 && echo hello > /data/step1/file1.txt]
+      args: [mkdir /mounted_data/step1 && echo hello > /mounted_data/step1/file.txt]
       command: [sh, -c]
       image: alpine
       volumeMounts:
-      - {mountPath: /data, name: pre-existing-volume}
+      - {mountPath: /mounted_data, name: dynamically-provisioned-vol}
     inputs:
       parameters:
-      - {name: pre-existing-volume-name}
+      - {name: dynamically-provisioned-vol-name}
+    metadata:
+      annotations: {pipelines.kubeflow.org/max_cache_staleness: P0D}
+      labels:
+        pipelines.kubeflow.org/kfp_sdk_version: 1.8.18
+        pipelines.kubeflow.org/pipeline-sdk-type: kfp
+        pipelines.kubeflow.org/enable_caching: "true"
+    volumes:
+    - name: dynamically-provisioned-vol
+      persistentVolumeClaim: {claimName: '{{inputs.parameters.dynamically-provisioned-vol-name}}'}
+  - name: kubernetes-resource-delete
+    container:
+      command: [kubectl, delete, PersistentVolumeClaim, '{{inputs.parameters.dynamically-provisioned-vol-name}}',
+        --ignore-not-found, --output, name, --wait=false]
+      image: gcr.io/cloud-builders/kubectl
+    inputs:
+      parameters:
+      - {name: dynamically-provisioned-vol-name}
+    metadata:
+      labels:
+        pipelines.kubeflow.org/kfp_sdk_version: 1.8.18
+        pipelines.kubeflow.org/pipeline-sdk-type: kfp
+        pipelines.kubeflow.org/enable_caching: "true"
+  - name: unzip
+    container:
+      args: [cat /data/step1/file.txt]
+      command: [sh, -c]
+      image: library/bash:4.4.23
+      volumeMounts:
+      - {mountPath: /data, name: dynamically-provisioned-vol}
+    inputs:
+      parameters:
+      - {name: dynamically-provisioned-vol-name}
     metadata:
       labels:
         pipelines.kubeflow.org/kfp_sdk_version: 1.8.18
         pipelines.kubeflow.org/pipeline-sdk-type: kfp
         pipelines.kubeflow.org/enable_caching: "true"
     volumes:
-    - name: pre-existing-volume
-      persistentVolumeClaim: {claimName: '{{inputs.parameters.pre-existing-volume-name}}'}
+    - name: dynamically-provisioned-vol
+      persistentVolumeClaim: {claimName: '{{inputs.parameters.dynamically-provisioned-vol-name}}'}
   - name: volume-pipeline
     dag:
       tasks:
-      - {name: pre-existing-volume, template: pre-existing-volume}
-      - name: step1-ingest
-        template: step1-ingest
-        dependencies: [pre-existing-volume]
+      - {name: dynamically-provisioned-vol, template: dynamically-provisioned-vol}
+      - name: ingest
+        template: ingest
+        dependencies: [dynamically-provisioned-vol]
         arguments:
           parameters:
-          - {name: pre-existing-volume-name, value: '{{tasks.pre-existing-volume.outputs.parameters.pre-existing-volume-name}}'}
+          - {name: dynamically-provisioned-vol-name, value: '{{tasks.dynamically-provisioned-vol.outputs.parameters.dynamically-provisioned-vol-name}}'}
+      - name: kubernetes-resource-delete
+        template: kubernetes-resource-delete
+        dependencies: [dynamically-provisioned-vol, unzip]
+        arguments:
+          parameters:
+          - {name: dynamically-provisioned-vol-name, value: '{{tasks.dynamically-provisioned-vol.outputs.parameters.dynamically-provisioned-vol-name}}'}
+      - name: unzip
+        template: unzip
+        dependencies: [dynamically-provisioned-vol, ingest]
+        arguments:
+          parameters:
+          - {name: dynamically-provisioned-vol-name, value: '{{tasks.dynamically-provisioned-vol.outputs.parameters.dynamically-provisioned-vol-name}}'}
   arguments:
     parameters: []
   serviceAccountName: pipeline-runner

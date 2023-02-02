@@ -1,0 +1,38 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: nfs-pvc-1
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  resources:
+    requests:
+      storage: 1Gi
+--
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nfs-pv-demo-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nfs-pv-demo
+  template:
+    metadata:
+      name: nfs-pv-pod
+      labels:
+        app: nfs-pv-demo
+    spec:
+      containers:
+      - image: busybox
+        name: nfs-pv-multi
+        imagePullPolicy: Always
+        volumeMounts:
+          - name: nfs-volume
+            mountPath: "/disk1"
+      volumes:
+      - name: nfs-volume
+        persistentVolumeClaim:
+          claimName: nfs-pv

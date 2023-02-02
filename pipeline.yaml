@@ -1,0 +1,178 @@
+# PIPELINE DEFINITION
+# Name: bigquery-query-job
+# Description: Launch a BigQuery query job and waits for it to finish.
+#              
+#                Args:
+#                    project (str):
+#                        Required. Project to run the BigQuery query job.
+#                    location (Optional[str]):
+#                        Location for creating the BigQuery job. If not set,
+#                        default to `US` multi-region.
+#              
+#                        For more details, see https://cloud.google.com/bigquery/docs/locations#specifying_your_location
+#                    query (str):
+#                        Required. SQL query text to execute. Only standard SQL is supported.
+#              
+#                        If query are both specified in here and in job_configuration_query,
+#                        the value in here will override the other one.
+#                    query_parameters (Optional[Sequence]):
+#                        jobs.query parameters for standard SQL queries.
+#              
+#                        If query_parameters are both specified in here and in job_configuration_query,
+#                        the value in here will override the other one.
+#                    job_configuration_query (Optional[dict]):
+#                        A json formatted string describing the rest of the job configuration.
+#              
+#                        For more details, see https://cloud.google.com/bigquery/docs/reference/rest/v2/Job#JobConfigurationQuery
+#                    labels (Optional[dict]):
+#                        The labels associated with this job. You can use these to organize and group your jobs.
+#                        Label keys and values can be no longer than 63 characters, can only containlowercase
+#                        letters, numeric characters, underscores and dashes. International characters are
+#                        allowed. Label values are optional. Label keys must start with a letter and each label
+#                        in the list must have a different key.
+#              
+#                        Example: { "name": "wrench", "mass": "1.3kg", "count": "3" }.
+#                    encryption_spec_key_name(Optional[List[str]]):
+#                        Describes the Cloud KMS encryption key that will be used to protect
+#                        destination BigQuery table. The BigQuery Service Account associated with
+#                        your project requires access to this encryption key.
+#              
+#                        If encryption_spec_key_name are both specified in here and in job_configuration_query,
+#                        the value in here will override the other one.
+#                Returns:
+#                    destination_table (google.BQTable):
+#                      Describes the table where the query results should be stored.
+#                      This property must be set for large results that exceed the maximum response size.
+#                      For queries that produce anonymous (cached) results, this field will be populated by BigQuery.
+#                    gcp_resources (str):
+#                        Serialized gcp_resources proto tracking the BigQuery job.
+#                        For more details, see https://github.com/kubeflow/pipelines/blob/master/components/google-cloud/google_cloud_pipeline_components/proto/README.md.
+# Inputs:
+#    encryption_spec_key_name: str
+#    job_configuration_query: dict [Default: {}]
+#    labels: dict [Default: {}]
+#    location: str [Default: 'us-central1']
+#    project: str
+#    query: str
+#    query_parameters: list [Default: []]
+components:
+  comp-bigquery-query-job:
+    executorLabel: exec-bigquery-query-job
+    inputDefinitions:
+      parameters:
+        encryption_spec_key_name:
+          isOptional: true
+          parameterType: STRING
+        job_configuration_query:
+          defaultValue: {}
+          isOptional: true
+          parameterType: STRUCT
+        labels:
+          defaultValue: {}
+          isOptional: true
+          parameterType: STRUCT
+        location:
+          defaultValue: us-central1
+          isOptional: true
+          parameterType: STRING
+        project:
+          parameterType: STRING
+        query:
+          parameterType: STRING
+        query_parameters:
+          defaultValue: []
+          isOptional: true
+          parameterType: LIST
+    outputDefinitions:
+      artifacts:
+        destination_table:
+          artifactType:
+            schemaTitle: google.BQTable
+            schemaVersion: 0.0.1
+      parameters:
+        gcp_resources:
+          parameterType: STRING
+deploymentSpec:
+  executors:
+    exec-bigquery-query-job:
+      container:
+        args:
+        - --type
+        - BigqueryQueryJob
+        - --project
+        - '{{$.inputs.parameters[''project'']}}'
+        - --location
+        - '{{$.inputs.parameters[''location'']}}'
+        - --payload
+        - '{"Concat": ["{", "\"configuration\": {", "\"query\": ", "{{$.inputs.parameters[''job_configuration_query'']}}",
+          ", \"labels\": ", "{{$.inputs.parameters[''labels'']}}", "}", "}"]}'
+        - --job_configuration_query_override
+        - '{"Concat": ["{", "\"query\": \"", "{{$.inputs.parameters[''query'']}}",
+          "\"", ", \"query_parameters\": ", "{{$.inputs.parameters[''query_parameters'']}}",
+          ", \"destination_encryption_configuration\": {", "\"kmsKeyName\": \"", "{{$.inputs.parameters[''encryption_spec_key_name'']}}",
+          "\"}", "}"]}'
+        - --gcp_resources
+        - '{{$.outputs.parameters[''gcp_resources''].output_file}}'
+        - --executor_input
+        - '{{$}}'
+        command:
+        - python3
+        - -u
+        - -m
+        - google_cloud_pipeline_components.container.v1.bigquery.query_job.launcher
+        image: gcr.io/ml-pipeline/google-cloud-pipeline-components:1.0.31
+pipelineInfo:
+  name: bigquery-query-job
+root:
+  dag:
+    tasks:
+      bigquery-query-job:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-bigquery-query-job
+        inputs:
+          parameters:
+            encryption_spec_key_name:
+              componentInputParameter: encryption_spec_key_name
+            job_configuration_query:
+              componentInputParameter: job_configuration_query
+            labels:
+              componentInputParameter: labels
+            location:
+              componentInputParameter: location
+            project:
+              componentInputParameter: project
+            query:
+              componentInputParameter: query
+            query_parameters:
+              componentInputParameter: query_parameters
+        taskInfo:
+          name: bigquery-query-job
+  inputDefinitions:
+    parameters:
+      encryption_spec_key_name:
+        isOptional: true
+        parameterType: STRING
+      job_configuration_query:
+        defaultValue: {}
+        isOptional: true
+        parameterType: STRUCT
+      labels:
+        defaultValue: {}
+        isOptional: true
+        parameterType: STRUCT
+      location:
+        defaultValue: us-central1
+        isOptional: true
+        parameterType: STRING
+      project:
+        parameterType: STRING
+      query:
+        parameterType: STRING
+      query_parameters:
+        defaultValue: []
+        isOptional: true
+        parameterType: LIST
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.0.0-beta.11
