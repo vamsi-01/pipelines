@@ -20,26 +20,23 @@ def pipeline():
         image='alpine',
         command=['sh', '-c'],
         arguments=[
-            'mkdir /mounted_data/step1 && '
-            'echo hello > /mounted_data/step1/file.txt'
+            'mkdir /mounted_data/pipeline && '
+            'echo hello > /mounted_data/pipeline/file.txt'
         ],
-        pvolumes={
-            '/mounted_data': dynamically_provisioned_vol.volume
-        },
-    ).add_pod_annotation(name="pipelines.kubeflow.org/max_cache_staleness",
-                         value="P0D")
-
-    gunzip = dsl.ContainerOp(
-        name='unzip',
-        image='library/bash:4.4.23',
-        command=['sh', '-c'],
-        arguments=['cat /data/step1/file.txt'],
-        pvolumes={
-            # '/data': task_a.pvolume,
-            '/data': ingest.pvolume
-        },
+        pvolumes={'/mounted_data': dynamically_provisioned_vol.volume},
     )
-    dynamically_provisioned_vol.delete().after(gunzip)
+
+    # cat out data from previous step
+    cat = dsl.ContainerOp(
+        name='cat',
+        image='alpine',
+        command=['sh', '-c'],
+        arguments=['cat /data/pipeline/file.txt'],
+        pvolumes={'/data': ingest.pvolume},
+    )
+
+    # clean up PVC (requires pod deletion first)
+    dynamically_provisioned_vol.delete().after(cat)
 
 
 # I expect the VolumeOp to create a PVC from nfs-pv
