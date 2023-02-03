@@ -6,7 +6,7 @@ def pipeline():
     # dynamically create a PVC
     dynamically_provisioned_vol = dsl.VolumeOp(
         name='dynamically_provisioned_vol',
-        generate_unique_name=True,
+        generate_unique_name=False,
         resource_name='pvc1',
         size='5Gi',
         storage_class='standard',
@@ -34,6 +34,8 @@ def pipeline():
         arguments=['cat /data/pipeline/file.txt'],
         pvolumes={'/data': ingest.pvolume},
     )
+    print("THIS")
+    print(ingest.pvolume)
 
     # clean up PVC (requires pod deletion first)
     dynamically_provisioned_vol.delete().after(cat)
