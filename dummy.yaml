@@ -1,0 +1,98 @@
+# PIPELINE DEFINITION
+# Name: x
+components:
+  comp-exit-handler-1:
+    dag:
+      tasks:
+        hey:
+          cachingOptions:
+            enableCache: true
+          componentRef:
+            name: comp-hey
+          taskInfo:
+            name: hey
+  comp-hey:
+    executorLabel: exec-hey
+  comp-vertex-pipelines-notification-email:
+    executorLabel: exec-vertex-pipelines-notification-email
+    inputDefinitions:
+      parameters:
+        pipeline_task_final_status:
+          isOptional: true
+          parameterType: STRUCT
+        recipients:
+          parameterType: LIST
+deploymentSpec:
+  executors:
+    exec-hey:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - hey
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet     --no-warn-script-location 'kfp==2.0.0-beta.13'\
+          \ && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          python3 -m kfp.components.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef hey():\n    print('hey')\n\n"
+        image: python:3.7
+    exec-vertex-pipelines-notification-email:
+      container:
+        args:
+        - --type
+        - VertexNotificationEmail
+        - --payload
+        - ''
+        command:
+        - python3
+        - -u
+        - -m
+        - google_cloud_pipeline_components.container.experimental.vertex_notification_email.executor
+        image: gcr.io/ml-pipeline/google-cloud-pipeline-components:latest
+pipelineInfo:
+  name: x
+root:
+  dag:
+    tasks:
+      exit-handler-1:
+        componentRef:
+          name: comp-exit-handler-1
+        taskInfo:
+          name: exit-handler-1
+      vertex-pipelines-notification-email:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-vertex-pipelines-notification-email
+        dependentTasks:
+        - exit-handler-1
+        inputs:
+          parameters:
+            pipeline_task_final_status:
+              taskFinalStatus:
+                producerTask: exit-handler-1
+            recipients:
+              runtimeValue:
+                constant:
+                - hi
+                - hi
+        taskInfo:
+          name: vertex-pipelines-notification-email
+        triggerPolicy:
+          strategy: ALL_UPSTREAM_TASKS_COMPLETED
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.0.0-beta.13

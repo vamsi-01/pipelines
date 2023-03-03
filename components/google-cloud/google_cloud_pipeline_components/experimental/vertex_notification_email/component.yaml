@@ -27,7 +27,7 @@ description: |
         The task final status of the upstream DAG that this component will use in the notification.
 inputs:
   - name: recipients
-    type: List[str]
+    type: List
   - name: pipeline_task_final_status
     type: PipelineTaskFinalStatus
 implementation:
