@@ -42,84 +42,90 @@ def CreatePVC(
     Outputs:
         name: The name of the generated PVC.
     """
-    create_pvc = pb.CreatePvc(
-        access_modes=access_modes,
-        size=size,
-        storage_class=storage_class,
-        volume_name=volume_name or '',
+    create_pvc = dict(
+        access_modes=str(access_modes),
+        size=str(size),
+        storage_class=str(storage_class),
+        volume_name=str(volume_name or ''),
     )
+    # pb.CreatePvc(
+    #     access_modes=access_modes,
+    # size=size,
+    # storage_class=storage_class,
+    # volume_name=volume_name or '',
+    # )
 
     if bool(pvc_name) == bool(pvc_name_suffix):
         raise ValueError(
-            f"Only one of arguments {'pvc_name'!r} or {'pvc_name_suffix'!r} permitted. Got {'both' if pvc_name else 'neither.'}"
+            f"Only one of arguments {'pvc_name'!r} or {'pvc_name_suffix'!r} permitted. Got {'both' if pvc_name else 'neither'}."
         )
     if pvc_name:
-        create_pvc.pvc_name = pvc_name
+        create_pvc['pvc_name'] = str(pvc_name)
     else:
-        create_pvc.pvc_name_suffix = pvc_name_suffix
+        create_pvc['pvc_name_suffix'] = str(pvc_name_suffix)
 
-    create_pvc.annotations = struct_pb2.Struct()
+    # create_pvc.annotations.CopyFrom(struct_pb2.Struct())
     # create_pvc.annotations.update(annotations or {})
+    # print({k: str(v) for k, v in create_pvc.items()})
 
+    import json
     return dsl.ContainerSpec(
         image='argostub/createpvc',
         command=['echo'],
-        args=[json_format.MessageToDict(create_pvc)],
+        args=[json.dumps(create_pvc)],
     )
 
 
-def mount_pvc(
-    task: PipelineTask,
-    pvc_name: str,
-    mount_path: str,
-) -> None:
-    """Mount a PersistentVolumeClaim to the task container.
+# def mount_pvc(
+#     task: PipelineTask,
+#     pvc_name: str,
+#     mount_path: str,
+# ) -> None:
+#     """Mount a PersistentVolumeClaim to the task container.
 
-    Args:
-        task: Pipeline task.
-        pvc_name: Name of the PVC to mount. Can also be a runtime-generated name
-            reference provided by kubernetes.CreatePvcOp().outputs['pvc_name'].
-        mount_path: Path to which the PVC should be mounted as a volume.
-    """
+#     Args:
+#         task: Pipeline task.
+#         pvc_name: Name of the PVC to mount. Can also be a runtime-generated name
+#             reference provided by kubernetes.CreatePvcOp().outputs['pvc_name'].
+#         mount_path: Path to which the PVC should be mounted as a volume.
+#     """
 
-    pvc_mount = pb.PvcMount(mount_path=mount_path)
-    _assign_pvc_name_to_msg(pvc_mount, pvc_name)
-    pvc_mount.mount_path = mount_path
-    # TODO
-    task.platform_config['kubernetes'] = json_format.MessageToDict(
-        pb.KubernetesExecutorConfig(pvc_mount=[pvc_mount]))
+#     pvc_mount = pb.PvcMount(mount_path=mount_path)
+#     _assign_pvc_name_to_msg(pvc_mount, pvc_name)
+#     pvc_mount.mount_path = mount_path
+#     # TODO
+#     task.platform_config['kubernetes'] = json_format.MessageToDict(
+#         pb.KubernetesExecutorConfig(pvc_mount=[pvc_mount]))
 
-    return task
+#     return task
 
+# @dsl.container_component
+# def DeletePVC(pvc_name: str):
+#     """Delete a PersistentVolumeClaim.
 
-@dsl.container_component
-def DeletePVC(pvc_name: str):
-    """Delete a PersistentVolumeClaim.
+#     Args:
+#         pvc_name: Name of the PVC to delete. Can also be a runtime-generated name
+#             reference provided by kubernetes.CreatePvcOp().outputs['name'].
+#     """
+#     delete_pvc = pb.DeletePvc()
+#     _assign_pvc_name_to_msg(delete_pvc, pvc_name)
 
-    Args:
-        pvc_name: Name of the PVC to delete. Can also be a runtime-generated name
-            reference provided by kubernetes.CreatePvcOp().outputs['name'].
-    """
-    delete_pvc = pb.DeletePvc()
-    _assign_pvc_name_to_msg(delete_pvc, pvc_name)
+#     return dsl.ContainerSpec(
+#         image='argostub/deletepvc',
+#         command=['echo'],
+#         args=[json_format.MessageToDict(delete_pvc)],
+#     )
 
-    return dsl.ContainerSpec(
-        image='argostub/deletepvc',
-        command=['echo'],
-        args=[json_format.MessageToDict(delete_pvc)],
-    )
-
-
-def _assign_pvc_name_to_msg(msg: message.Message,
-                            pvc_name: Union[str, 'PipelineChannel']) -> None:
-    if isinstance(pvc_name, str):
-        msg.pvc_name = pvc_name
-    elif hasattr(pvc_name, 'task_name'):
-        if pvc_name.task_name is None:
-            msg.component_input_parameter = pvc_name.name
-        else:
-            msg.task_output_parameter.producer_task = pvc_name.task_name
-            msg.task_output_parameter.output_parameter_key = pvc_name.name
-    raise ValueError(
-        f'Argument for {"pvc_name"!r} must be an instance of str or PipelineChannel. Got unknown input type: {type(pvc_name)!r}. '
-    )
+# def _assign_pvc_name_to_msg(msg: message.Message,
+#                             pvc_name: Union[str, 'PipelineChannel']) -> None:
+#     if isinstance(pvc_name, str):
+#         msg.pvc_name = pvc_name
+#     elif hasattr(pvc_name, 'task_name'):
+#         if pvc_name.task_name is None:
+#             msg.component_input_parameter = pvc_name.name
+#         else:
+#             msg.task_output_parameter.producer_task = pvc_name.task_name
+#             msg.task_output_parameter.output_parameter_key = pvc_name.name
+#     raise ValueError(
+#         f'Argument for {"pvc_name"!r} must be an instance of str or PipelineChannel. Got unknown input type: {type(pvc_name)!r}. '
+#     )
