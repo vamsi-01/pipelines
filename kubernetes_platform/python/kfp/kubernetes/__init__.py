@@ -14,3 +14,5 @@
 
 from kfp.kubernetes.kubernetes_executor_config_pb2 import \
     KubernetesExecutorConfig
+
+from kfp.kubernetes.volume import CreatePVC, DeletePVC
