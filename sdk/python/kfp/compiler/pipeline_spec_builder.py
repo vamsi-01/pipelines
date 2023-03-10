@@ -13,6 +13,7 @@
 # limitations under the License.
 """Functions for creating PipelineSpec proto objects."""
 
+import copy
 import json
 import typing
 from typing import (Any, DefaultDict, Dict, List, Mapping, Optional, Tuple,
@@ -1504,17 +1505,20 @@ def _merge_deployment_spec(
         old_executor_label: str,
         new_executor_label: str,
     ) -> None:
-        for platform_key, platform_config in sub_platform_spec.platforms.items(
+        # make a copy so that map size doesn't change during iteration
+        sub_platform_spec_copy = copy.deepcopy(sub_platform_spec)
+        for platform_key, platform_config in sub_platform_spec_copy.platforms.items(
         ):
             for cur_exec_label, task_config in platform_config.deployment_spec.executors.items(
             ):
                 if cur_exec_label == old_executor_label:
-                    del sub_platform_spec.platforms[
+                    del sub_platform_spec_copy.platforms[
                         platform_key].deployment_spec.executors[
                             old_executor_label]
-                    sub_platform_spec.platforms[
+                    sub_platform_spec_copy.platforms[
                         platform_key].deployment_spec.executors[
                             new_executor_label].CopyFrom(task_config)
+        sub_platform_spec.CopyFrom(sub_platform_spec_copy)
 
     sub_deployment_config = pipeline_spec_pb2.PipelineDeploymentConfig()
     json_format.ParseDict(
