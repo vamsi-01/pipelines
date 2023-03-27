@@ -1,0 +1,503 @@
+# PIPELINE DEFINITION
+# Name: automl-beans-custom
+# Inputs:
+#    batch_destination: str [Default: '']
+#    bq_dest: str [Default: '']
+#    bq_source: str [Default: 'bq://sara-vertex-demos.beans_demo.large_dataset']
+#    bucket: str [Default: 'gs://cjmccarthy-kfp-default-bucket']
+#    container_uri: str [Default: '']
+#    gcp_region: str [Default: 'us-central1']
+#    project: str [Default: '271009669852']
+components:
+  comp-customcontainertrainingjob-run:
+    executorLabel: exec-customcontainertrainingjob-run
+    inputDefinitions:
+      artifacts:
+        dataset:
+          artifactType:
+            schemaTitle: google.VertexDataset
+            schemaVersion: 0.0.1
+      parameters:
+        bigquery_destination:
+          parameterType: STRING
+        container_uri:
+          parameterType: STRING
+        location:
+          parameterType: STRING
+        project:
+          parameterType: STRING
+        staging_bucket:
+          parameterType: STRING
+    outputDefinitions:
+      artifacts:
+        model:
+          artifactType:
+            schemaTitle: google.VertexModel
+            schemaVersion: 0.0.1
+  comp-customcontainertrainingjob-run-2:
+    executorLabel: exec-customcontainertrainingjob-run-2
+    inputDefinitions:
+      artifacts:
+        dataset:
+          artifactType:
+            schemaTitle: google.VertexDataset
+            schemaVersion: 0.0.1
+      parameters:
+        bigquery_destination:
+          parameterType: STRING
+        container_uri:
+          parameterType: STRING
+        location:
+          parameterType: STRING
+        project:
+          parameterType: STRING
+        staging_bucket:
+          parameterType: STRING
+    outputDefinitions:
+      artifacts:
+        model:
+          artifactType:
+            schemaTitle: google.VertexModel
+            schemaVersion: 0.0.1
+  comp-model-batch-predict:
+    executorLabel: exec-model-batch-predict
+    inputDefinitions:
+      artifacts:
+        model:
+          artifactType:
+            schemaTitle: google.VertexModel
+            schemaVersion: 0.0.1
+          isOptional: true
+        unmanaged_container_model:
+          artifactType:
+            schemaTitle: google.UnmanagedContainerModel
+            schemaVersion: 0.0.1
+          isOptional: true
+      parameters:
+        accelerator_count:
+          defaultValue: 0.0
+          isOptional: true
+          parameterType: NUMBER_INTEGER
+        accelerator_type:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        bigquery_destination_output_uri:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        bigquery_source_input_uri:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        encryption_spec_key_name:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        explanation_metadata:
+          defaultValue: {}
+          isOptional: true
+          parameterType: STRUCT
+        explanation_parameters:
+          defaultValue: {}
+          isOptional: true
+          parameterType: STRUCT
+        gcs_destination_output_uri_prefix:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        gcs_source_uris:
+          defaultValue: []
+          isOptional: true
+          parameterType: LIST
+        generate_explanation:
+          defaultValue: false
+          isOptional: true
+          parameterType: BOOLEAN
+        instances_format:
+          defaultValue: jsonl
+          isOptional: true
+          parameterType: STRING
+        job_display_name:
+          parameterType: STRING
+        labels:
+          defaultValue: {}
+          isOptional: true
+          parameterType: STRUCT
+        location:
+          defaultValue: us-central1
+          isOptional: true
+          parameterType: STRING
+        machine_type:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        manual_batch_tuning_parameters_batch_size:
+          defaultValue: 0.0
+          isOptional: true
+          parameterType: NUMBER_INTEGER
+        max_replica_count:
+          defaultValue: 0.0
+          isOptional: true
+          parameterType: NUMBER_INTEGER
+        model_parameters:
+          defaultValue: {}
+          isOptional: true
+          parameterType: STRUCT
+        predictions_format:
+          defaultValue: jsonl
+          isOptional: true
+          parameterType: STRING
+        project:
+          parameterType: STRING
+        starting_replica_count:
+          defaultValue: 0.0
+          isOptional: true
+          parameterType: NUMBER_INTEGER
+    outputDefinitions:
+      artifacts:
+        batchpredictionjob:
+          artifactType:
+            schemaTitle: google.VertexBatchPredictionJob
+            schemaVersion: 0.0.1
+        bigquery_output_table:
+          artifactType:
+            schemaTitle: google.BQTable
+            schemaVersion: 0.0.1
+        gcs_output_directory:
+          artifactType:
+            schemaTitle: system.Artifact
+            schemaVersion: 0.0.1
+      parameters:
+        gcp_resources:
+          parameterType: STRING
+  comp-tabular-dataset-create:
+    executorLabel: exec-tabular-dataset-create
+    inputDefinitions:
+      parameters:
+        bq_source:
+          isOptional: true
+          parameterType: STRING
+        display_name:
+          parameterType: STRING
+        encryption_spec_key_name:
+          isOptional: true
+          parameterType: STRING
+        gcs_source:
+          isOptional: true
+          parameterType: STRING
+        labels:
+          defaultValue: {}
+          isOptional: true
+          parameterType: STRUCT
+        location:
+          defaultValue: us-central1
+          isOptional: true
+          parameterType: STRING
+        project:
+          parameterType: STRING
+    outputDefinitions:
+      artifacts:
+        dataset:
+          artifactType:
+            schemaTitle: google.VertexDataset
+            schemaVersion: 0.0.1
+defaultPipelineRoot: gs://cjmccarthy-kfp-default-bucket
+deploymentSpec:
+  executors:
+    exec-customcontainertrainingjob-run:
+      container:
+        args:
+        - --init.display_name
+        - pipeline-beans-custom-train
+        - --init.model_serving_container_image_uri
+        - us-docker.pkg.dev/vertex-ai/prediction/sklearn-cpu.0-24:latest
+        - --method.training_fraction_split
+        - '0.8'
+        - --method.validation_fraction_split
+        - '0.1'
+        - --method.test_fraction_split
+        - '0.1'
+        - --method.model_display_name
+        - scikit-beans-model-pipeline
+        - --method.machine_type
+        - n1-standard-4
+        - --executor_input
+        - '{{$}}'
+        - --resource_name_output_artifact_uri
+        - '{{$.outputs.artifacts[''model''].uri}}'
+        - --init.container_uri
+        - '{{$.inputs.parameters[''container_uri'']}}'
+        - --init.project
+        - '{{$.inputs.parameters[''project'']}}'
+        - --init.location
+        - '{{$.inputs.parameters[''location'']}}'
+        - --method.dataset
+        - '{{$.inputs.artifacts[''dataset''].metadata[''resourceName'']}}'
+        - --init.staging_bucket
+        - '{{$.inputs.parameters[''staging_bucket'']}}'
+        - --method.bigquery_destination
+        - '{{$.inputs.parameters[''bigquery_destination'']}}'
+        command:
+        - python3
+        - -m
+        - google_cloud_pipeline_components.container.aiplatform.remote_runner
+        - --cls_name
+        - CustomContainerTrainingJob
+        - --method_name
+        - run
+        image: gcr.io/ml-pipeline/google-cloud-pipeline-components:2.0.0b1
+    exec-customcontainertrainingjob-run-2:
+      container:
+        args:
+        - --init.display_name
+        - pipeline-beans-custom-train
+        - --init.model_serving_container_image_uri
+        - us-docker.pkg.dev/vertex-ai/prediction/sklearn-cpu.0-24:latest
+        - --method.training_fraction_split
+        - '0.8'
+        - --method.validation_fraction_split
+        - '0.1'
+        - --method.test_fraction_split
+        - '0.1'
+        - --method.model_display_name
+        - scikit-beans-model-pipeline
+        - --method.machine_type
+        - n1-standard-4
+        - --executor_input
+        - '{{$}}'
+        - --resource_name_output_artifact_uri
+        - '{{$.outputs.artifacts[''model''].uri}}'
+        - --init.container_uri
+        - '{{$.inputs.parameters[''container_uri'']}}'
+        - --init.project
+        - '{{$.inputs.parameters[''project'']}}'
+        - --init.location
+        - '{{$.inputs.parameters[''location'']}}'
+        - --method.dataset
+        - '{{$.inputs.artifacts[''dataset''].metadata[''resourceName'']}}'
+        - --init.staging_bucket
+        - '{{$.inputs.parameters[''staging_bucket'']}}'
+        - --method.bigquery_destination
+        - '{{$.inputs.parameters[''bigquery_destination'']}}'
+        command:
+        - python3
+        - -m
+        - google_cloud_pipeline_components.container.aiplatform.remote_runner
+        - --cls_name
+        - CustomContainerTrainingJob
+        - --method_name
+        - run
+        image: gcr.io/ml-pipeline/google-cloud-pipeline-components:2.0.0b1
+    exec-model-batch-predict:
+      container:
+        args:
+        - --type
+        - BatchPredictionJob
+        - --payload
+        - '{"Concat": ["{", "\"display_name\": \"", "{{$.inputs.parameters[''job_display_name'']}}",
+          "\", ", {"IfPresent": {"InputName": "model", "Then": "\"model\": \""}},
+          {"IfPresent": {"InputName": "model", "Then": "{{$.inputs.artifacts[''model''].metadata[''resourceName'']}}"}},
+          {"IfPresent": {"InputName": "model", "Then": "\","}}, " \"input_config\":
+          {", "\"instances_format\": \"", "{{$.inputs.parameters[''instances_format'']}}",
+          "\"", ", \"gcs_source\": {", "\"uris\":", "{{$.inputs.parameters[''gcs_source_uris'']}}",
+          "}", ", \"bigquery_source\": {", "\"input_uri\": \"", "{{$.inputs.parameters[''bigquery_source_input_uri'']}}",
+          "\"", "}", "}", ", \"model_parameters\": ", "{{$.inputs.parameters[''model_parameters'']}}",
+          ", \"output_config\": {", "\"predictions_format\": \"", "{{$.inputs.parameters[''predictions_format'']}}",
+          "\"", ", \"gcs_destination\": {", "\"output_uri_prefix\": \"", "{{$.inputs.parameters[''gcs_destination_output_uri_prefix'']}}",
+          "\"", "}", ", \"bigquery_destination\": {", "\"output_uri\": \"", "{{$.inputs.parameters[''bigquery_destination_output_uri'']}}",
+          "\"", "}", "}", ", \"dedicated_resources\": {", "\"machine_spec\": {", "\"machine_type\":
+          \"", "{{$.inputs.parameters[''machine_type'']}}", "\"", ", \"accelerator_type\":
+          \"", "{{$.inputs.parameters[''accelerator_type'']}}", "\"", ", \"accelerator_count\":
+          ", "{{$.inputs.parameters[''accelerator_count'']}}", "}", ", \"starting_replica_count\":
+          ", "{{$.inputs.parameters[''starting_replica_count'']}}", ", \"max_replica_count\":
+          ", "{{$.inputs.parameters[''max_replica_count'']}}", "}", ", \"manual_batch_tuning_parameters\":
+          {", "\"batch_size\": ", "{{$.inputs.parameters[''manual_batch_tuning_parameters_batch_size'']}}",
+          "}", ", \"generate_explanation\": ", "{{$.inputs.parameters[''generate_explanation'']}}",
+          ", \"explanation_spec\": {", "\"parameters\": ", "{{$.inputs.parameters[''explanation_parameters'']}}",
+          ", \"metadata\": ", "{{$.inputs.parameters[''explanation_metadata'']}}",
+          "}", ", \"labels\": ", "{{$.inputs.parameters[''labels'']}}", ", \"encryption_spec\":
+          {\"kms_key_name\":\"", "{{$.inputs.parameters[''encryption_spec_key_name'']}}",
+          "\"}", "}"]}'
+        - --project
+        - '{{$.inputs.parameters[''project'']}}'
+        - --location
+        - '{{$.inputs.parameters[''location'']}}'
+        - --gcp_resources
+        - '{{$.outputs.parameters[''gcp_resources''].output_file}}'
+        - --executor_input
+        - '{{$}}'
+        command:
+        - python3
+        - -u
+        - -m
+        - google_cloud_pipeline_components.container.v1.batch_prediction_job.launcher
+        image: gcr.io/ml-pipeline/google-cloud-pipeline-components:2.0.0b1
+    exec-tabular-dataset-create:
+      container:
+        args:
+        - --method.project
+        - '{{$.inputs.parameters[''project'']}}'
+        - --method.location
+        - '{{$.inputs.parameters[''location'']}}'
+        - --method.display_name
+        - '{{$.inputs.parameters[''display_name'']}}'
+        - '{"IfPresent": {"InputName": "gcs_source", "Then": ["--method.gcs_source",
+          "{{$.inputs.parameters[''gcs_source'']}}"]}}'
+        - '{"IfPresent": {"InputName": "bq_source", "Then": ["--method.bq_source",
+          "{{$.inputs.parameters[''bq_source'']}}"]}}'
+        - --method.labels
+        - '{{$.inputs.parameters[''labels'']}}'
+        - '{"IfPresent": {"InputName": "encryption_spec_key_name", "Then": ["--method.encryption_spec_key_name",
+          "{{$.inputs.parameters[''encryption_spec_key_name'']}}"]}}'
+        - --executor_input
+        - '{{$}}'
+        - --resource_name_output_artifact_uri
+        - '{{$.outputs.artifacts[''dataset''].uri}}'
+        command:
+        - python3
+        - -m
+        - google_cloud_pipeline_components.container.aiplatform.remote_runner
+        - --cls_name
+        - TabularDataset
+        - --method_name
+        - create
+        image: gcr.io/ml-pipeline/google-cloud-pipeline-components:2.0.0b1
+pipelineInfo:
+  name: automl-beans-custom
+root:
+  dag:
+    tasks:
+      customcontainertrainingjob-run:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-customcontainertrainingjob-run
+        inputs:
+          artifacts:
+            dataset:
+              componentInputArtifact: pipelinechannel--dataset
+          parameters:
+            bigquery_destination:
+              componentInputParameter: pipelinechannel--bigquery_destination
+            container_uri:
+              componentInputParameter: container_uri
+            location:
+              componentInputParameter: pipelinechannel--location
+            project:
+              componentInputParameter: project
+            staging_bucket:
+              componentInputParameter: pipelinechannel--staging_bucket
+        taskInfo:
+          name: customcontainertrainingjob-run
+      customcontainertrainingjob-run-2:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-customcontainertrainingjob-run-2
+        dependentTasks:
+        - tabular-dataset-create
+        inputs:
+          artifacts:
+            dataset:
+              taskOutputArtifact:
+                outputArtifactKey: dataset
+                producerTask: tabular-dataset-create
+          parameters:
+            bigquery_destination:
+              componentInputParameter: bq_dest
+            container_uri:
+              componentInputParameter: container_uri
+            location:
+              componentInputParameter: gcp_region
+            project:
+              componentInputParameter: project
+            staging_bucket:
+              componentInputParameter: bucket
+        taskInfo:
+          name: customcontainertrainingjob-run-2
+      model-batch-predict:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-model-batch-predict
+        dependentTasks:
+        - customcontainertrainingjob-run-2
+        inputs:
+          artifacts:
+            model:
+              taskOutputArtifact:
+                outputArtifactKey: model
+                producerTask: customcontainertrainingjob-run-2
+          parameters:
+            gcs_destination_output_uri_prefix:
+              componentInputParameter: batch_destination
+            gcs_source_uris:
+              runtimeValue:
+                constant:
+                - gs://cjmccarthy-kfp-default-bucket/batch_examples.csv
+            instances_format:
+              runtimeValue:
+                constant: csv
+            job_display_name:
+              runtimeValue:
+                constant: beans-batch-predict
+            location:
+              componentInputParameter: gcp_region
+            machine_type:
+              runtimeValue:
+                constant: n1-standard-4
+            project:
+              componentInputParameter: project
+        taskInfo:
+          name: model-batch-predict
+      tabular-dataset-create:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-tabular-dataset-create
+        inputs:
+          parameters:
+            bq_source:
+              componentInputParameter: bq_source
+            display_name:
+              runtimeValue:
+                constant: tabular-beans-dataset
+            location:
+              componentInputParameter: gcp_region
+            project:
+              componentInputParameter: project
+        taskInfo:
+          name: tabular-dataset-create
+  inputDefinitions:
+    parameters:
+      batch_destination:
+        defaultValue: ''
+        isOptional: true
+        parameterType: STRING
+      bq_dest:
+        defaultValue: ''
+        isOptional: true
+        parameterType: STRING
+      bq_source:
+        defaultValue: bq://sara-vertex-demos.beans_demo.large_dataset
+        isOptional: true
+        parameterType: STRING
+      bucket:
+        defaultValue: gs://cjmccarthy-kfp-default-bucket
+        isOptional: true
+        parameterType: STRING
+      container_uri:
+        defaultValue: ''
+        isOptional: true
+        parameterType: STRING
+      gcp_region:
+        defaultValue: us-central1
+        isOptional: true
+        parameterType: STRING
+      project:
+        defaultValue: '271009669852'
+        isOptional: true
+        parameterType: STRING
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.0.0-beta.13
