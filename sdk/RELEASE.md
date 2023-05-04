@@ -9,6 +9,18 @@
 ## Bug fixes and other changes
 
 ## Documentation updates
+# 2.0.0-beta.16
+
+## Features
+
+## Breaking changes
+
+## Deprecations
+
+## Bug fixes and other changes
+* Fix appengine import error [\#9323](https://github.com/kubeflow/pipelines/pull/9323)
+
+## Documentation updates
 # 2.0.0-beta.15
 
 ## Features
