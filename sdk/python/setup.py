@@ -15,6 +15,8 @@
 import os
 import re
 from typing import List
+import uuid
+import contextlib
 
 import setuptools
 
@@ -57,53 +59,96 @@ def read_readme() -> str:
 docker = ['docker']
 kubernetes = ['kfp-kubernetes<2']
 
-setuptools.setup(
-    name='kfp',
-    version=find_version('kfp', '__init__.py'),
-    description='Kubeflow Pipelines SDK',
-    long_description=read_readme(),
-    long_description_content_type='text/markdown',
-    author='The Kubeflow Authors',
-    url='https://github.com/kubeflow/pipelines',
-    project_urls={
-        'Documentation':
-            'https://kubeflow-pipelines.readthedocs.io/en/stable/',
-        'Bug Tracker':
-            'https://github.com/kubeflow/pipelines/issues',
-        'Source':
-            'https://github.com/kubeflow/pipelines/tree/master/sdk',
-        'Changelog':
-            'https://github.com/kubeflow/pipelines/blob/master/sdk/RELEASE.md',
-    },
-    install_requires=get_requirements('requirements.in'),
-    extras_require={
-        'all': docker + kubernetes,
-        'kubernetes': kubernetes,
-    },
-    packages=setuptools.find_packages(exclude=['*test*']),
-    classifiers=[
-        'Intended Audience :: Developers',
-        'Intended Audience :: Education',
-        'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: Apache Software License',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10',
-        'Programming Language :: Python :: 3.11',
-        'Topic :: Scientific/Engineering',
-        'Topic :: Scientific/Engineering :: Artificial Intelligence',
-        'Topic :: Software Development',
-        'Topic :: Software Development :: Libraries',
-        'Topic :: Software Development :: Libraries :: Python Modules',
-    ],
-    python_requires='>=3.7.0,<3.12.0',
-    include_package_data=True,
-    entry_points={
-        'console_scripts': [
-            'dsl-compile = kfp.cli.compile_:main',
-            'dsl-compile-deprecated = kfp.deprecated.compiler.main:main',
-            'kfp=kfp.cli.__main__:main',
-        ]
-    })
+
+@contextlib.contextmanager
+def temporarily_remove_file(filepath: str) -> None:
+    backup_path = str(uuid.uuid4())
+    try:
+        print("HERE")
+        print(os.listdir('kfp'))
+        os.rename(filepath, backup_path)
+        yield
+    finally:
+        os.rename(backup_path, filepath)
+
+
+if os.environ.get('KFP_PKG') == 'EXECUTOR':
+    with temporarily_remove_file(
+            os.path.join(os.path.dirname(__file__), 'kfp', '__init__.py')):
+        setuptools.setup(
+            name='kfp-executor',
+            version='0.0.1',
+            description='Kubeflow Pipelines Executor package',
+            author='The Kubeflow Authors',
+            url='https://github.com/kubeflow/pipelines',
+            packages=setuptools.find_namespace_packages(
+                include=['kfp.executor']),
+            classifiers=[
+                'Intended Audience :: Developers',
+                'Intended Audience :: Education',
+                'Intended Audience :: Science/Research',
+                'License :: OSI Approved :: Apache Software License',
+                'Programming Language :: Python :: 3',
+                'Programming Language :: Python :: 3.7',
+                'Programming Language :: Python :: 3.8',
+                'Programming Language :: Python :: 3.9',
+                'Programming Language :: Python :: 3.10',
+                'Programming Language :: Python :: 3.11',
+                'Topic :: Scientific/Engineering',
+                'Topic :: Scientific/Engineering :: Artificial Intelligence',
+                'Topic :: Software Development',
+                'Topic :: Software Development :: Libraries',
+                'Topic :: Software Development :: Libraries :: Python Modules',
+            ],
+            python_requires='>=3.7.0,<3.12.0')
+else:
+    setuptools.setup(
+        name='kfp',
+        version=find_version('kfp', '__init__.py'),
+        description='Kubeflow Pipelines SDK',
+        long_description=read_readme(),
+        long_description_content_type='text/markdown',
+        author='The Kubeflow Authors',
+        url='https://github.com/kubeflow/pipelines',
+        project_urls={
+            'Documentation':
+                'https://kubeflow-pipelines.readthedocs.io/en/stable/',
+            'Bug Tracker':
+                'https://github.com/kubeflow/pipelines/issues',
+            'Source':
+                'https://github.com/kubeflow/pipelines/tree/master/sdk',
+            'Changelog':
+                'https://github.com/kubeflow/pipelines/blob/master/sdk/RELEASE.md',
+        },
+        install_requires=get_requirements('requirements.in'),
+        extras_require={
+            'all': docker + kubernetes,
+            'kubernetes': kubernetes,
+        },
+        packages=setuptools.find_packages(exclude=['*test*']),
+        classifiers=[
+            'Intended Audience :: Developers',
+            'Intended Audience :: Education',
+            'Intended Audience :: Science/Research',
+            'License :: OSI Approved :: Apache Software License',
+            'Programming Language :: Python :: 3',
+            'Programming Language :: Python :: 3.7',
+            'Programming Language :: Python :: 3.8',
+            'Programming Language :: Python :: 3.9',
+            'Programming Language :: Python :: 3.10',
+            'Programming Language :: Python :: 3.11',
+            'Topic :: Scientific/Engineering',
+            'Topic :: Scientific/Engineering :: Artificial Intelligence',
+            'Topic :: Software Development',
+            'Topic :: Software Development :: Libraries',
+            'Topic :: Software Development :: Libraries :: Python Modules',
+        ],
+        python_requires='>=3.7.0,<3.12.0',
+        include_package_data=True,
+        entry_points={
+            'console_scripts': [
+                'dsl-compile = kfp.cli.compile_:main',
+                'dsl-compile-deprecated = kfp.deprecated.compiler.main:main',
+                'kfp=kfp.cli.__main__:main',
+            ]
+        })

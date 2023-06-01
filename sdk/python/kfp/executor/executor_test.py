@@ -21,15 +21,15 @@ import unittest
 from unittest import mock
 
 from absl.testing import parameterized
-from kfp.components import executor
-from kfp.components.task_final_status import PipelineTaskFinalStatus
-from kfp.components.types import artifact_types
-from kfp.components.types.artifact_types import Artifact
-from kfp.components.types.artifact_types import Dataset
-from kfp.components.types.artifact_types import Metrics
-from kfp.components.types.artifact_types import Model
-from kfp.components.types.type_annotations import InputPath
-from kfp.components.types.type_annotations import OutputPath
+from kfp.executor import executor
+from kfp.dsl.task_final_status import PipelineTaskFinalStatus
+from kfp.dsl import artifact_types
+from kfp.dsl import Artifact
+from kfp.dsl import Dataset
+from kfp.dsl import Metrics
+from kfp.dsl import Model
+from kfp.dsl.type_annotations import InputPath
+from kfp.dsl.type_annotations import OutputPath
 from kfp.dsl import Input
 from kfp.dsl import Output
 

@@ -15,7 +15,7 @@ import unittest
 
 from kfp import dsl
 from kfp.components import importer_node
-from kfp.components.types.artifact_types import Dataset
+from kfp.dsl import Dataset
 
 
 class TestImporterSupportsDynamicMetadata(unittest.TestCase):

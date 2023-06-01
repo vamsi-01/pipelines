@@ -18,6 +18,7 @@ from typing import Callable, Dict, List, Union
 
 from kfp.components import component_factory
 from kfp.components.types import type_annotations
+from kfp.dsl import type_annotations as dsl_type_annotations
 from kfp.components.types import type_utils
 
 RETURN_PREFIX = 'return-'
@@ -44,7 +45,8 @@ def get_param_to_custom_artifact_class(func: Callable) -> Dict[str, type]:
     typing.NamedTuple returns.
     """
     param_to_artifact_cls: Dict[str, type] = {}
-    kfp_artifact_classes = set(type_utils._ARTIFACT_CLASSES_MAPPING.values())
+    kfp_artifact_classes = set(
+        dsl_type_annotations.ARTIFACT_CLASSES_MAPPING.values())
 
     signature = inspect.signature(func)
     for name, param in signature.parameters.items():
@@ -53,7 +55,7 @@ def get_param_to_custom_artifact_class(func: Callable) -> Dict[str, type]:
             artifact_class = type_annotations.get_io_artifact_class(annotation)
             if artifact_class not in kfp_artifact_classes:
                 param_to_artifact_cls[name] = artifact_class
-        elif type_annotations.is_artifact_class(annotation):
+        elif dsl_type_annotations.is_artifact_class(annotation):
             param_to_artifact_cls[name] = annotation
             if artifact_class not in kfp_artifact_classes:
                 param_to_artifact_cls[name] = artifact_class
@@ -65,11 +67,11 @@ def get_param_to_custom_artifact_class(func: Callable) -> Dict[str, type]:
 
     elif type_utils.is_typed_named_tuple_annotation(return_annotation):
         for name, annotation in return_annotation.__annotations__.items():
-            if type_annotations.is_artifact_class(
+            if dsl_type_annotations.is_artifact_class(
                     annotation) and annotation not in kfp_artifact_classes:
                 param_to_artifact_cls[f'{RETURN_PREFIX}{name}'] = annotation
 
-    elif type_annotations.is_artifact_class(
+    elif dsl_type_annotations.is_artifact_class(
             return_annotation
     ) and return_annotation not in kfp_artifact_classes:
         param_to_artifact_cls[RETURN_PREFIX] = return_annotation

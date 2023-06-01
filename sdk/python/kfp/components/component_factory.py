@@ -27,10 +27,11 @@ from kfp.components import graph_component
 from kfp.components import placeholders
 from kfp.components import python_component
 from kfp.components import structures
-from kfp.components import task_final_status
-from kfp.components.types import artifact_types
+from kfp.dsl import task_final_status
+from kfp.dsl import artifact_types
 from kfp.components.types import custom_artifact_types
 from kfp.components.types import type_annotations
+from kfp.dsl import type_annotations as dsl_type_annotations
 from kfp.components.types import type_utils
 
 _DEFAULT_BASE_IMAGE = 'python:3.7'
@@ -202,7 +203,7 @@ def extract_component_interface(
 
             parameter_type = type_annotations.get_io_artifact_class(
                 parameter_type)
-            if not type_annotations.is_artifact_class(parameter_type):
+            if not dsl_type_annotations.is_artifact_class(parameter_type):
                 raise ValueError(
                     f'Input[T] and Output[T] are only supported when T is an artifact or list of artifacts. Found `{io_name} with type {parameter_type}`'
                 )
@@ -222,11 +223,11 @@ def extract_component_interface(
 
         elif isinstance(
                 parameter_type,
-            (type_annotations.InputPath, type_annotations.OutputPath)):
+            (dsl_type_annotations.InputPath, dsl_type_annotations.OutputPath)):
             passing_style = type(parameter_type)
             parameter_type = parameter_type.type
             if parameter.default is not inspect.Parameter.empty and not (
-                    passing_style == type_annotations.InputPath and
+                    passing_style == dsl_type_annotations.InputPath and
                     parameter.default is None):
                 raise ValueError(
                     'Path inputs only support default values of None. Default'
@@ -238,7 +239,8 @@ def extract_component_interface(
                 f'Missing type annotation for argument: {parameter.name}')
 
         if passing_style in [
-                type_annotations.OutputAnnotation, type_annotations.OutputPath
+                type_annotations.OutputAnnotation,
+                dsl_type_annotations.OutputPath
         ]:
             if io_name == single_output_name_const:
                 raise ValueError(
@@ -246,10 +248,10 @@ def extract_component_interface(
                 )
             io_name = _maybe_make_unique(io_name, output_names)
             output_names.add(io_name)
-            if type_annotations.is_artifact_class(parameter_type):
+            if dsl_type_annotations.is_artifact_class(parameter_type):
                 schema_version = parameter_type.schema_version
                 output_spec = structures.OutputSpec(
-                    type=type_utils.create_bundled_artifact_type(
+                    type=dsl_type_annotations.create_bundled_artifact_type(
                         type_struct, schema_version),
                     is_artifact_list=is_artifact_list)
             else:
@@ -258,11 +260,11 @@ def extract_component_interface(
         else:
             io_name = _maybe_make_unique(io_name, input_names)
             input_names.add(io_name)
-            type_ = type_utils.create_bundled_artifact_type(
+            type_ = dsl_type_annotations.create_bundled_artifact_type(
                 type_struct, parameter_type.schema_version
-            ) if type_annotations.is_artifact_class(
+            ) if dsl_type_annotations.is_artifact_class(
                 parameter_type) else type_struct
-            default = None if parameter.default == inspect.Parameter.empty or type_annotations.is_artifact_class(
+            default = None if parameter.default == inspect.Parameter.empty or dsl_type_annotations.is_artifact_class(
                 parameter_type) else parameter.default
             optional = parameter.default is not inspect.Parameter.empty or type_utils.is_task_final_status_type(
                 type_struct)
@@ -292,13 +294,13 @@ def extract_component_interface(
                 if type_annotations.is_list_of_artifacts(type_var):
                     artifact_cls = type_var.__args__[0]
                     output_spec = structures.OutputSpec(
-                        type=type_utils.create_bundled_artifact_type(
+                        type=dsl_type_annotations.create_bundled_artifact_type(
                             artifact_cls.schema_title,
                             artifact_cls.schema_version),
                         is_artifact_list=True)
-                elif type_annotations.is_artifact_class(type_var):
+                elif dsl_type_annotations.is_artifact_class(type_var):
                     output_spec = structures.OutputSpec(
-                        type=type_utils.create_bundled_artifact_type(
+                        type=dsl_type_annotations.create_bundled_artifact_type(
                             type_var.schema_title, type_var.schema_version))
                 else:
                     type_struct = type_utils._annotation_to_type_struct(
@@ -328,12 +330,12 @@ def extract_component_interface(
             if type_annotations.is_list_of_artifacts(return_ann):
                 artifact_cls = return_ann.__args__[0]
                 output_spec = structures.OutputSpec(
-                    type=type_utils.create_bundled_artifact_type(
+                    type=dsl_type_annotations.create_bundled_artifact_type(
                         artifact_cls.schema_title, artifact_cls.schema_version),
                     is_artifact_list=True)
-            elif type_annotations.is_artifact_class(return_ann):
+            elif dsl_type_annotations.is_artifact_class(return_ann):
                 output_spec = structures.OutputSpec(
-                    type=type_utils.create_bundled_artifact_type(
+                    type=dsl_type_annotations.create_bundled_artifact_type(
                         return_ann.schema_title, return_ann.schema_version),
                     is_artifact_list=False)
             else:

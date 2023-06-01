@@ -19,9 +19,9 @@ from kfp import dsl
 from kfp.components import component_factory
 from kfp.components import structures
 from kfp.components.component_decorator import component
-from kfp.components.types.artifact_types import Artifact
-from kfp.components.types.artifact_types import Model
-from kfp.components.types.type_annotations import OutputPath
+from kfp.dsl import Artifact
+from kfp.dsl import Model
+from kfp.dsl import OutputPath
 from kfp.dsl import Input
 from kfp.dsl import Output
 

@@ -25,7 +25,7 @@ from kfp.components import base_component
 from kfp.components import pipeline_channel
 from kfp.components import structures
 from kfp.components import yaml_component
-from kfp.components.types import artifact_types
+from kfp.dsl import artifact_types
 from kfp.components.types import type_utils
 from kfp.components.types.type_utils import InconsistentTypeException
 from kfp.dsl import Dataset
@@ -313,7 +313,7 @@ class TestCreateBundledArtifacttType(parameterized.TestCase):
     ])
     def test(self, schema_title: str, schema_version: Union[str, None],
              expected: str):
-        actual = type_utils.create_bundled_artifact_type(
+        actual = dsl_type_annotations.create_bundled_artifact_type(
             schema_title, schema_version)
         self.assertEqual(actual, expected)
 

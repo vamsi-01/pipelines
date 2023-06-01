@@ -19,102 +19,8 @@ These are only compatible with v2 Pipelines.
 import re
 from typing import List, Type, TypeVar, Union
 
-from kfp.components.types import artifact_types
-from kfp.components.types import type_annotations
-from kfp.components.types import type_utils
-
-
-class OutputPath:
-    """Type annotation used in component definitions for indicating a parameter
-    is a path to an output. The path parameter typed with this annotation can
-    be treated as a locally accessible filepath within the component body.
-
-    The argument typed with this annotation is provided at runtime by the executing backend and does not need to be passed as an input by the pipeline author (see example).
-
-
-    Args:
-        type: The type of the value written to the output path.
-
-    Example:
-      ::
-
-        @dsl.component
-        def create_parameter(
-                message: str,
-                output_parameter_path: OutputPath(str),
-        ):
-            with open(output_parameter_path, 'w') as f:
-                f.write(message)
-
-
-        @dsl.component
-        def consume_parameter(message: str):
-            print(message)
-
-
-        @dsl.pipeline(name='my-pipeline', pipeline_root='gs://my-bucket')
-        def my_pipeline(message: str = 'default message'):
-            create_param_op = create_parameter(message=message)
-            consume_parameter(message=create_param_op.outputs['output_parameter_path'])
-    """
-
-    def __init__(self, type=None):
-        self.type = construct_type_for_inputpath_or_outputpath(type)
-
-    def __eq__(self, other):
-        return isinstance(other, OutputPath) and self.type == other.type
-
-
-class InputPath:
-    """Type annotation used in component definitions for indicating a parameter
-    is a path to an input.
-
-    Example:
-      ::
-
-        @dsl.component
-        def create_dataset(dataset_path: OutputPath('Dataset'),):
-            import json
-            dataset = {'my_dataset': [[1, 2, 3], [4, 5, 6]]}
-            with open(dataset_path, 'w') as f:
-                json.dump(dataset, f)
-
-
-        @dsl.component
-        def consume_dataset(dataset: InputPath('Dataset')):
-            print(dataset)
-
-
-        @dsl.pipeline(name='my-pipeline', pipeline_root='gs://my-bucket')
-        def my_pipeline():
-            create_dataset_op = create_dataset()
-            consume_dataset(dataset=create_dataset_op.outputs['dataset_path'])
-    """
-
-    def __init__(self, type=None):
-        self.type = construct_type_for_inputpath_or_outputpath(type)
-
-    def __eq__(self, other):
-        return isinstance(other, InputPath) and self.type == other.type
-
-
-def construct_type_for_inputpath_or_outputpath(
-        type_: Union[str, Type, None]) -> Union[str, None]:
-    if type_annotations.is_artifact_class(type_):
-        return type_utils.create_bundled_artifact_type(type_.schema_title,
-                                                       type_.schema_version)
-    elif isinstance(
-            type_,
-            str) and type_.lower() in type_utils._ARTIFACT_CLASSES_MAPPING:
-        # v1 artifact backward compat, e.g. dsl.OutputPath('Dataset')
-        return type_utils.create_bundled_artifact_type(
-            type_utils._ARTIFACT_CLASSES_MAPPING[type_.lower()].schema_title)
-    elif type_utils.get_parameter_type(type_):
-        return type_
-    else:
-        # v1 unknown type dsl.OutputPath('MyCustomType')
-        return type_utils.create_bundled_artifact_type(
-            artifact_types.Artifact.schema_title)
+from kfp.dsl import artifact_types
+from kfp.dsl import type_annotations as dsl_type_annotations
 
 
 class InputAnnotation:
@@ -226,17 +132,11 @@ def get_short_type_name(type_name: str) -> str:
     return match['type'] if match else type_name
 
 
-def is_artifact_class(artifact_class_or_instance: Type) -> bool:
-    # we do not yet support non-pre-registered custom artifact types with instance_schema attribute
-    return hasattr(artifact_class_or_instance, 'schema_title') and hasattr(
-        artifact_class_or_instance, 'schema_version')
-
-
 def is_list_of_artifacts(
     type_var: Union[Type[List[artifact_types.Artifact]],
                     Type[artifact_types.Artifact]]
 ) -> bool:
     # the type annotation for this function's `type_var` parameter may not actually be a subclass of the KFP SDK's Artifact class for custom artifact types
     return getattr(type_var, '__origin__',
-                   None) == list and type_annotations.is_artifact_class(
+                   None) == list and dsl_type_annotations.is_artifact_class(
                        type_var.__args__[0])

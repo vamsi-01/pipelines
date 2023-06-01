@@ -17,7 +17,7 @@ import logging
 import os
 import sys
 
-from kfp.components import executor as component_executor
+from kfp.executor import executor as component_executor
 from kfp.components import kfp_config
 from kfp.components import utils
 

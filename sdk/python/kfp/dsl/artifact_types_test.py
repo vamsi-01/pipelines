@@ -18,7 +18,7 @@ import os
 import unittest
 
 from absl.testing import parameterized
-from kfp.components.types import artifact_types
+from kfp.dsl import artifact_types
 
 
 class ArtifactsTest(parameterized.TestCase):

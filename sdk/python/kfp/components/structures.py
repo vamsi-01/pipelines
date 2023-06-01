@@ -29,8 +29,9 @@ from kfp.components import v1_components
 from kfp.components import v1_structures
 from kfp.components.container_component_artifact_channel import \
     ContainerComponentArtifactChannel
-from kfp.components.types import artifact_types
+from kfp.dsl import artifact_types
 from kfp.components.types import type_annotations
+from kfp.dsl import type_annotations as dsl_type_annotations
 from kfp.components.types import type_utils
 from kfp.pipeline_spec import pipeline_spec_pb2
 import yaml
@@ -96,7 +97,7 @@ class InputSpec:
             is_artifact_list = ir_component_inputs_dict.get(
                 'isArtifactList', False)
             return InputSpec(
-                type=type_utils.create_bundled_artifact_type(
+                type=dsl_type_annotations.create_bundled_artifact_type(
                     type_, schema_version),
                 optional=optional,
                 is_artifact_list=is_artifact_list)
@@ -185,7 +186,7 @@ class OutputSpec:
             is_artifact_list = ir_component_outputs_dict.get(
                 'isArtifactList', False)
             return OutputSpec(
-                type=type_utils.create_bundled_artifact_type(
+                type=dsl_type_annotations.create_bundled_artifact_type(
                     type_, schema_version),
                 is_artifact_list=is_artifact_list)
 
@@ -682,19 +683,19 @@ class ComponentSpec:
                 continue
 
             elif isinstance(type_, str) and re.match(
-                    type_utils._GOOGLE_TYPES_PATTERN, type_):
+                    type_utils.GOOGLE_TYPES_PATTERN, type_):
                 schema_title = type_
-                schema_version = type_utils._GOOGLE_TYPES_VERSION
+                schema_version = type_utils.GOOGLE_TYPES_VERSION
 
             elif isinstance(type_, str) and type_.lower(
-            ) in type_utils._ARTIFACT_CLASSES_MAPPING:
-                artifact_class = type_utils._ARTIFACT_CLASSES_MAPPING[
+            ) in dsl_type_annotations.ARTIFACT_CLASSES_MAPPING:
+                artifact_class = dsl_type_annotations.ARTIFACT_CLASSES_MAPPING[
                     type_.lower()]
                 schema_title = artifact_class.schema_title
                 schema_version = artifact_class.schema_version
 
             elif type_ is None or isinstance(type_, dict) or type_.lower(
-            ) not in type_utils._ARTIFACT_CLASSES_MAPPING:
+            ) not in dsl_type_annotations.ARTIFACT_CLASSES_MAPPING:
                 schema_title = artifact_types.Artifact.schema_title
                 schema_version = artifact_types.Artifact.schema_version
 
@@ -704,14 +705,14 @@ class ComponentSpec:
             if optional:
                 # handles optional artifacts with no default value
                 inputs[utils.sanitize_input_name(spec['name'])] = InputSpec(
-                    type=type_utils.create_bundled_artifact_type(
+                    type=dsl_type_annotations.create_bundled_artifact_type(
                         schema_title, schema_version),
                     default=default,
                     optional=optional,
                 )
             else:
                 inputs[utils.sanitize_input_name(spec['name'])] = InputSpec(
-                    type=type_utils.create_bundled_artifact_type(
+                    type=dsl_type_annotations.create_bundled_artifact_type(
                         schema_title, schema_version))
 
         outputs = {}
@@ -732,19 +733,19 @@ class ComponentSpec:
                 continue
 
             elif isinstance(type_, str) and re.match(
-                    type_utils._GOOGLE_TYPES_PATTERN, type_):
+                    type_utils.GOOGLE_TYPES_PATTERN, type_):
                 schema_title = type_
-                schema_version = type_utils._GOOGLE_TYPES_VERSION
+                schema_version = type_utils.GOOGLE_TYPES_VERSION
 
             elif isinstance(type_, str) and type_.lower(
-            ) in type_utils._ARTIFACT_CLASSES_MAPPING:
-                artifact_class = type_utils._ARTIFACT_CLASSES_MAPPING[
+            ) in dsl_type_annotations.ARTIFACT_CLASSES_MAPPING:
+                artifact_class = dsl_type_annotations.ARTIFACT_CLASSES_MAPPING[
                     type_.lower()]
                 schema_title = artifact_class.schema_title
                 schema_version = artifact_class.schema_version
 
             elif type_ is None or isinstance(type_, dict) or type_.lower(
-            ) not in type_utils._ARTIFACT_CLASSES_MAPPING:
+            ) not in dsl_type_annotations.ARTIFACT_CLASSES_MAPPING:
                 schema_title = artifact_types.Artifact.schema_title
                 schema_version = artifact_types.Artifact.schema_version
 
@@ -752,7 +753,7 @@ class ComponentSpec:
                 raise ValueError(f'Unknown output: {type_}')
 
             outputs[utils.sanitize_input_name(spec['name'])] = OutputSpec(
-                type=type_utils.create_bundled_artifact_type(
+                type=dsl_type_annotations.create_bundled_artifact_type(
                     schema_title, schema_version))
 
         return ComponentSpec(

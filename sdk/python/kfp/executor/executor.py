@@ -16,18 +16,18 @@ import json
 import os
 from typing import Any, Callable, Dict, List, Optional, Union
 
-from kfp.components import python_component
-from kfp.components import task_final_status
-from kfp.components.types import artifact_types
+from kfp.dsl import task_final_status
+from kfp.dsl import artifact_types
 from kfp.components.types import type_annotations
 
 
 class Executor():
     """Executor executes v2-based Python function components."""
 
-    def __init__(self, executor_input: Dict,
-                 function_to_execute: Union[Callable,
-                                            python_component.PythonComponent]):
+    def __init__(
+        self, executor_input: Dict,
+        function_to_execute: Union[Callable,
+                                   'python_component.PythonComponent']):
         if hasattr(function_to_execute, 'python_func'):
             self._func = function_to_execute.python_func
         else:
@@ -207,7 +207,7 @@ class Executor():
     @classmethod
     def _is_artifact(cls, annotation: Any) -> bool:
         if type(annotation) == type:
-            return type_annotations.is_artifact_class(annotation)
+            return dsl_type_annotations.is_artifact_class(annotation)
         return False
 
     @classmethod

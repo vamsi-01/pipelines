@@ -23,7 +23,7 @@ from typing import Union, Type
 import re
 from typing import List, Optional
 from kfp.deprecated.components import _structures
-from kfp.components.types import artifact_types
+from kfp.dsl import artifact_types
 
 warnings.warn(
     'Module kfp.dsl.type_utils is deprecated and will be removed'

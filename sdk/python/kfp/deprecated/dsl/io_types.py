@@ -16,7 +16,7 @@
 This module will be removed in KFP v2.0.
 """
 import warnings
-from kfp.components.types import artifact_types
+from kfp.dsl import artifact_types
 
 warnings.warn(
     'Module kfp.dsl.io_types is deprecated and will be removed'

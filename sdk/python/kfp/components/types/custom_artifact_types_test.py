@@ -24,12 +24,12 @@ import unittest
 from absl.testing import parameterized
 import kfp
 from kfp import dsl
-from kfp.components.types import artifact_types
+from kfp.dsl import artifact_types
 from kfp.components.types import custom_artifact_types
-from kfp.components.types.artifact_types import Artifact
-from kfp.components.types.artifact_types import Dataset
-from kfp.components.types.type_annotations import InputPath
-from kfp.components.types.type_annotations import OutputPath
+from kfp.dsl import Artifact
+from kfp.dsl import Dataset
+from kfp.dsl import InputPath
+from kfp.dsl import OutputPath
 from kfp.dsl import Input
 from kfp.dsl import Output
 
@@ -219,9 +219,9 @@ class TestGetParamToCustomArtifactClass(_TestCaseWithThirdPartyPackage):
 class TestGetFullQualnameForArtifact(_TestCaseWithThirdPartyPackage):
     # only gets called on artifacts, so don't need to test on all types
     @parameterized.parameters([
-        (Alias, 'kfp.components.types.artifact_types.Artifact'),
-        (Artifact, 'kfp.components.types.artifact_types.Artifact'),
-        (Dataset, 'kfp.components.types.artifact_types.Dataset'),
+        (Alias, 'kfp.dsl.artifact_types.Artifact'),
+        (Artifact, 'kfp.dsl.artifact_types.Artifact'),
+        (Dataset, 'kfp.dsl.artifact_types.Dataset'),
     ])
     def test(self, obj: Any, expected_qualname: str):
         self.assertEqual(

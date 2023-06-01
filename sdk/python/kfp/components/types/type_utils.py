@@ -22,28 +22,14 @@ import warnings
 import kfp
 from kfp.components import pipeline_channel
 from kfp.components import structures
-from kfp.components import task_final_status
-from kfp.components.types import artifact_types
+from kfp.dsl import task_final_status
+from kfp.dsl import artifact_types
 from kfp.components.types import type_annotations
 from kfp.pipeline_spec import pipeline_spec_pb2
 
-DEFAULT_ARTIFACT_SCHEMA_VERSION = '0.0.1'
 PARAMETER_TYPES = Union[str, int, float, bool, dict, list]
 
-# ComponentSpec I/O types to DSL ontology artifact classes mapping.
-_ARTIFACT_CLASSES_MAPPING = {
-    'artifact': artifact_types.Artifact,
-    'model': artifact_types.Model,
-    'dataset': artifact_types.Dataset,
-    'metrics': artifact_types.Metrics,
-    'classificationmetrics': artifact_types.ClassificationMetrics,
-    'slicedclassificationmetrics': artifact_types.SlicedClassificationMetrics,
-    'html': artifact_types.HTML,
-    'markdown': artifact_types.Markdown,
-}
-
-_GOOGLE_TYPES_PATTERN = r'^google.[A-Za-z]+$'
-_GOOGLE_TYPES_VERSION = DEFAULT_ARTIFACT_SCHEMA_VERSION
+GOOGLE_TYPES_PATTERN = r'^google.[A-Za-z]+$'
 
 # ComponentSpec I/O types to (IR) PipelineTaskSpec I/O types mapping.
 # The keys are normalized (lowercased). These are types viewed as Parameters.
@@ -490,14 +476,6 @@ def get_canonical_name_for_outer_generic(type_name: Any) -> str:
         return type_name
 
 
-def create_bundled_artifact_type(schema_title: str,
-                                 schema_version: Optional[str] = None) -> str:
-    if not isinstance(schema_title, str):
-        raise ValueError
-    return schema_title + '@' + (
-        schema_version or DEFAULT_ARTIFACT_SCHEMA_VERSION)
-
-
 def validate_schema_version(schema_version: str) -> None:
     split_schema_version = schema_version.split('.')
     if len(split_schema_version) != 3:
@@ -542,7 +520,7 @@ def _annotation_to_type_struct(annotation):
         type_struct = get_canonical_type_name_for_type(annotation)
         if type_struct:
             return type_struct
-        elif type_annotations.is_artifact_class(annotation):
+        elif dsl_type_annotations.is_artifact_class(annotation):
             schema_title = annotation.schema_title
         else:
             schema_title = str(annotation.__name__)
