@@ -576,7 +576,7 @@ class PipelineTask:
                 task2 = my_component(text='2nd task').after(task1)
         """
         for task in tasks:
-            self._run_after.append(task.name)
+            self._run_after.append(task)
             self._task_spec.dependent_tasks.append(task.name)
         return self
 

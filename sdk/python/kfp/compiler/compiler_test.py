@@ -1804,7 +1804,7 @@ class TestValidLegalTopologies(unittest.TestCase):
 
         with self.assertRaisesRegex(
                 compiler_utils.InvalidTopologyException,
-                r'Downstream tasks in a nested ParallelFor group cannot depend on an upstream task in a shallower ParallelFor group.'
+                r'Illegal task dependency across DSL context managers\. A downstream task cannot depend on an upstream task within a dsl\.ParallelFor context unless the downstream is within that context too or the outputs are begin fanned-in to a list using dsl\.Collected\. Found task dummy-op which depends on upstream task producer-op within an uncommon dsl\.ParallelFor context\.'
         ):
 
             @dsl.pipeline()
@@ -2910,7 +2910,7 @@ class TestCrossTasksGroupFanInCollection(unittest.TestCase):
         # the annotation is incorrect, but the user didn't use dsl.Collected
         with self.assertRaisesRegex(
                 compiler_utils.InvalidTopologyException,
-                r'Illegal task dependency across DSL context managers\. A downstream task cannot depend on an upstream task within a dsl\.ParallelFor context unless the downstream is within that context too or the outputs are begin fanned-in to a list using dsl\.Collected\. Found task add which depends on upstream task double within an uncommon dsl\.ParallelFor context\.'
+                r"Illegal task dependency across DSL context managers\. A downstream task cannot depend on an upstream task within a dsl\.ParallelFor context unless the downstream is within that context too or the outputs are begin fanned-in to a list using dsl\.Collected\. Found task add which depends on upstream task double within an uncommon dsl\.ParallelFor context\."
         ):
 
             @dsl.pipeline
