@@ -36,9 +36,10 @@ def custom_training_job(
     base_output_directory: str = '',
     labels: Dict[str, str] = {},
     encryption_spec_key_name: str = '',
+    persistent_resource_id: str = '',
 ):
-  # fmt: off
-  """Launch a Custom training job using Vertex CustomJob API.
+    # fmt: off
+    """Launch a Custom training job using Vertex CustomJob API.
 
   Args:
       project: Project to create the custom training job in.
@@ -49,7 +50,7 @@ def custom_training_job(
         worker pools including machine type and Docker image. All worker pools
         except the first one are optional and can be skipped by providing an
         empty value.  For more details about the WorkerPoolSpec, see
-        https://cloud.google.com/vertex-ai/docs/reference/rest/v1/CustomJobSpec#WorkerPoolSpec
+          https://cloud.google.com/vertex-ai/docs/reference/rest/v1/CustomJobSpec#WorkerPoolSpec
       timeout: The maximum job running time. The default is 7
         days. A duration in seconds with up to nine fractional digits,
         terminated by 's', for example: "3.5s".
@@ -86,44 +87,70 @@ def custom_training_job(
       base_output_directory: The Cloud Storage location to store
         the output of this CustomJob or HyperparameterTuningJob. see below for
         more details:
-        https://cloud.google.com/vertex-ai/docs/reference/rest/v1/GcsDestination
+          https://cloud.google.com/vertex-ai/docs/reference/rest/v1/GcsDestination
       labels:
         The labels with user-defined metadata
         to organize CustomJobs. See https://goo.gl/xmQnxf for more information.
       encryption_spec_key_name: Customer-managed encryption key
         options for the CustomJob. If this is set, then all resources created by
         the CustomJob will be encrypted with the provided encryption key.
+      persistent_resource_id: The ID of the PersistentResource in the same Project
+        and Location which to run. If this is specified, the job will be run on
+        existing machines held by the PersistentResource instead of on-demand
+        short-live machines. The network and CMEK configs on the job should be
+        consistent with those on the PersistentResource, otherwise, the job will
+        be rejected. (This is a Preview feature not yet recommended for production
+        workloads.)
 
   Returns:
-      gcp_resources: Serialized gcp_resources proto tracking the batch prediction job. For more details, see https://github.com/kubeflow/pipelines/blob/master/components/google-cloud/google_cloud_pipeline_components/proto/README.md.
+      gcp_resources: Serialized gcp_resources proto tracking the batch prediction job.
+
+          For more details, see
+          https://github.com/kubeflow/pipelines/blob/master/components/google-cloud/google_cloud_pipeline_components/proto/README.md.
   """
-  # fmt: on
-  return utils.build_serverless_customjob_container_spec(
-      project=project,
-      location=location,
-      custom_job_payload={
-          'display_name': display_name,
-          'job_spec': {
-              'worker_pool_specs': worker_pool_specs,
-              'scheduling': {
-                  'timeout': timeout,
-                  'restart_job_on_worker_restart': (
-                      restart_job_on_worker_restart
-                  ),
-              },
-              'service_account': service_account,
-              'tensorboard': tensorboard,
-              'enable_web_access': enable_web_access,
-              'network': network,
-              'reserved_ip_ranges': reserved_ip_ranges,
-              'base_output_directory': {
-                  'output_uri_prefix': base_output_directory
-              },
-          },
-          'labels': labels,
-          'encryption_spec_key_name': {
-              'kms_key_name': encryption_spec_key_name
-          },
-      },
-      gcp_resources=gcp_resources,
-  )
+    # fmt: on
+    return dsl.ContainerSpec(
+        image=_image.GCPC_IMAGE_TAG,
+        command=[
+            'python3',
+            '-u',
+            '-m',
+            'google_cloud_pipeline_components.container.v1.custom_job.launcher',
+        ],
+        args=[
+            '--type',
+            'CustomJob',
+            '--payload',
+            utils.container_component_dumps({
+                'display_name': display_name,
+                'job_spec': {
+                    'worker_pool_specs': worker_pool_specs,
+                    'scheduling': {
+                        'timeout':
+                            timeout,
+                        'restart_job_on_worker_restart':
+                            (restart_job_on_worker_restart),
+                    },
+                    'service_account': service_account,
+                    'tensorboard': tensorboard,
+                    'enable_web_access': enable_web_access,
+                    'network': network,
+                    'reserved_ip_ranges': reserved_ip_ranges,
+                    'base_output_directory': {
+                        'output_uri_prefix': base_output_directory
+                    },
+                    'persistent_resource_id': persistent_resource_id,
+                },
+                'labels': labels,
+                'encryption_spec_key_name': {
+                    'kms_key_name': encryption_spec_key_name
+                },
+            }),
+            '--project',
+            project,
+            '--location',
+            location,
+            '--gcp_resources',
+            gcp_resources,
+        ],
+    )
