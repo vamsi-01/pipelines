@@ -42,7 +42,7 @@ components:
           isOptional: true
           parameterType: STRING
         persistent_resource_id:
-          defaultValue: test-persistent-resource
+          defaultValue: test-persistent-resource-no-accelerator
           isOptional: true
           parameterType: STRING
         project:
