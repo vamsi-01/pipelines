@@ -1,50 +1,48 @@
 PERSISTENT_RESOURCE_ID = 'test-persistent-resource-no-accelerator'
 #
-import requests
-import subprocess
-import shlex
+# import requests
+# import subprocess
+# import shlex
 
+# def get_access_token():
+#     command = shlex.split('gcloud auth print-access-token')
+#     output = subprocess.check_output(command).strip()
+#     return output.decode()
 
-def get_access_token():
-    command = shlex.split('gcloud auth print-access-token')
-    output = subprocess.check_output(command).strip()
-    return output.decode()
+# PROJECT_NUMBER = 186556260430
+# PERSISTENT_RESOURCE_REQUEST = {
+#     "display_name":
+#         "Test-Persistent-Resource",
+#     "resource_pools": [{
+#         "machine_spec": {
+#             "machine_type": "n1-highmem-4"
+#         },
+#         "replica_count": 4,
+#         "disk_spec": {
+#             "boot_disk_type": "pd-ssd",
+#             "boot_disk_size_gb": 100
+#         }
+#     }, {
+#         "machine_spec": {
+#             "machine_type": "n1-standard-4",
+#         },
+#         "replica_count": 4,
+#         "disk_spec": {
+#             "boot_disk_type": "pd-ssd",
+#             "boot_disk_size_gb": 100
+#         }
+#     }]
+# }
+# request_uri = f"https://us-central1-aiplatform.googleapis.com/v1beta1/projects/{PROJECT_NUMBER}/locations/us-central1/persistentResources"
 
-
-PROJECT_NUMBER = 186556260430
-PERSISTENT_RESOURCE_REQUEST = {
-    "display_name":
-        "Test-Persistent-Resource",
-    "resource_pools": [{
-        "machine_spec": {
-            "machine_type": "n1-highmem-4"
-        },
-        "replica_count": 4,
-        "disk_spec": {
-            "boot_disk_type": "pd-ssd",
-            "boot_disk_size_gb": 100
-        }
-    }, {
-        "machine_spec": {
-            "machine_type": "n1-standard-4",
-        },
-        "replica_count": 4,
-        "disk_spec": {
-            "boot_disk_type": "pd-ssd",
-            "boot_disk_size_gb": 100
-        }
-    }]
-}
-request_uri = f"https://us-central1-aiplatform.googleapis.com/v1beta1/projects/{PROJECT_NUMBER}/locations/us-central1/persistentResources"
-
-response = requests.post(
-    request_uri,
-    params={"persistent_resource_id": PERSISTENT_RESOURCE_ID},
-    json=PERSISTENT_RESOURCE_REQUEST,
-    headers={
-        'Authorization': 'Bearer ' + get_access_token(),
-        'Content-Type': 'application/json'
-    })
+# response = requests.post(
+#     request_uri,
+#     params={"persistent_resource_id": PERSISTENT_RESOURCE_ID},
+#     json=PERSISTENT_RESOURCE_REQUEST,
+#     headers={
+#         'Authorization': 'Bearer ' + get_access_token(),
+#         'Content-Type': 'application/json'
+#     })
 
 # print(response.text)
 from google_cloud_pipeline_components.v1 import custom_job
