@@ -1,5 +1,5 @@
 PERSISTENT_RESOURCE_ID = 'test-persistent-resource-no-accelerator'
-#
+
 # import requests
 # import subprocess
 # import shlex
@@ -61,14 +61,16 @@ def sum_numbers(a: int = 1, b: int = 2) -> int:
 
 
 comp = custom_job.create_custom_training_job_from_component(
-    sum_numbers, persistent_resource_id=PERSISTENT_RESOURCE_ID)
+    sum_numbers,
+    persistent_resource_id=PERSISTENT_RESOURCE_ID,
+    )
 
 from kfp import dsl
 
 
 @dsl.pipeline
 def my_pipeline():
-    comp(project='271009669852', location='us-central1')
+    comp(project='186556260430', location='us-central1')
 
 
 if __name__ == '__main__':
@@ -89,7 +91,7 @@ if __name__ == '__main__':
     aiplatform.PipelineJob(
         project='186556260430',
         template_path=ir_file,
-        pipeline_root='gs://cjmccarthy-kfp-default-bucket',
+        pipeline_root='gs://cjmccarthy-managed-pipelines-test',
         display_name=pipeline_name,
         job_id=job_id).submit()
     url = f'https://console.cloud.google.com/vertex-ai/locations/us-central1/pipelines/runs/{pipeline_name}-{display_name}?project=186556260430'
