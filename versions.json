@@ -18,10 +18,5 @@
         "version": "https://google-cloud-pipeline-components.readthedocs.io/en/google-cloud-pipeline-components-2.0.0b4",
         "title": "2.0.0b4",
         "aliases": []
-    },
-    {
-        "version": "https://google-cloud-pipeline-components.readthedocs.io/en/google-cloud-pipeline-components-2.0.0b3",
-        "title": "2.0.0b3",
-        "aliases": []
     }
 ]

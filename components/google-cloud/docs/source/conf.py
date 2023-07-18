@@ -223,7 +223,7 @@ html_theme_options = {
     'version_dropdown':
         True,
     'version_json':
-        'https://raw.githubusercontent.com/kubeflow/pipelines/d3889de7f27af9e0dfa1697d4de79a84ea5b7579/versions.json',
+        'https://raw.githubusercontent.com/kubeflow/pipelines/test-gcpc-dropdown/versions.json',
     # "toc_title_is_page_title": True,
 }
 # Add any paths that contain templates here, relative to this directory.
