@@ -20,6 +20,7 @@ from kfp.dsl import for_loop
 from kfp.dsl import pipeline_channel
 from kfp.dsl import pipeline_context
 from kfp.dsl import pipeline_task
+import copy
 
 
 class TasksGroupType(str, enum.Enum):
@@ -52,7 +53,7 @@ class TasksGroup:
         group_type: TasksGroupType,
         name: Optional[str] = None,
         is_root: bool = False,
-    ):
+    ) -> None:
         """Create a new instance of TasksGroup.
 
         Args:
@@ -117,7 +118,7 @@ class ExitHandler(TasksGroup):
         self,
         exit_task: pipeline_task.PipelineTask,
         name: Optional[str] = None,
-    ):
+    ) -> None:
         """Initializes a Condition task group."""
         super().__init__(
             group_type=TasksGroupType.EXIT_HANDLER,
@@ -136,6 +137,9 @@ class ExitHandler(TasksGroup):
         exit_task.is_exit_handler = True
 
         self.exit_task = exit_task
+
+
+CUR_CONDITION = None
 
 
 class Condition(TasksGroup):
@@ -158,7 +162,7 @@ class Condition(TasksGroup):
         self,
         condition: pipeline_channel.ConditionOperator,
         name: Optional[str] = None,
-    ):
+    ) -> None:
         """Initializes a conditional task group."""
         super().__init__(
             group_type=TasksGroupType.CONDITION,
@@ -166,6 +170,64 @@ class Condition(TasksGroup):
             is_root=False,
         )
         self.condition = condition
+        global CUR_CONDITION
+        CUR_CONDITION = condition
+
+
+If = Condition
+
+
+class Elif(Condition):
+
+    def __init__(
+        self,
+        condition: pipeline_channel.ConditionOperator,
+        name: Optional[str] = None,
+    ):
+        super().__init__(
+            condition=condition,
+            name=name,
+        )
+
+
+class Else(Condition):
+
+    def __init__(
+        self,
+        name: Optional[str] = None,
+    ) -> None:
+        condition = copy.deepcopy(CUR_CONDITION)
+        condition.negate = True
+        super().__init__(
+            condition=condition,
+            name=name,
+        )
+
+
+class OneOf(pipeline_channel.PipelineChannel):
+
+    def __init__(
+        self,
+        *outputs: pipeline_channel.PipelineChannel,
+    ) -> None:
+        self._check_all_same_type(*outputs)
+        self.outputs = outputs
+        first_output = outputs[0]
+        self.is_artifact_channel = isinstance(
+            first_output, pipeline_channel.PipelineArtifactChannel)
+        self.channel_type = first_output.channel_type
+
+    def _check_all_same_type(
+        self,
+        *outputs: pipeline_channel.PipelineChannel,
+    ) -> None:
+        if not all(output.channel_type == outputs[0] for output in outputs):
+            raise Exception('TODO')
+        elif isinstance(outputs[0],
+                        pipeline_channel.PipelineArtifactChannel) and not all(
+                            output.is_artifact_list == outputs[0]
+                            for output in outputs):
+            raise Exception('TODO')
 
 
 class ParallelFor(TasksGroup):
@@ -198,7 +260,7 @@ class ParallelFor(TasksGroup):
         items: Union[for_loop.ItemList, pipeline_channel.PipelineChannel],
         name: Optional[str] = None,
         parallelism: Optional[int] = None,
-    ):
+    ) -> None:
         """Initializes a for loop task group."""
         parallelism = parallelism or 0
         if parallelism < 0:

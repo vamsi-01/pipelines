@@ -180,6 +180,9 @@ pipelines:
     - module: dsl_one_of/artifacts_if_elif_else
       name: flip_coin_pipeline
       execute: false
+      # nested OneOf?
+      # Collected in OneOf?
+      # OneOf in Collected?
 components:
   test_data_dir: sdk/python/test_data/components
   read: true

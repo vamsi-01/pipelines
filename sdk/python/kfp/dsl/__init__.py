@@ -21,6 +21,10 @@ __all__ = [
     'importer',
     'ContainerSpec',
     'Condition',
+    'If',
+    'Elif',
+    'Else',
+    'OneOf',
     'ExitHandler',
     'ParallelFor',
     'Collected',
@@ -68,6 +72,10 @@ from kfp.dsl.placeholders import IfPresentPlaceholder
 from kfp.dsl.structures import ContainerSpec
 from kfp.dsl.task_final_status import PipelineTaskFinalStatus
 from kfp.dsl.tasks_group import Condition
+from kfp.dsl.tasks_group import If
+from kfp.dsl.tasks_group import Elif
+from kfp.dsl.tasks_group import Else
+from kfp.dsl.tasks_group import OneOf
 from kfp.dsl.tasks_group import ExitHandler
 from kfp.dsl.tasks_group import ParallelFor
 from kfp.dsl.types.artifact_types import Artifact

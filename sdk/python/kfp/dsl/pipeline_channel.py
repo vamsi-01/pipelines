@@ -35,7 +35,12 @@ class ConditionOperator:
     operator: str
     left_operand: Union['PipelineParameterChannel', type_utils.PARAMETER_TYPES]
     right_operand: Union['PipelineParameterChannel', type_utils.PARAMETER_TYPES]
+    negate: bool = False
 
+
+# @dataclasses.dataclass
+# class ConjunctiveOperator:
+#     condition_operators = List[ConditionOperator]
 
 # The string template used to generate the placeholder of a PipelineChannel.
 _PIPELINE_CHANNEL_PLACEHOLDER_TEMPLATE = (

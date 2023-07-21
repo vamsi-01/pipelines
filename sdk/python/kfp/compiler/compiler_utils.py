@@ -661,8 +661,12 @@ def get_dependencies(
                 dependent_group = group_name_to_group.get(
                     uncommon_upstream_groups[0], None)
 
-                if isinstance(dependent_group,
-                              (tasks_group.Condition, tasks_group.ExitHandler)):
+                if isinstance(
+                        dependent_group,
+                    (
+                        # TODO: need to check if in OneOf
+                        # tasks_group.Condition,
+                        tasks_group.ExitHandler,)):
                     raise InvalidTopologyException(
                         f'{ILLEGAL_CROSS_DAG_ERROR_PREFIX} A downstream task cannot depend on an upstream task within a dsl.{dependent_group.__class__.__name__} context unless the downstream is within that context too. Found task {task.name} which depends on upstream task {upstream_task.name} within an uncommon dsl.{dependent_group.__class__.__name__} context.'
                     )

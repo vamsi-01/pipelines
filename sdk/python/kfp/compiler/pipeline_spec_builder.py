@@ -129,6 +129,13 @@ def build_task_spec_for_task(
             task._task_spec.retry_policy.to_proto())
 
     for input_name, input_value in task.inputs.items():
+        if isinstance(input_value,
+                      tasks_group.OneOf) and input_value.is_artifact_channel:
+            print('artifact')
+        elif isinstance(
+                input_value,
+                tasks_group.OneOf) and not input_value.is_artifact_channel:
+            print('not artifact')
 
         if isinstance(input_value,
                       pipeline_channel.PipelineArtifactChannel) or (
@@ -434,7 +441,28 @@ def _connect_dag_outputs(
         output_name: The name of the dag output.
         output_channel: The pipeline channel selected for the dag output.
     """
-    if isinstance(output_channel, pipeline_channel.PipelineArtifactChannel):
+    # TODO verify
+    if isinstance(output_channel,
+                  tasks_group.OneOf) and output_channel.is_artifact_channel:
+        for single_channel in output_channel.outputs:
+            component_spec.dag.outputs.artifacts[
+                output_name].artifact_selectors.append(
+                    pipeline_spec_pb2.DagOutputsSpec.ArtifactSelectorSpec(
+                        producer_subtask=single_channel.task_name,
+                        output_artifact_key=single_channel.name,
+                    ))
+
+    elif isinstance(output_channel,
+                    tasks_group.OneOf) and output_channel.is_artifact_channel:
+        for single_channel in output_channel.outputs:
+            component_spec.dag.outputs.parameters[
+                output_name].value_from_oneof.parameter_selectors[
+                    0].value_from_parameter.producer_subtask = single_channel.task_name
+            component_spec.dag.outputs.parameters[
+                output_name].value_from_oneof.parameter_selectors[
+                    0].value_from_parameter.output_parameter_key = single_channel.name
+
+    elif isinstance(output_channel, pipeline_channel.PipelineArtifactChannel):
         if output_name not in component_spec.output_definitions.artifacts:
             raise ValueError(
                 f'Pipeline or component output not defined: {output_name}. You may be missing a type annotation.'
@@ -445,6 +473,7 @@ def _connect_dag_outputs(
                     producer_subtask=output_channel.task_name,
                     output_artifact_key=output_channel.name,
                 ))
+
     elif isinstance(output_channel, pipeline_channel.PipelineParameterChannel):
         if output_name not in component_spec.output_definitions.parameters:
             raise ValueError(
@@ -841,6 +870,8 @@ def _update_task_spec_for_condition_group(
     condition_string = (
         f'{left_operand_value} {group.condition.operator} {right_operand_value}'
     )
+    if group.condition.negate:
+        condition_string = f'!({condition_string})'
     pipeline_task_spec.trigger_policy.CopyFrom(
         pipeline_spec_pb2.PipelineTaskSpec.TriggerPolicy(
             condition=condition_string))
@@ -1722,7 +1753,7 @@ def create_pipeline_spec(
         deployment_config=deployment_config,
         platform_spec=platform_spec,
     )
-
+    print(modified_pipeline_outputs_dict)
     _build_dag_outputs(
         component_spec=pipeline_spec.root,
         dag_outputs=modified_pipeline_outputs_dict,
