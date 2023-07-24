@@ -110,9 +110,1251 @@ components:
           parameterType: NUMBER_INTEGER
         gcp_resources:
           parameterType: STRING
+  comp-sum-numbers-10:
+    executorLabel: exec-sum-numbers-10
+    inputDefinitions:
+      parameters:
+        a:
+          defaultValue: 1.0
+          isOptional: true
+          parameterType: NUMBER_INTEGER
+        b:
+          defaultValue: 2.0
+          isOptional: true
+          parameterType: NUMBER_INTEGER
+        base_output_directory:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        display_name:
+          defaultValue: sum-numbers
+          isOptional: true
+          parameterType: STRING
+        enable_web_access:
+          defaultValue: false
+          isOptional: true
+          parameterType: BOOLEAN
+        encryption_spec_key_name:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        labels:
+          defaultValue: {}
+          isOptional: true
+          parameterType: STRUCT
+        location:
+          defaultValue: us-central1
+          isOptional: true
+          parameterType: STRING
+        network:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        persistent_resource_id:
+          defaultValue: test-persistent-resource-no-accelerator
+          isOptional: true
+          parameterType: STRING
+        project:
+          parameterType: STRING
+        reserved_ip_ranges:
+          defaultValue: []
+          isOptional: true
+          parameterType: LIST
+        restart_job_on_worker_restart:
+          defaultValue: false
+          isOptional: true
+          parameterType: BOOLEAN
+        service_account:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        tensorboard:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        timeout:
+          defaultValue: 604800s
+          isOptional: true
+          parameterType: STRING
+        worker_pool_specs:
+          defaultValue:
+          - container_spec:
+              args:
+              - --executor_input
+              - '{{$.json_escape[1]}}'
+              - --function_to_execute
+              - sum_numbers
+              command:
+              - sh
+              - -c
+              - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip\
+                \ || python3 -m ensurepip --user || apt-get install python3-pip\n\
+                fi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet\
+                \     --no-warn-script-location 'kfp==2.0.0-rc.1' && \"$0\" \"$@\"\
+                \n"
+              - sh
+              - -ec
+              - 'program_path=$(mktemp -d)
+
+                printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+                python3 -m kfp.components.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+                '
+              - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing\
+                \ import *\n\ndef sum_numbers(a: int = 1, b: int = 2) -> int:\n  \
+                \  return a + b\n\n"
+              image_uri: python:3.7
+            disk_spec:
+              boot_disk_size_gb: 100.0
+              boot_disk_type: pd-ssd
+            machine_spec:
+              machine_type: n1-standard-4
+            replica_count: 1.0
+          isOptional: true
+          parameterType: LIST
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: NUMBER_INTEGER
+        gcp_resources:
+          parameterType: STRING
+  comp-sum-numbers-2:
+    executorLabel: exec-sum-numbers-2
+    inputDefinitions:
+      parameters:
+        a:
+          defaultValue: 1.0
+          isOptional: true
+          parameterType: NUMBER_INTEGER
+        b:
+          defaultValue: 2.0
+          isOptional: true
+          parameterType: NUMBER_INTEGER
+        base_output_directory:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        display_name:
+          defaultValue: sum-numbers
+          isOptional: true
+          parameterType: STRING
+        enable_web_access:
+          defaultValue: false
+          isOptional: true
+          parameterType: BOOLEAN
+        encryption_spec_key_name:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        labels:
+          defaultValue: {}
+          isOptional: true
+          parameterType: STRUCT
+        location:
+          defaultValue: us-central1
+          isOptional: true
+          parameterType: STRING
+        network:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        persistent_resource_id:
+          defaultValue: test-persistent-resource-no-accelerator
+          isOptional: true
+          parameterType: STRING
+        project:
+          parameterType: STRING
+        reserved_ip_ranges:
+          defaultValue: []
+          isOptional: true
+          parameterType: LIST
+        restart_job_on_worker_restart:
+          defaultValue: false
+          isOptional: true
+          parameterType: BOOLEAN
+        service_account:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        tensorboard:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        timeout:
+          defaultValue: 604800s
+          isOptional: true
+          parameterType: STRING
+        worker_pool_specs:
+          defaultValue:
+          - container_spec:
+              args:
+              - --executor_input
+              - '{{$.json_escape[1]}}'
+              - --function_to_execute
+              - sum_numbers
+              command:
+              - sh
+              - -c
+              - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip\
+                \ || python3 -m ensurepip --user || apt-get install python3-pip\n\
+                fi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet\
+                \     --no-warn-script-location 'kfp==2.0.0-rc.1' && \"$0\" \"$@\"\
+                \n"
+              - sh
+              - -ec
+              - 'program_path=$(mktemp -d)
+
+                printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+                python3 -m kfp.components.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+                '
+              - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing\
+                \ import *\n\ndef sum_numbers(a: int = 1, b: int = 2) -> int:\n  \
+                \  return a + b\n\n"
+              image_uri: python:3.7
+            disk_spec:
+              boot_disk_size_gb: 100.0
+              boot_disk_type: pd-ssd
+            machine_spec:
+              machine_type: n1-standard-4
+            replica_count: 1.0
+          isOptional: true
+          parameterType: LIST
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: NUMBER_INTEGER
+        gcp_resources:
+          parameterType: STRING
+  comp-sum-numbers-3:
+    executorLabel: exec-sum-numbers-3
+    inputDefinitions:
+      parameters:
+        a:
+          defaultValue: 1.0
+          isOptional: true
+          parameterType: NUMBER_INTEGER
+        b:
+          defaultValue: 2.0
+          isOptional: true
+          parameterType: NUMBER_INTEGER
+        base_output_directory:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        display_name:
+          defaultValue: sum-numbers
+          isOptional: true
+          parameterType: STRING
+        enable_web_access:
+          defaultValue: false
+          isOptional: true
+          parameterType: BOOLEAN
+        encryption_spec_key_name:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        labels:
+          defaultValue: {}
+          isOptional: true
+          parameterType: STRUCT
+        location:
+          defaultValue: us-central1
+          isOptional: true
+          parameterType: STRING
+        network:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        persistent_resource_id:
+          defaultValue: test-persistent-resource-no-accelerator
+          isOptional: true
+          parameterType: STRING
+        project:
+          parameterType: STRING
+        reserved_ip_ranges:
+          defaultValue: []
+          isOptional: true
+          parameterType: LIST
+        restart_job_on_worker_restart:
+          defaultValue: false
+          isOptional: true
+          parameterType: BOOLEAN
+        service_account:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        tensorboard:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        timeout:
+          defaultValue: 604800s
+          isOptional: true
+          parameterType: STRING
+        worker_pool_specs:
+          defaultValue:
+          - container_spec:
+              args:
+              - --executor_input
+              - '{{$.json_escape[1]}}'
+              - --function_to_execute
+              - sum_numbers
+              command:
+              - sh
+              - -c
+              - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip\
+                \ || python3 -m ensurepip --user || apt-get install python3-pip\n\
+                fi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet\
+                \     --no-warn-script-location 'kfp==2.0.0-rc.1' && \"$0\" \"$@\"\
+                \n"
+              - sh
+              - -ec
+              - 'program_path=$(mktemp -d)
+
+                printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+                python3 -m kfp.components.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+                '
+              - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing\
+                \ import *\n\ndef sum_numbers(a: int = 1, b: int = 2) -> int:\n  \
+                \  return a + b\n\n"
+              image_uri: python:3.7
+            disk_spec:
+              boot_disk_size_gb: 100.0
+              boot_disk_type: pd-ssd
+            machine_spec:
+              machine_type: n1-standard-4
+            replica_count: 1.0
+          isOptional: true
+          parameterType: LIST
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: NUMBER_INTEGER
+        gcp_resources:
+          parameterType: STRING
+  comp-sum-numbers-4:
+    executorLabel: exec-sum-numbers-4
+    inputDefinitions:
+      parameters:
+        a:
+          defaultValue: 1.0
+          isOptional: true
+          parameterType: NUMBER_INTEGER
+        b:
+          defaultValue: 2.0
+          isOptional: true
+          parameterType: NUMBER_INTEGER
+        base_output_directory:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        display_name:
+          defaultValue: sum-numbers
+          isOptional: true
+          parameterType: STRING
+        enable_web_access:
+          defaultValue: false
+          isOptional: true
+          parameterType: BOOLEAN
+        encryption_spec_key_name:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        labels:
+          defaultValue: {}
+          isOptional: true
+          parameterType: STRUCT
+        location:
+          defaultValue: us-central1
+          isOptional: true
+          parameterType: STRING
+        network:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        persistent_resource_id:
+          defaultValue: test-persistent-resource-no-accelerator
+          isOptional: true
+          parameterType: STRING
+        project:
+          parameterType: STRING
+        reserved_ip_ranges:
+          defaultValue: []
+          isOptional: true
+          parameterType: LIST
+        restart_job_on_worker_restart:
+          defaultValue: false
+          isOptional: true
+          parameterType: BOOLEAN
+        service_account:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        tensorboard:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        timeout:
+          defaultValue: 604800s
+          isOptional: true
+          parameterType: STRING
+        worker_pool_specs:
+          defaultValue:
+          - container_spec:
+              args:
+              - --executor_input
+              - '{{$.json_escape[1]}}'
+              - --function_to_execute
+              - sum_numbers
+              command:
+              - sh
+              - -c
+              - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip\
+                \ || python3 -m ensurepip --user || apt-get install python3-pip\n\
+                fi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet\
+                \     --no-warn-script-location 'kfp==2.0.0-rc.1' && \"$0\" \"$@\"\
+                \n"
+              - sh
+              - -ec
+              - 'program_path=$(mktemp -d)
+
+                printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+                python3 -m kfp.components.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+                '
+              - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing\
+                \ import *\n\ndef sum_numbers(a: int = 1, b: int = 2) -> int:\n  \
+                \  return a + b\n\n"
+              image_uri: python:3.7
+            disk_spec:
+              boot_disk_size_gb: 100.0
+              boot_disk_type: pd-ssd
+            machine_spec:
+              machine_type: n1-standard-4
+            replica_count: 1.0
+          isOptional: true
+          parameterType: LIST
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: NUMBER_INTEGER
+        gcp_resources:
+          parameterType: STRING
+  comp-sum-numbers-5:
+    executorLabel: exec-sum-numbers-5
+    inputDefinitions:
+      parameters:
+        a:
+          defaultValue: 1.0
+          isOptional: true
+          parameterType: NUMBER_INTEGER
+        b:
+          defaultValue: 2.0
+          isOptional: true
+          parameterType: NUMBER_INTEGER
+        base_output_directory:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        display_name:
+          defaultValue: sum-numbers
+          isOptional: true
+          parameterType: STRING
+        enable_web_access:
+          defaultValue: false
+          isOptional: true
+          parameterType: BOOLEAN
+        encryption_spec_key_name:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        labels:
+          defaultValue: {}
+          isOptional: true
+          parameterType: STRUCT
+        location:
+          defaultValue: us-central1
+          isOptional: true
+          parameterType: STRING
+        network:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        persistent_resource_id:
+          defaultValue: test-persistent-resource-no-accelerator
+          isOptional: true
+          parameterType: STRING
+        project:
+          parameterType: STRING
+        reserved_ip_ranges:
+          defaultValue: []
+          isOptional: true
+          parameterType: LIST
+        restart_job_on_worker_restart:
+          defaultValue: false
+          isOptional: true
+          parameterType: BOOLEAN
+        service_account:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        tensorboard:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        timeout:
+          defaultValue: 604800s
+          isOptional: true
+          parameterType: STRING
+        worker_pool_specs:
+          defaultValue:
+          - container_spec:
+              args:
+              - --executor_input
+              - '{{$.json_escape[1]}}'
+              - --function_to_execute
+              - sum_numbers
+              command:
+              - sh
+              - -c
+              - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip\
+                \ || python3 -m ensurepip --user || apt-get install python3-pip\n\
+                fi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet\
+                \     --no-warn-script-location 'kfp==2.0.0-rc.1' && \"$0\" \"$@\"\
+                \n"
+              - sh
+              - -ec
+              - 'program_path=$(mktemp -d)
+
+                printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+                python3 -m kfp.components.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+                '
+              - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing\
+                \ import *\n\ndef sum_numbers(a: int = 1, b: int = 2) -> int:\n  \
+                \  return a + b\n\n"
+              image_uri: python:3.7
+            disk_spec:
+              boot_disk_size_gb: 100.0
+              boot_disk_type: pd-ssd
+            machine_spec:
+              machine_type: n1-standard-4
+            replica_count: 1.0
+          isOptional: true
+          parameterType: LIST
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: NUMBER_INTEGER
+        gcp_resources:
+          parameterType: STRING
+  comp-sum-numbers-6:
+    executorLabel: exec-sum-numbers-6
+    inputDefinitions:
+      parameters:
+        a:
+          defaultValue: 1.0
+          isOptional: true
+          parameterType: NUMBER_INTEGER
+        b:
+          defaultValue: 2.0
+          isOptional: true
+          parameterType: NUMBER_INTEGER
+        base_output_directory:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        display_name:
+          defaultValue: sum-numbers
+          isOptional: true
+          parameterType: STRING
+        enable_web_access:
+          defaultValue: false
+          isOptional: true
+          parameterType: BOOLEAN
+        encryption_spec_key_name:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        labels:
+          defaultValue: {}
+          isOptional: true
+          parameterType: STRUCT
+        location:
+          defaultValue: us-central1
+          isOptional: true
+          parameterType: STRING
+        network:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        persistent_resource_id:
+          defaultValue: test-persistent-resource-no-accelerator
+          isOptional: true
+          parameterType: STRING
+        project:
+          parameterType: STRING
+        reserved_ip_ranges:
+          defaultValue: []
+          isOptional: true
+          parameterType: LIST
+        restart_job_on_worker_restart:
+          defaultValue: false
+          isOptional: true
+          parameterType: BOOLEAN
+        service_account:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        tensorboard:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        timeout:
+          defaultValue: 604800s
+          isOptional: true
+          parameterType: STRING
+        worker_pool_specs:
+          defaultValue:
+          - container_spec:
+              args:
+              - --executor_input
+              - '{{$.json_escape[1]}}'
+              - --function_to_execute
+              - sum_numbers
+              command:
+              - sh
+              - -c
+              - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip\
+                \ || python3 -m ensurepip --user || apt-get install python3-pip\n\
+                fi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet\
+                \     --no-warn-script-location 'kfp==2.0.0-rc.1' && \"$0\" \"$@\"\
+                \n"
+              - sh
+              - -ec
+              - 'program_path=$(mktemp -d)
+
+                printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+                python3 -m kfp.components.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+                '
+              - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing\
+                \ import *\n\ndef sum_numbers(a: int = 1, b: int = 2) -> int:\n  \
+                \  return a + b\n\n"
+              image_uri: python:3.7
+            disk_spec:
+              boot_disk_size_gb: 100.0
+              boot_disk_type: pd-ssd
+            machine_spec:
+              machine_type: n1-standard-4
+            replica_count: 1.0
+          isOptional: true
+          parameterType: LIST
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: NUMBER_INTEGER
+        gcp_resources:
+          parameterType: STRING
+  comp-sum-numbers-7:
+    executorLabel: exec-sum-numbers-7
+    inputDefinitions:
+      parameters:
+        a:
+          defaultValue: 1.0
+          isOptional: true
+          parameterType: NUMBER_INTEGER
+        b:
+          defaultValue: 2.0
+          isOptional: true
+          parameterType: NUMBER_INTEGER
+        base_output_directory:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        display_name:
+          defaultValue: sum-numbers
+          isOptional: true
+          parameterType: STRING
+        enable_web_access:
+          defaultValue: false
+          isOptional: true
+          parameterType: BOOLEAN
+        encryption_spec_key_name:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        labels:
+          defaultValue: {}
+          isOptional: true
+          parameterType: STRUCT
+        location:
+          defaultValue: us-central1
+          isOptional: true
+          parameterType: STRING
+        network:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        persistent_resource_id:
+          defaultValue: test-persistent-resource-no-accelerator
+          isOptional: true
+          parameterType: STRING
+        project:
+          parameterType: STRING
+        reserved_ip_ranges:
+          defaultValue: []
+          isOptional: true
+          parameterType: LIST
+        restart_job_on_worker_restart:
+          defaultValue: false
+          isOptional: true
+          parameterType: BOOLEAN
+        service_account:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        tensorboard:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        timeout:
+          defaultValue: 604800s
+          isOptional: true
+          parameterType: STRING
+        worker_pool_specs:
+          defaultValue:
+          - container_spec:
+              args:
+              - --executor_input
+              - '{{$.json_escape[1]}}'
+              - --function_to_execute
+              - sum_numbers
+              command:
+              - sh
+              - -c
+              - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip\
+                \ || python3 -m ensurepip --user || apt-get install python3-pip\n\
+                fi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet\
+                \     --no-warn-script-location 'kfp==2.0.0-rc.1' && \"$0\" \"$@\"\
+                \n"
+              - sh
+              - -ec
+              - 'program_path=$(mktemp -d)
+
+                printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+                python3 -m kfp.components.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+                '
+              - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing\
+                \ import *\n\ndef sum_numbers(a: int = 1, b: int = 2) -> int:\n  \
+                \  return a + b\n\n"
+              image_uri: python:3.7
+            disk_spec:
+              boot_disk_size_gb: 100.0
+              boot_disk_type: pd-ssd
+            machine_spec:
+              machine_type: n1-standard-4
+            replica_count: 1.0
+          isOptional: true
+          parameterType: LIST
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: NUMBER_INTEGER
+        gcp_resources:
+          parameterType: STRING
+  comp-sum-numbers-8:
+    executorLabel: exec-sum-numbers-8
+    inputDefinitions:
+      parameters:
+        a:
+          defaultValue: 1.0
+          isOptional: true
+          parameterType: NUMBER_INTEGER
+        b:
+          defaultValue: 2.0
+          isOptional: true
+          parameterType: NUMBER_INTEGER
+        base_output_directory:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        display_name:
+          defaultValue: sum-numbers
+          isOptional: true
+          parameterType: STRING
+        enable_web_access:
+          defaultValue: false
+          isOptional: true
+          parameterType: BOOLEAN
+        encryption_spec_key_name:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        labels:
+          defaultValue: {}
+          isOptional: true
+          parameterType: STRUCT
+        location:
+          defaultValue: us-central1
+          isOptional: true
+          parameterType: STRING
+        network:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        persistent_resource_id:
+          defaultValue: test-persistent-resource-no-accelerator
+          isOptional: true
+          parameterType: STRING
+        project:
+          parameterType: STRING
+        reserved_ip_ranges:
+          defaultValue: []
+          isOptional: true
+          parameterType: LIST
+        restart_job_on_worker_restart:
+          defaultValue: false
+          isOptional: true
+          parameterType: BOOLEAN
+        service_account:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        tensorboard:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        timeout:
+          defaultValue: 604800s
+          isOptional: true
+          parameterType: STRING
+        worker_pool_specs:
+          defaultValue:
+          - container_spec:
+              args:
+              - --executor_input
+              - '{{$.json_escape[1]}}'
+              - --function_to_execute
+              - sum_numbers
+              command:
+              - sh
+              - -c
+              - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip\
+                \ || python3 -m ensurepip --user || apt-get install python3-pip\n\
+                fi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet\
+                \     --no-warn-script-location 'kfp==2.0.0-rc.1' && \"$0\" \"$@\"\
+                \n"
+              - sh
+              - -ec
+              - 'program_path=$(mktemp -d)
+
+                printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+                python3 -m kfp.components.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+                '
+              - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing\
+                \ import *\n\ndef sum_numbers(a: int = 1, b: int = 2) -> int:\n  \
+                \  return a + b\n\n"
+              image_uri: python:3.7
+            disk_spec:
+              boot_disk_size_gb: 100.0
+              boot_disk_type: pd-ssd
+            machine_spec:
+              machine_type: n1-standard-4
+            replica_count: 1.0
+          isOptional: true
+          parameterType: LIST
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: NUMBER_INTEGER
+        gcp_resources:
+          parameterType: STRING
+  comp-sum-numbers-9:
+    executorLabel: exec-sum-numbers-9
+    inputDefinitions:
+      parameters:
+        a:
+          defaultValue: 1.0
+          isOptional: true
+          parameterType: NUMBER_INTEGER
+        b:
+          defaultValue: 2.0
+          isOptional: true
+          parameterType: NUMBER_INTEGER
+        base_output_directory:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        display_name:
+          defaultValue: sum-numbers
+          isOptional: true
+          parameterType: STRING
+        enable_web_access:
+          defaultValue: false
+          isOptional: true
+          parameterType: BOOLEAN
+        encryption_spec_key_name:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        labels:
+          defaultValue: {}
+          isOptional: true
+          parameterType: STRUCT
+        location:
+          defaultValue: us-central1
+          isOptional: true
+          parameterType: STRING
+        network:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        persistent_resource_id:
+          defaultValue: test-persistent-resource-no-accelerator
+          isOptional: true
+          parameterType: STRING
+        project:
+          parameterType: STRING
+        reserved_ip_ranges:
+          defaultValue: []
+          isOptional: true
+          parameterType: LIST
+        restart_job_on_worker_restart:
+          defaultValue: false
+          isOptional: true
+          parameterType: BOOLEAN
+        service_account:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        tensorboard:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        timeout:
+          defaultValue: 604800s
+          isOptional: true
+          parameterType: STRING
+        worker_pool_specs:
+          defaultValue:
+          - container_spec:
+              args:
+              - --executor_input
+              - '{{$.json_escape[1]}}'
+              - --function_to_execute
+              - sum_numbers
+              command:
+              - sh
+              - -c
+              - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip\
+                \ || python3 -m ensurepip --user || apt-get install python3-pip\n\
+                fi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet\
+                \     --no-warn-script-location 'kfp==2.0.0-rc.1' && \"$0\" \"$@\"\
+                \n"
+              - sh
+              - -ec
+              - 'program_path=$(mktemp -d)
+
+                printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+                python3 -m kfp.components.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+                '
+              - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing\
+                \ import *\n\ndef sum_numbers(a: int = 1, b: int = 2) -> int:\n  \
+                \  return a + b\n\n"
+              image_uri: python:3.7
+            disk_spec:
+              boot_disk_size_gb: 100.0
+              boot_disk_type: pd-ssd
+            machine_spec:
+              machine_type: n1-standard-4
+            replica_count: 1.0
+          isOptional: true
+          parameterType: LIST
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: NUMBER_INTEGER
+        gcp_resources:
+          parameterType: STRING
 deploymentSpec:
   executors:
     exec-sum-numbers:
+      container:
+        args:
+        - --type
+        - CustomJob
+        - --payload
+        - '{"display_name": "{{$.inputs.parameters[''display_name'']}}", "job_spec":
+          {"worker_pool_specs": {{$.inputs.parameters[''worker_pool_specs'']}}, "scheduling":
+          {"timeout": "{{$.inputs.parameters[''timeout'']}}", "restart_job_on_worker_restart":
+          {{$.inputs.parameters[''restart_job_on_worker_restart'']}}}, "service_account":
+          "{{$.inputs.parameters[''service_account'']}}", "tensorboard": "{{$.inputs.parameters[''tensorboard'']}}",
+          "enable_web_access": {{$.inputs.parameters[''enable_web_access'']}}, "network":
+          "{{$.inputs.parameters[''network'']}}", "reserved_ip_ranges": {{$.inputs.parameters[''reserved_ip_ranges'']}},
+          "base_output_directory": {"output_uri_prefix": "{{$.inputs.parameters[''base_output_directory'']}}"},
+          "persistent_resource_id": "{{$.inputs.parameters[''persistent_resource_id'']}}"},
+          "labels": {{$.inputs.parameters[''labels'']}}, "encryption_spec_key_name":
+          {"kms_key_name": "{{$.inputs.parameters[''encryption_spec_key_name'']}}"}}'
+        - --project
+        - '{{$.inputs.parameters[''project'']}}'
+        - --location
+        - '{{$.inputs.parameters[''location'']}}'
+        - --gcp_resources
+        - '{{$.outputs.parameters[''gcp_resources''].output_file}}'
+        command:
+        - python3
+        - -u
+        - -m
+        - google_cloud_pipeline_components.container.v1.custom_job.launcher
+        image: gcr.io/ml-pipeline/google-cloud-pipeline-components:2.0.0b4
+    exec-sum-numbers-10:
+      container:
+        args:
+        - --type
+        - CustomJob
+        - --payload
+        - '{"display_name": "{{$.inputs.parameters[''display_name'']}}", "job_spec":
+          {"worker_pool_specs": {{$.inputs.parameters[''worker_pool_specs'']}}, "scheduling":
+          {"timeout": "{{$.inputs.parameters[''timeout'']}}", "restart_job_on_worker_restart":
+          {{$.inputs.parameters[''restart_job_on_worker_restart'']}}}, "service_account":
+          "{{$.inputs.parameters[''service_account'']}}", "tensorboard": "{{$.inputs.parameters[''tensorboard'']}}",
+          "enable_web_access": {{$.inputs.parameters[''enable_web_access'']}}, "network":
+          "{{$.inputs.parameters[''network'']}}", "reserved_ip_ranges": {{$.inputs.parameters[''reserved_ip_ranges'']}},
+          "base_output_directory": {"output_uri_prefix": "{{$.inputs.parameters[''base_output_directory'']}}"},
+          "persistent_resource_id": "{{$.inputs.parameters[''persistent_resource_id'']}}"},
+          "labels": {{$.inputs.parameters[''labels'']}}, "encryption_spec_key_name":
+          {"kms_key_name": "{{$.inputs.parameters[''encryption_spec_key_name'']}}"}}'
+        - --project
+        - '{{$.inputs.parameters[''project'']}}'
+        - --location
+        - '{{$.inputs.parameters[''location'']}}'
+        - --gcp_resources
+        - '{{$.outputs.parameters[''gcp_resources''].output_file}}'
+        command:
+        - python3
+        - -u
+        - -m
+        - google_cloud_pipeline_components.container.v1.custom_job.launcher
+        image: gcr.io/ml-pipeline/google-cloud-pipeline-components:2.0.0b4
+    exec-sum-numbers-2:
+      container:
+        args:
+        - --type
+        - CustomJob
+        - --payload
+        - '{"display_name": "{{$.inputs.parameters[''display_name'']}}", "job_spec":
+          {"worker_pool_specs": {{$.inputs.parameters[''worker_pool_specs'']}}, "scheduling":
+          {"timeout": "{{$.inputs.parameters[''timeout'']}}", "restart_job_on_worker_restart":
+          {{$.inputs.parameters[''restart_job_on_worker_restart'']}}}, "service_account":
+          "{{$.inputs.parameters[''service_account'']}}", "tensorboard": "{{$.inputs.parameters[''tensorboard'']}}",
+          "enable_web_access": {{$.inputs.parameters[''enable_web_access'']}}, "network":
+          "{{$.inputs.parameters[''network'']}}", "reserved_ip_ranges": {{$.inputs.parameters[''reserved_ip_ranges'']}},
+          "base_output_directory": {"output_uri_prefix": "{{$.inputs.parameters[''base_output_directory'']}}"},
+          "persistent_resource_id": "{{$.inputs.parameters[''persistent_resource_id'']}}"},
+          "labels": {{$.inputs.parameters[''labels'']}}, "encryption_spec_key_name":
+          {"kms_key_name": "{{$.inputs.parameters[''encryption_spec_key_name'']}}"}}'
+        - --project
+        - '{{$.inputs.parameters[''project'']}}'
+        - --location
+        - '{{$.inputs.parameters[''location'']}}'
+        - --gcp_resources
+        - '{{$.outputs.parameters[''gcp_resources''].output_file}}'
+        command:
+        - python3
+        - -u
+        - -m
+        - google_cloud_pipeline_components.container.v1.custom_job.launcher
+        image: gcr.io/ml-pipeline/google-cloud-pipeline-components:2.0.0b4
+    exec-sum-numbers-3:
+      container:
+        args:
+        - --type
+        - CustomJob
+        - --payload
+        - '{"display_name": "{{$.inputs.parameters[''display_name'']}}", "job_spec":
+          {"worker_pool_specs": {{$.inputs.parameters[''worker_pool_specs'']}}, "scheduling":
+          {"timeout": "{{$.inputs.parameters[''timeout'']}}", "restart_job_on_worker_restart":
+          {{$.inputs.parameters[''restart_job_on_worker_restart'']}}}, "service_account":
+          "{{$.inputs.parameters[''service_account'']}}", "tensorboard": "{{$.inputs.parameters[''tensorboard'']}}",
+          "enable_web_access": {{$.inputs.parameters[''enable_web_access'']}}, "network":
+          "{{$.inputs.parameters[''network'']}}", "reserved_ip_ranges": {{$.inputs.parameters[''reserved_ip_ranges'']}},
+          "base_output_directory": {"output_uri_prefix": "{{$.inputs.parameters[''base_output_directory'']}}"},
+          "persistent_resource_id": "{{$.inputs.parameters[''persistent_resource_id'']}}"},
+          "labels": {{$.inputs.parameters[''labels'']}}, "encryption_spec_key_name":
+          {"kms_key_name": "{{$.inputs.parameters[''encryption_spec_key_name'']}}"}}'
+        - --project
+        - '{{$.inputs.parameters[''project'']}}'
+        - --location
+        - '{{$.inputs.parameters[''location'']}}'
+        - --gcp_resources
+        - '{{$.outputs.parameters[''gcp_resources''].output_file}}'
+        command:
+        - python3
+        - -u
+        - -m
+        - google_cloud_pipeline_components.container.v1.custom_job.launcher
+        image: gcr.io/ml-pipeline/google-cloud-pipeline-components:2.0.0b4
+    exec-sum-numbers-4:
+      container:
+        args:
+        - --type
+        - CustomJob
+        - --payload
+        - '{"display_name": "{{$.inputs.parameters[''display_name'']}}", "job_spec":
+          {"worker_pool_specs": {{$.inputs.parameters[''worker_pool_specs'']}}, "scheduling":
+          {"timeout": "{{$.inputs.parameters[''timeout'']}}", "restart_job_on_worker_restart":
+          {{$.inputs.parameters[''restart_job_on_worker_restart'']}}}, "service_account":
+          "{{$.inputs.parameters[''service_account'']}}", "tensorboard": "{{$.inputs.parameters[''tensorboard'']}}",
+          "enable_web_access": {{$.inputs.parameters[''enable_web_access'']}}, "network":
+          "{{$.inputs.parameters[''network'']}}", "reserved_ip_ranges": {{$.inputs.parameters[''reserved_ip_ranges'']}},
+          "base_output_directory": {"output_uri_prefix": "{{$.inputs.parameters[''base_output_directory'']}}"},
+          "persistent_resource_id": "{{$.inputs.parameters[''persistent_resource_id'']}}"},
+          "labels": {{$.inputs.parameters[''labels'']}}, "encryption_spec_key_name":
+          {"kms_key_name": "{{$.inputs.parameters[''encryption_spec_key_name'']}}"}}'
+        - --project
+        - '{{$.inputs.parameters[''project'']}}'
+        - --location
+        - '{{$.inputs.parameters[''location'']}}'
+        - --gcp_resources
+        - '{{$.outputs.parameters[''gcp_resources''].output_file}}'
+        command:
+        - python3
+        - -u
+        - -m
+        - google_cloud_pipeline_components.container.v1.custom_job.launcher
+        image: gcr.io/ml-pipeline/google-cloud-pipeline-components:2.0.0b4
+    exec-sum-numbers-5:
+      container:
+        args:
+        - --type
+        - CustomJob
+        - --payload
+        - '{"display_name": "{{$.inputs.parameters[''display_name'']}}", "job_spec":
+          {"worker_pool_specs": {{$.inputs.parameters[''worker_pool_specs'']}}, "scheduling":
+          {"timeout": "{{$.inputs.parameters[''timeout'']}}", "restart_job_on_worker_restart":
+          {{$.inputs.parameters[''restart_job_on_worker_restart'']}}}, "service_account":
+          "{{$.inputs.parameters[''service_account'']}}", "tensorboard": "{{$.inputs.parameters[''tensorboard'']}}",
+          "enable_web_access": {{$.inputs.parameters[''enable_web_access'']}}, "network":
+          "{{$.inputs.parameters[''network'']}}", "reserved_ip_ranges": {{$.inputs.parameters[''reserved_ip_ranges'']}},
+          "base_output_directory": {"output_uri_prefix": "{{$.inputs.parameters[''base_output_directory'']}}"},
+          "persistent_resource_id": "{{$.inputs.parameters[''persistent_resource_id'']}}"},
+          "labels": {{$.inputs.parameters[''labels'']}}, "encryption_spec_key_name":
+          {"kms_key_name": "{{$.inputs.parameters[''encryption_spec_key_name'']}}"}}'
+        - --project
+        - '{{$.inputs.parameters[''project'']}}'
+        - --location
+        - '{{$.inputs.parameters[''location'']}}'
+        - --gcp_resources
+        - '{{$.outputs.parameters[''gcp_resources''].output_file}}'
+        command:
+        - python3
+        - -u
+        - -m
+        - google_cloud_pipeline_components.container.v1.custom_job.launcher
+        image: gcr.io/ml-pipeline/google-cloud-pipeline-components:2.0.0b4
+    exec-sum-numbers-6:
+      container:
+        args:
+        - --type
+        - CustomJob
+        - --payload
+        - '{"display_name": "{{$.inputs.parameters[''display_name'']}}", "job_spec":
+          {"worker_pool_specs": {{$.inputs.parameters[''worker_pool_specs'']}}, "scheduling":
+          {"timeout": "{{$.inputs.parameters[''timeout'']}}", "restart_job_on_worker_restart":
+          {{$.inputs.parameters[''restart_job_on_worker_restart'']}}}, "service_account":
+          "{{$.inputs.parameters[''service_account'']}}", "tensorboard": "{{$.inputs.parameters[''tensorboard'']}}",
+          "enable_web_access": {{$.inputs.parameters[''enable_web_access'']}}, "network":
+          "{{$.inputs.parameters[''network'']}}", "reserved_ip_ranges": {{$.inputs.parameters[''reserved_ip_ranges'']}},
+          "base_output_directory": {"output_uri_prefix": "{{$.inputs.parameters[''base_output_directory'']}}"},
+          "persistent_resource_id": "{{$.inputs.parameters[''persistent_resource_id'']}}"},
+          "labels": {{$.inputs.parameters[''labels'']}}, "encryption_spec_key_name":
+          {"kms_key_name": "{{$.inputs.parameters[''encryption_spec_key_name'']}}"}}'
+        - --project
+        - '{{$.inputs.parameters[''project'']}}'
+        - --location
+        - '{{$.inputs.parameters[''location'']}}'
+        - --gcp_resources
+        - '{{$.outputs.parameters[''gcp_resources''].output_file}}'
+        command:
+        - python3
+        - -u
+        - -m
+        - google_cloud_pipeline_components.container.v1.custom_job.launcher
+        image: gcr.io/ml-pipeline/google-cloud-pipeline-components:2.0.0b4
+    exec-sum-numbers-7:
+      container:
+        args:
+        - --type
+        - CustomJob
+        - --payload
+        - '{"display_name": "{{$.inputs.parameters[''display_name'']}}", "job_spec":
+          {"worker_pool_specs": {{$.inputs.parameters[''worker_pool_specs'']}}, "scheduling":
+          {"timeout": "{{$.inputs.parameters[''timeout'']}}", "restart_job_on_worker_restart":
+          {{$.inputs.parameters[''restart_job_on_worker_restart'']}}}, "service_account":
+          "{{$.inputs.parameters[''service_account'']}}", "tensorboard": "{{$.inputs.parameters[''tensorboard'']}}",
+          "enable_web_access": {{$.inputs.parameters[''enable_web_access'']}}, "network":
+          "{{$.inputs.parameters[''network'']}}", "reserved_ip_ranges": {{$.inputs.parameters[''reserved_ip_ranges'']}},
+          "base_output_directory": {"output_uri_prefix": "{{$.inputs.parameters[''base_output_directory'']}}"},
+          "persistent_resource_id": "{{$.inputs.parameters[''persistent_resource_id'']}}"},
+          "labels": {{$.inputs.parameters[''labels'']}}, "encryption_spec_key_name":
+          {"kms_key_name": "{{$.inputs.parameters[''encryption_spec_key_name'']}}"}}'
+        - --project
+        - '{{$.inputs.parameters[''project'']}}'
+        - --location
+        - '{{$.inputs.parameters[''location'']}}'
+        - --gcp_resources
+        - '{{$.outputs.parameters[''gcp_resources''].output_file}}'
+        command:
+        - python3
+        - -u
+        - -m
+        - google_cloud_pipeline_components.container.v1.custom_job.launcher
+        image: gcr.io/ml-pipeline/google-cloud-pipeline-components:2.0.0b4
+    exec-sum-numbers-8:
+      container:
+        args:
+        - --type
+        - CustomJob
+        - --payload
+        - '{"display_name": "{{$.inputs.parameters[''display_name'']}}", "job_spec":
+          {"worker_pool_specs": {{$.inputs.parameters[''worker_pool_specs'']}}, "scheduling":
+          {"timeout": "{{$.inputs.parameters[''timeout'']}}", "restart_job_on_worker_restart":
+          {{$.inputs.parameters[''restart_job_on_worker_restart'']}}}, "service_account":
+          "{{$.inputs.parameters[''service_account'']}}", "tensorboard": "{{$.inputs.parameters[''tensorboard'']}}",
+          "enable_web_access": {{$.inputs.parameters[''enable_web_access'']}}, "network":
+          "{{$.inputs.parameters[''network'']}}", "reserved_ip_ranges": {{$.inputs.parameters[''reserved_ip_ranges'']}},
+          "base_output_directory": {"output_uri_prefix": "{{$.inputs.parameters[''base_output_directory'']}}"},
+          "persistent_resource_id": "{{$.inputs.parameters[''persistent_resource_id'']}}"},
+          "labels": {{$.inputs.parameters[''labels'']}}, "encryption_spec_key_name":
+          {"kms_key_name": "{{$.inputs.parameters[''encryption_spec_key_name'']}}"}}'
+        - --project
+        - '{{$.inputs.parameters[''project'']}}'
+        - --location
+        - '{{$.inputs.parameters[''location'']}}'
+        - --gcp_resources
+        - '{{$.outputs.parameters[''gcp_resources''].output_file}}'
+        command:
+        - python3
+        - -u
+        - -m
+        - google_cloud_pipeline_components.container.v1.custom_job.launcher
+        image: gcr.io/ml-pipeline/google-cloud-pipeline-components:2.0.0b4
+    exec-sum-numbers-9:
       container:
         args:
         - --type
@@ -147,8 +1389,7 @@ root:
   dag:
     tasks:
       sum-numbers:
-        cachingOptions:
-          enableCache: true
+        cachingOptions: {}
         componentRef:
           name: comp-sum-numbers
         inputs:
@@ -161,5 +1402,149 @@ root:
                 constant: '186556260430'
         taskInfo:
           name: sum-numbers
+      sum-numbers-10:
+        cachingOptions: {}
+        componentRef:
+          name: comp-sum-numbers-10
+        dependentTasks:
+        - sum-numbers-9
+        inputs:
+          parameters:
+            location:
+              runtimeValue:
+                constant: us-central1
+            project:
+              runtimeValue:
+                constant: '186556260430'
+        taskInfo:
+          name: sum-numbers-10
+      sum-numbers-2:
+        cachingOptions: {}
+        componentRef:
+          name: comp-sum-numbers-2
+        dependentTasks:
+        - sum-numbers
+        inputs:
+          parameters:
+            location:
+              runtimeValue:
+                constant: us-central1
+            project:
+              runtimeValue:
+                constant: '186556260430'
+        taskInfo:
+          name: sum-numbers-2
+      sum-numbers-3:
+        cachingOptions: {}
+        componentRef:
+          name: comp-sum-numbers-3
+        dependentTasks:
+        - sum-numbers-2
+        inputs:
+          parameters:
+            location:
+              runtimeValue:
+                constant: us-central1
+            project:
+              runtimeValue:
+                constant: '186556260430'
+        taskInfo:
+          name: sum-numbers-3
+      sum-numbers-4:
+        cachingOptions: {}
+        componentRef:
+          name: comp-sum-numbers-4
+        dependentTasks:
+        - sum-numbers-3
+        inputs:
+          parameters:
+            location:
+              runtimeValue:
+                constant: us-central1
+            project:
+              runtimeValue:
+                constant: '186556260430'
+        taskInfo:
+          name: sum-numbers-4
+      sum-numbers-5:
+        cachingOptions: {}
+        componentRef:
+          name: comp-sum-numbers-5
+        dependentTasks:
+        - sum-numbers-4
+        inputs:
+          parameters:
+            location:
+              runtimeValue:
+                constant: us-central1
+            project:
+              runtimeValue:
+                constant: '186556260430'
+        taskInfo:
+          name: sum-numbers-5
+      sum-numbers-6:
+        cachingOptions: {}
+        componentRef:
+          name: comp-sum-numbers-6
+        dependentTasks:
+        - sum-numbers-5
+        inputs:
+          parameters:
+            location:
+              runtimeValue:
+                constant: us-central1
+            project:
+              runtimeValue:
+                constant: '186556260430'
+        taskInfo:
+          name: sum-numbers-6
+      sum-numbers-7:
+        cachingOptions: {}
+        componentRef:
+          name: comp-sum-numbers-7
+        dependentTasks:
+        - sum-numbers-6
+        inputs:
+          parameters:
+            location:
+              runtimeValue:
+                constant: us-central1
+            project:
+              runtimeValue:
+                constant: '186556260430'
+        taskInfo:
+          name: sum-numbers-7
+      sum-numbers-8:
+        cachingOptions: {}
+        componentRef:
+          name: comp-sum-numbers-8
+        dependentTasks:
+        - sum-numbers-7
+        inputs:
+          parameters:
+            location:
+              runtimeValue:
+                constant: us-central1
+            project:
+              runtimeValue:
+                constant: '186556260430'
+        taskInfo:
+          name: sum-numbers-8
+      sum-numbers-9:
+        cachingOptions: {}
+        componentRef:
+          name: comp-sum-numbers-9
+        dependentTasks:
+        - sum-numbers-8
+        inputs:
+          parameters:
+            location:
+              runtimeValue:
+                constant: us-central1
+            project:
+              runtimeValue:
+                constant: '186556260430'
+        taskInfo:
+          name: sum-numbers-9
 schemaVersion: 2.1.0
 sdkVersion: kfp-2.0.0-rc.1
