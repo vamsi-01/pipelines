@@ -13,8 +13,9 @@
 # limitations under the License.
 """Definition for TasksGroup."""
 
+import copy
 import enum
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 from kfp.dsl import for_loop
 from kfp.dsl import pipeline_channel
@@ -52,7 +53,7 @@ class TasksGroup:
         group_type: TasksGroupType,
         name: Optional[str] = None,
         is_root: bool = False,
-    ):
+    ) -> None:
         """Create a new instance of TasksGroup.
 
         Args:
@@ -117,7 +118,7 @@ class ExitHandler(TasksGroup):
         self,
         exit_task: pipeline_task.PipelineTask,
         name: Optional[str] = None,
-    ):
+    ) -> None:
         """Initializes a Condition task group."""
         super().__init__(
             group_type=TasksGroupType.EXIT_HANDLER,
@@ -138,6 +139,9 @@ class ExitHandler(TasksGroup):
         self.exit_task = exit_task
 
 
+_ACCUMULATED_CONDITIONS: List[pipeline_channel.BinaryOperation] = []
+
+
 class Condition(TasksGroup):
     """A class for creating conditional control flow within a pipeline
     definition.
@@ -156,16 +160,84 @@ class Condition(TasksGroup):
 
     def __init__(
         self,
-        condition: pipeline_channel.ConditionOperator,
+        condition: pipeline_channel.BinaryOperation,
         name: Optional[str] = None,
-    ):
+    ) -> None:
         """Initializes a conditional task group."""
         super().__init__(
             group_type=TasksGroupType.CONDITION,
             name=name,
             is_root=False,
         )
+        if isinstance(condition, bool):
+            raise ValueError(
+                f'Got constant boolean {condition} as a condition. TODO: finish'
+            )
         self.condition = condition
+        _ACCUMULATED_CONDITIONS.append(condition)
+
+
+If = Condition
+
+
+class Elif(Condition):
+
+    def __init__(
+        self,
+        condition: pipeline_channel.BinaryOperation,
+        name: Optional[str] = None,
+    ) -> None:
+
+        _ACCUMULATED_CONDITIONS.append(condition)
+        # condition = prev_condition & condition
+
+        super().__init__(
+            condition=condition,
+            name=name,
+        )
+
+
+class Else(Condition):
+
+    def __init__(
+        self,
+        name: Optional[str] = None,
+    ) -> None:
+        accumulated_conditions = copy.deepcopy(_ACCUMULATED_CONDITIONS)
+
+        from typing import List
+
+        def list_to_binary_operation(
+            operations: List[pipeline_channel.BinaryOperation]
+        ) -> pipeline_channel.BinaryOperation:
+            if not operations:
+                raise ValueError("List is empty")
+            if len(operations) == 1:
+                return operations[0]
+            binary_operation = operations[0]
+            for operation in operations[1:]:
+                binary_operation = pipeline_channel.BinaryOperation(
+                    binary_operation, operation)
+            return binary_operation
+
+        initial_cond = list_to_binary_operation(accumulated_conditions)
+
+        cur_bin_op = pipeline_channel.BinaryOperation(
+            initial_cond,
+            '&&',
+            cond,
+        )
+        for cond in accumulated_conditions[3:]:
+            cur_bin_op = pipeline_channel.BinaryOperation(
+                cur_bin_op,
+                '&&',
+                cond,
+            )
+
+        super().__init__(
+            condition=cur_bin_op,
+            name=name,
+        )
 
 
 class ParallelFor(TasksGroup):
@@ -198,7 +270,7 @@ class ParallelFor(TasksGroup):
         items: Union[for_loop.ItemList, pipeline_channel.PipelineChannel],
         name: Optional[str] = None,
         parallelism: Optional[int] = None,
-    ):
+    ) -> None:
         """Initializes a for loop task group."""
         parallelism = parallelism or 0
         if parallelism < 0:

@@ -23,18 +23,49 @@ from typing import Dict, List, Optional, Union
 from kfp.dsl.types import type_utils
 
 
+class BinaryOperationMixin:
+
+    def __eq__(self, other):
+        return BinaryOperation('==', self, other)
+
+    def __ne__(self, other):
+        return BinaryOperation('!=', self, other)
+
+    def __lt__(self, other):
+        return BinaryOperation('<', self, other)
+
+    def __le__(self, other):
+        return BinaryOperation('<=', self, other)
+
+    def __gt__(self, other):
+        return BinaryOperation('>', self, other)
+
+    def __ge__(self, other):
+        return BinaryOperation('>=', self, other)
+
+    def __and__(self, other):
+        return BinaryOperation('&&', self, other)
+
+    def __rand__(self, other):
+        return self & other
+
+
 @dataclasses.dataclass
-class ConditionOperator:
-    """Represents a condition expression to be used in dsl.Condition().
+class BinaryOperation(BinaryOperationMixin):
+    """Represents a condition expression to be used in dsl.Condition and subclasses.
 
     Attributes:
       operator: The operator of the condition.
       left_operand: The left operand.
       right_operand: The right operand.
+      negate: When to invert the boolean resulting from the binary operation.
     """
     operator: str
-    left_operand: Union['PipelineParameterChannel', type_utils.PARAMETER_TYPES]
-    right_operand: Union['PipelineParameterChannel', type_utils.PARAMETER_TYPES]
+    left_operand: Union['PipelineParameterChannel', type_utils.PARAMETER_TYPES,
+                        'BinaryOperation']
+    right_operand: Union['PipelineParameterChannel', type_utils.PARAMETER_TYPES,
+                         'BinaryOperation']
+    negate: bool = False
 
 
 # The string template used to generate the placeholder of a PipelineChannel.
@@ -45,7 +76,7 @@ _PIPELINE_CHANNEL_PLACEHOLDER_REGEX = (
     r'{{channel:task=([\w\s_-]*);name=([\w\s_-]+);type=([\w\s{}":_-]*);}}')
 
 
-class PipelineChannel(abc.ABC):
+class PipelineChannel(abc.ABC, BinaryOperationMixin):
     """Represents a future value that is passed between pipeline components.
 
     A PipelineChannel object can be used as a pipeline function argument so that
@@ -147,24 +178,6 @@ class PipelineChannel(abc.ABC):
     def __hash__(self) -> int:
         """Returns the hash of a PipelineChannel."""
         return hash(self.pattern)
-
-    def __eq__(self, other):
-        return ConditionOperator('==', self, other)
-
-    def __ne__(self, other):
-        return ConditionOperator('!=', self, other)
-
-    def __lt__(self, other):
-        return ConditionOperator('<', self, other)
-
-    def __le__(self, other):
-        return ConditionOperator('<=', self, other)
-
-    def __gt__(self, other):
-        return ConditionOperator('>', self, other)
-
-    def __ge__(self, other):
-        return ConditionOperator('>=', self, other)
 
 
 class PipelineParameterChannel(PipelineChannel):

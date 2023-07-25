@@ -709,22 +709,53 @@ def _update_task_spec_for_loop_group(
         input_name=pipeline_task_spec.parameter_iterator.item_input)
 
 
-def _resolve_condition_operands(
-    left_operand: Union[str, pipeline_channel.PipelineChannel],
-    right_operand: Union[str, pipeline_channel.PipelineChannel],
-) -> Tuple[str, str]:
-    """Resolves values and PipelineChannels for condition operands.
+def _convert_binary_operation_to_condition_string(
+        binary_operation: pipeline_channel.BinaryOperation) -> str:
+    """Converts a BinaryOperation, which may have a left_operand or right_operand that is also a BinaryOperation, to a condition string for IR.
 
     Args:
-        left_operand: The left operand of a condition expression.
-        right_operand: The right operand of a condition expression.
+        binary_operation: The binary operation to convert to a string.
 
     Returns:
-        A tuple of the resolved operands values:
-        (left_operand_value, right_operand_value).
+        The binary operation as a CEL string with placeholders.
     """
 
-    # Pre-scan the operand to get the type of constant value if there's any.
+    if binary_operation.operator == '&&':
+        for operand in [
+                binary_operation.left_operand, binary_operation.right_operand
+        ]:
+            if not isinstance(operand, pipeline_channel.BinaryOperation):
+                raise ValueError(
+                    f"Both operands must be a pipeline channel when using '&' in conditional context manager. Got {type(binary_operation)}."
+                )
+
+            return _condition_string_from_parts(
+                _convert_binary_operation_to_condition_string(
+                    binary_operation.left_operand),
+                _convert_binary_operation_to_condition_string(
+                    binary_operation.right_operand),
+                '&&',
+                binary_operation.negate,
+            )
+    else:
+        return _convert_unnested_binary_operation_to_condition_string(
+            binary_operation)
+
+
+def _convert_unnested_binary_operation_to_condition_string(
+        binary_operation: pipeline_channel.BinaryOperation) -> str:
+    """Converts a single BinaryOperation, where neither left_operand nor right_operand is a BinaryOperation, to a condition string for IR.
+
+    Args:
+        binary_operation: The binary operation to convert to a string.
+
+    Returns:
+        The binary operation as a CEL string with placeholders.
+    """
+    left_operand = binary_operation.left_operand
+    right_operand = binary_operation.right_operand
+
+    # cannot make comparisons involving particular types
     for value_or_reference in [left_operand, right_operand]:
         if isinstance(value_or_reference, pipeline_channel.PipelineChannel):
             parameter_type = type_utils.get_parameter_type(
@@ -738,8 +769,10 @@ def _resolve_condition_operands(
                 input_name = compiler_utils.additional_input_name_for_pipeline_channel(
                     value_or_reference)
                 raise ValueError(
-                    f'Conditional requires scalar parameter values for comparison. Found input "{input_name}" of type {value_or_reference.channel_type} in pipeline definition instead.'
+                    f'Conditional requires primitive parameter values for comparison. Found input "{input_name}" of type {value_or_reference.channel_type} in pipeline definition instead.'
                 )
+
+    # ensure the types compared are the same or compatible
     parameter_types = set()
     for value_or_reference in [left_operand, right_operand]:
         if isinstance(value_or_reference, pipeline_channel.PipelineChannel):
@@ -822,7 +855,21 @@ def _resolve_condition_operands(
 
         operand_values.append(operand_value)
 
-    return tuple(operand_values)
+    left_operand_value, right_operand_value = tuple(operand_values)
+
+    return _condition_string_from_parts(
+        left_operand_value,
+        right_operand_value,
+        binary_operation.operator,
+        binary_operation.negate,
+    )
+
+
+def _condition_string_from_parts(left_operand: str, right_operand: str,
+                                 operator: str, negate: bool) -> str:
+    condition_string = (f'{left_operand} {operator} {right_operand}')
+
+    return f'!({condition_string})' if negate else condition_string
 
 
 def _update_task_spec_for_condition_group(
@@ -835,15 +882,9 @@ def _update_task_spec_for_condition_group(
         group: The condition group to update task spec for.
         pipeline_task_spec: The pipeline task spec to update in place.
     """
-    left_operand_value, right_operand_value = _resolve_condition_operands(
-        group.condition.left_operand, group.condition.right_operand)
-
-    condition_string = (
-        f'{left_operand_value} {group.condition.operator} {right_operand_value}'
-    )
+    condition = _convert_binary_operation_to_condition_string(group.condition)
     pipeline_task_spec.trigger_policy.CopyFrom(
-        pipeline_spec_pb2.PipelineTaskSpec.TriggerPolicy(
-            condition=condition_string))
+        pipeline_spec_pb2.PipelineTaskSpec.TriggerPolicy(condition=condition))
 
 
 def build_task_spec_for_exit_task(
@@ -1241,12 +1282,9 @@ def build_spec_by_group(
             # "Punch the hole", adding inputs needed by its subgroups or
             # tasks.
             condition_subgroup_channels = list(subgroup_input_channels)
-            for operand in [
-                    subgroup.condition.left_operand,
-                    subgroup.condition.right_operand,
-            ]:
-                if isinstance(operand, pipeline_channel.PipelineChannel):
-                    condition_subgroup_channels.append(operand)
+
+            compiler_utils.recursively_get_channels_from_binary_operation(
+                subgroup.condition, condition_subgroup_channels)
 
             subgroup_component_spec = build_component_spec_for_group(
                 input_pipeline_channels=condition_subgroup_channels,

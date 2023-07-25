@@ -4161,5 +4161,161 @@ class ExtractInputOutputDescription(unittest.TestCase):
             'Component output artifact.')
 
 
+@dsl.component
+def flip_coin() -> str:
+    import random
+    return 'heads' if random.randint(0, 1) == 0 else 'tails'
+
+
+@dsl.component
+def print_and_return(text: str) -> str:
+    print(text)
+    return text
+
+
+@dsl.component
+def flip_three_sided_coin() -> str:
+    import random
+    val = random.randint(0, 2)
+
+    if val == 0:
+        return 'heads'
+    elif val == 1:
+        return 'tails'
+    else:
+        return 'draw'
+
+
+class TestConditionLogic(unittest.TestCase):
+
+    def test_if(self):
+
+        @dsl.pipeline
+        def flip_coin_pipeline():
+            flip_coin_task = flip_coin()
+            with dsl.If(flip_coin_task.output == 'heads'):
+                heads_task = print_and_return(text='Got heads!')
+
+        self.assertEqual(
+            flip_coin_pipeline.pipeline_spec.root.dag.tasks['condition-1']
+            .trigger_policy.condition,
+            "inputs.parameter_values['pipelinechannel--flip-coin-Output'] == 'heads'"
+        )
+
+    def test_multiple_binary_operators_parens(self):
+
+        @dsl.pipeline
+        def flip_coin_pipeline():
+            flip_coin_task = flip_coin()
+            with dsl.If((flip_coin_task.output == 'heads')
+                        & (flip_coin_task.output == 'heads')):
+                heads_task = print_and_return(text='Got heads!')
+
+        self.assertEqual(
+            flip_coin_pipeline.pipeline_spec.root.dag.tasks['condition-1']
+            .trigger_policy.condition,
+            "inputs.parameter_values['pipelinechannel--flip-coin-Output'] == 'heads' && inputs.parameter_values['pipelinechannel--flip-coin-Output'] == 'heads'"
+        )
+
+    def test_multiple_binary_operators_no_parens(self):
+
+        with self.assertRaisesRegex(
+                ValueError,
+                r'Got constant boolean False as a condition\. TODO: finish'):
+
+            @dsl.pipeline
+            def flip_coin_pipeline():
+                flip_coin_task = flip_coin()
+                with dsl.If(flip_coin_task.output == 'heads'
+                            & flip_coin_task.output == 'heads'):
+                    heads_task = print_and_return(text='Got heads!')
+
+    def test_if_else(self):
+
+        @dsl.pipeline
+        def flip_coin_pipeline():
+            flip_coin_task = flip_coin()
+            with dsl.If(flip_coin_task.output == 'heads'):
+                heads_task = print_and_return(text='Got heads!')
+            with dsl.Else():
+                heads_task = print_and_return(text='Got tails!')
+
+        self.assertEqual(
+            flip_coin_pipeline.pipeline_spec.root.dag.tasks['condition-2']
+            .trigger_policy.condition,
+            "!(inputs.parameter_values['pipelinechannel--flip-coin-Output'] == 'heads')"
+        )
+
+    def test_if_elif_else(self):
+
+        @dsl.pipeline
+        def flip_coin_pipeline():
+            flip_coin_task = flip_three_sided_coin()
+            with dsl.If(flip_coin_task.output == 'heads'):
+                heads_task = print_and_return(text='Got heads!')
+            with dsl.Elif(flip_coin_task.output == 'tails'):
+                tails_task = print_and_return(text='Got tails!')
+            with dsl.Else():
+                draw_task = print_and_return(text='Draw!')
+
+        print(flip_coin_pipeline.pipeline_spec.root.dag.tasks['condition-2']
+              .trigger_policy.condition)
+        self.assertEqual(
+            flip_coin_pipeline.pipeline_spec.root.dag.tasks['condition-1']
+            .trigger_policy.condition,
+            "inputs.parameter_values['pipelinechannel--flip-three-sided-coin-Output'] == 'heads'"
+        )
+        self.assertEqual(
+            flip_coin_pipeline.pipeline_spec.root.dag.tasks['condition-2']
+            .trigger_policy.condition,
+            "!(inputs.parameter_values['pipelinechannel--flip-three-sided-coin-Output'] == 'heads') && inputs.parameter_values['pipelinechannel--flip-three-sided-coin-Output'] == 'tails'"
+        )
+
+        self.assertEqual(
+            flip_coin_pipeline.pipeline_spec.root.dag.tasks['condition-3']
+            .trigger_policy.condition,
+            "!(inputs.parameter_values['pipelinechannel--flip-coin-Output'] == 'heads') && !(inputs.parameter_values['pipelinechannel--flip-coin-Output'] == 'tails')"
+        )
+
+    def test_multiple_ifs_permitted(self):
+
+        @dsl.pipeline
+        def flip_coin_pipeline():
+            flip_coin_task = flip_coin()
+            with dsl.If(flip_coin_task.output == 'heads'):
+                heads_task = print_and_return(text='Got heads!')
+            with dsl.If(flip_coin_task.output == 'tails'):
+                heads_task = print_and_return(text='Got tails!')
+
+        self.assertEqual(
+            flip_coin_pipeline.pipeline_spec.root.dag.tasks['condition-1']
+            .trigger_policy.condition,
+            "inputs.parameter_values['pipelinechannel--flip-coin-Output'] == 'heads'"
+        )
+        self.assertEqual(
+            flip_coin_pipeline.pipeline_spec.root.dag.tasks['condition-2']
+            .trigger_policy.condition,
+            "inputs.parameter_values['pipelinechannel--flip-coin-Output'] == 'tails'"
+        )
+
+    # def test_multiple_else_not_permitted(self):
+
+    #     @dsl.pipeline
+    #     def flip_coin_pipeline():
+    #         flip_coin_task = flip_coin()
+    #         with dsl.If(flip_coin_task.output == 'heads'):
+    #             heads_task = print_and_return(text='Got heads!')
+    #         with dsl.Else():
+    #             heads_task = print_and_return(text='Got tails!')
+    #         with dsl.Else():
+    #             heads_task = print_and_return(text='Got tails!')
+
+    #     self.assertEqual(
+    #         flip_coin_pipeline.pipeline_spec.root.dag.tasks['condition-2']
+    #         .trigger_policy.condition,
+    #         "!(inputs.parameter_values['pipelinechannel--flip-coin-Output'] == 'heads')"
+    #     )
+
+
 if __name__ == '__main__':
     unittest.main()

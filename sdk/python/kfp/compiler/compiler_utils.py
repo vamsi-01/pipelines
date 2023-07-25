@@ -119,7 +119,21 @@ def get_parent_groups(
     return (tasks_to_groups, groups_to_groups)
 
 
-# TODO: do we really need this?
+def recursively_get_channels_from_binary_operation(
+        binary_operation: pipeline_channel.BinaryOperation,
+        collected_channels: list):
+    """Recursively get all channels used in a BinaryOperation, which may include other BinaryOperations in the left_operand or right_operand."""
+
+    for operand in [
+            binary_operation.left_operand, binary_operation.right_operand
+    ]:
+        if isinstance(operand, pipeline_channel.PipelineChannel):
+            collected_channels.append(operand)
+        elif isinstance(operand, pipeline_channel.BinaryOperation):
+            recursively_get_channels_from_binary_operation(
+                operand, collected_channels)
+
+
 def get_condition_channels_for_tasks(
     root_group: tasks_group.TasksGroup,
 ) -> Mapping[str, Set[pipeline_channel.PipelineChannel]]:
@@ -141,17 +155,13 @@ def get_condition_channels_for_tasks(
         new_current_conditions_channels = current_conditions_channels
         if isinstance(group, tasks_group.Condition):
             new_current_conditions_channels = list(current_conditions_channels)
-            if isinstance(group.condition.left_operand,
-                          pipeline_channel.PipelineChannel):
-                new_current_conditions_channels.append(
-                    group.condition.left_operand)
-            if isinstance(group.condition.right_operand,
-                          pipeline_channel.PipelineChannel):
-                new_current_conditions_channels.append(
-                    group.condition.right_operand)
+            recursively_get_channels_from_binary_operation(
+                group.condition, new_current_conditions_channels)
+
         for task in group.tasks:
             for channel in new_current_conditions_channels:
                 conditions[task.name].add(channel)
+
         for group in group.groups:
             _get_condition_channels_for_tasks_helper(
                 group, new_current_conditions_channels)
