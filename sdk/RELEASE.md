@@ -1,7 +1,7 @@
 # Current Version (in development)
 
 ## Features
-
+* Add support for If, Elif, Else pipeline control flow [\#TODO](https://github.com/kubeflow/pipelines/pull/TODO)
 ## Breaking changes
 
 ## Deprecations
