@@ -1,7 +1,7 @@
 # Current Version (in development)
 
 ## Features
-
+* Add support for If, Elif, Else pipeline control flow [\#9780](https://github.com/kubeflow/pipelines/pull/9780)
 ## Breaking changes
 
 ## Deprecations
