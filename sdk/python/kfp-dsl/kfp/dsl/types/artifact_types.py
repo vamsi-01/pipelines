@@ -13,6 +13,7 @@
 # limitations under the License.
 """Classes for input/output Artifacts in KFP SDK."""
 
+import os
 from typing import Dict, List, Optional, Type
 
 _GCS_LOCAL_MOUNT_PREFIX = '/gcs/'
@@ -467,3 +468,13 @@ _SCHEMA_TITLE_TO_TYPE: Dict[str, Type[Artifact]] = {
         Markdown,
     ]
 }
+
+
+# default 'Output' should be the same key as the default key for a single output component
+def get_uri(suffix: str = 'Output') -> str:
+    task_root_env_var = 'TASK_ROOT'
+    if task_root_env_var not in os.environ:
+        raise RuntimeError(
+            f"'{task_root_env_var}' environment variable not found. Cannot use 'dsl.get_uri'."
+        )
+    return os.path.join(os.environ[task_root_env_var], suffix)

@@ -47,6 +47,7 @@ __all__ = [
     'Metrics',
     'Model',
     'SlicedClassificationMetrics',
+    'get_uri',
     'PipelineTask',
 ]
 
@@ -75,6 +76,7 @@ from kfp.dsl.tasks_group import ParallelFor
 from kfp.dsl.types.artifact_types import Artifact
 from kfp.dsl.types.artifact_types import ClassificationMetrics
 from kfp.dsl.types.artifact_types import Dataset
+from kfp.dsl.types.artifact_types import get_uri
 from kfp.dsl.types.artifact_types import HTML
 from kfp.dsl.types.artifact_types import Markdown
 from kfp.dsl.types.artifact_types import Metrics
