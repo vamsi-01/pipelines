@@ -168,6 +168,15 @@ pipelines:
     - module: pipeline_with_metadata_fields
       name: dataset_concatenator
       execute: false
+    - module: pythonic_artifact_with_single_return
+      name: multiplication_model_pipeline
+      execute: false
+    - module: pythonic_artifact_with_multiple_returns
+      name: pass_through_pipeline
+      execute: false
+    - module: pythonic_artifact_with_list_of_artifacts
+      name: make_and_join_datasets
+      execute: false
 components:
   test_data_dir: sdk/python/test_data/components
   read: true
