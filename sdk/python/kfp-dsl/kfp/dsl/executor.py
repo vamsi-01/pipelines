@@ -357,8 +357,9 @@ def create_artifact_instance(
 
     artifact_cls = artifact_types._SCHEMA_TITLE_TO_TYPE.get(
         schema_title, artifact_cls)
-    return artifact_cls(
+    artifact_instance = artifact_cls(
         uri=runtime_artifact.get('uri', ''),
-        name=runtime_artifact.get('name', ''),
         metadata=runtime_artifact.get('metadata', {}),
     )
+    artifact_instance.name = runtime_artifact.get('name', '')
+    return artifact_instance
