@@ -4160,5 +4160,118 @@ class ExtractInputOutputDescription(unittest.TestCase):
             'Component output artifact.')
 
 
+class TestPythonicArtifactAuthoring(unittest.TestCase):
+    # python component
+    def test_input_annotation_on_python_component(self):
+
+        @dsl.component
+        def pythonic_style(in_artifact: Artifact):
+            pass
+
+        self.assertEqual(
+            pythonic_style.pipeline_spec.components['comp-pythonic-style']
+            .input_definitions.artifacts['in_artifact'].artifact_type
+            .schema_title, 'system.Artifact')
+        # ensure the artifact without the type marker is not compiled as a parameter
+        self.assertFalse(
+            pythonic_style.pipeline_spec.components['comp-pythonic-style']
+            .input_definitions.parameters)
+
+        @dsl.component
+        def standard_style(in_artifact: Input[Artifact]):
+            pass
+
+        self.assertEqual(
+            pythonic_style.pipeline_spec.components['comp-pythonic-style']
+            .input_definitions.artifacts['in_artifact'].artifact_type
+            .schema_title, standard_style.pipeline_spec
+            .components['comp-standard-style'].input_definitions
+            .artifacts['in_artifact'].artifact_type.schema_title)
+
+    def test_output_annotation_on_python_component(self):
+
+        @dsl.component
+        def pythonic_style() -> Artifact:
+            pass
+
+        self.assertEqual(
+            pythonic_style.pipeline_spec.components['comp-pythonic-style']
+            .output_definitions.artifacts['Output'].artifact_type.schema_title,
+            'system.Artifact')
+        # ensure the artifact without the type marker is not compiled as a parameter
+        self.assertFalse(
+            pythonic_style.pipeline_spec.components['comp-pythonic-style']
+            .output_definitions.parameters)
+
+        @dsl.component
+        def standard_style(named_output: Output[Artifact]):
+            pass
+
+        self.assertEqual(
+            pythonic_style.pipeline_spec.components['comp-pythonic-style']
+            .output_definitions.artifacts['Output'].artifact_type.schema_title,
+            standard_style.pipeline_spec.components['comp-standard-style']
+            .output_definitions.artifacts['named_output'].artifact_type
+            .schema_title)
+
+    # pipeline
+    def test_input_annotation_on_pipeline(self):
+
+        @dsl.component
+        def pythonic_style(in_artifact: Artifact):
+            pass
+
+        @dsl.pipeline
+        def my_pipeline(in_artifact: Artifact):
+            pythonic_style(in_artifact=in_artifact)
+
+        self.assertEqual(
+            my_pipeline.pipeline_spec.root.input_definitions
+            .artifacts['in_artifact'].artifact_type.schema_title,
+            'system.Artifact')
+
+        # ensure the artifact without the type marker is not compiled as a parameter
+        self.assertFalse(
+            my_pipeline.pipeline_spec.root.input_definitions.parameters)
+
+    def test_output_annotation_on_pipeline(self):
+
+        @dsl.component
+        def pythonic_style() -> Artifact:
+            pass
+
+        @dsl.pipeline
+        def my_pipeline() -> Artifact:
+            return pythonic_style().output
+
+        self.assertEqual(
+            my_pipeline.pipeline_spec.root.output_definitions
+            .artifacts['Output'].artifact_type.schema_title, 'system.Artifact')
+
+        # ensure the artifact without the type marker is not compiled as a parameter
+        self.assertFalse(
+            my_pipeline.pipeline_spec.root.output_definitions.parameters)
+
+    def test_input_annotation_on_container_component(self):
+        with self.assertRaisesRegex(
+                TypeError,
+                r'Artifacts can only be used in Container Components with Input or Output type markers\. Got function input in_artifact with type Artifact\.'
+        ):
+
+            @dsl.container_component
+            def comp(in_artifact: Artifact):
+                return dsl.ContainerSpec(image='alpine', command=['pwd'])
+
+    def test_output_annotation_on_container_component(self):
+        with self.assertRaisesRegex(
+                TypeError,
+                r'Return annotation should be either ContainerSpec or omitted for container components\.'
+        ):
+
+            @dsl.container_component
+            def comp() -> Artifact:
+                return dsl.ContainerSpec(image='alpine', command=['pwd'])
+
+
 if __name__ == '__main__':
     unittest.main()

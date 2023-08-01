@@ -541,6 +541,10 @@ def make_input_for_parameterized_container_component_function(
                                  Type[artifact_types.Artifact]]
 ) -> Union[placeholders.Placeholder, container_component_artifact_channel
            .ContainerComponentArtifactChannel]:
+    if not type_annotations.is_Input_Output_artifact_annotation(annotation):
+        raise TypeError(
+            f'Artifacts can only be used in Container Components with Input or Output type markers. Got function input {name} with type {getattr(annotation, "__name__", annotation)}.'
+        )
     if type_annotations.is_input_artifact(annotation):
 
         if type_annotations.is_list_of_artifacts(annotation.__origin__):
