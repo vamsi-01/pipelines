@@ -12,19 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import setuptools
-
-setuptools.setup(
-    name='kfp-dsl',
-    version='2.1.2',
-    description='A KFP SDK subpackage containing the DSL and runtime code.',
-    author='google',
-    author_email='kubeflow-pipelines@google.com',
-    url='https://github.com/kubeflow/pipelines',
-    packages=setuptools.find_namespace_packages(include=['kfp.*']),
-    python_requires='>=3.7.0',
-    install_requires=['typing-extensions>=3.7.4,<5; python_version<"3.9"'],
-    include_package_data=True,
-    license='Apache 2.0',
-    namespace_packages=['kfp'],
-)
+# `kfp` is a namespace package.
+# https://packaging.python.org/guides/packaging-namespace-packages/#pkgutil-style-namespace-packages
+__path__ = __import__('pkgutil').extend_path(__path__, __name__)
