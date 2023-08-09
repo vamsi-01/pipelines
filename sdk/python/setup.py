@@ -59,7 +59,7 @@ kubernetes = ['kfp-kubernetes<2']
 
 setuptools.setup(
     name='kfp',
-    version=find_version('kfp', '__init__.py'),
+    version='2.1.2',
     description='Kubeflow Pipelines SDK',
     long_description=read_readme(),
     long_description_content_type='text/markdown',
@@ -80,7 +80,7 @@ setuptools.setup(
         'all': docker + kubernetes,
         'kubernetes': kubernetes,
     },
-    packages=setuptools.find_packages(exclude=['*test*']),
+    packages=setuptools.find_namespace_packages(include=['kfp.*'], exclude=['*test*']),
     classifiers=[
         'Intended Audience :: Developers',
         'Intended Audience :: Education',
