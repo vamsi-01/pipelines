@@ -1,4 +1,4 @@
-# Copyright 2018-2022 The Kubeflow Authors
+# Copyright 2021 The Kubeflow Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,15 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-# `kfp` is a namespace package.
-# https://packaging.python.org/guides/packaging-namespace-packages/#pkgutil-style-namespace-packages
-__path__ = __import__('pkgutil').extend_path(__path__, __name__)
-
-__version__ = '2.0.1'
-
-TYPE_CHECK = True
-
-from kfp import components
-from kfp import dsl
-from kfp.client import Client
