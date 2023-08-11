@@ -20,7 +20,7 @@ from kfp.components import python_component
 from kfp.components import task_final_status
 from kfp.components.types import artifact_types
 from kfp.components.types import type_annotations
-
+import logging
 
 class Executor():
     """Executor executes v2-based Python function components."""
@@ -283,19 +283,37 @@ class Executor():
 
         # This check is to ensure only one worker (in a mirrored, distributed training/compute strategy) attempts to write to the same executor output file at the same time using gcsfuse, which enforces immutability of files.
         write_file = True
+        logging.info(
+            f'[More logging] Bool to write file {write_file}.'
+        )
 
         CLUSTER_SPEC_ENV_VAR_NAME = 'CLUSTER_SPEC'
         cluster_spec_string = os.environ.get(CLUSTER_SPEC_ENV_VAR_NAME)
+        logging.info(
+            f'[More logging] Bool to write file: {write_file}.'
+        )
         if cluster_spec_string:
+            logging.info(
+                f'[More logging] Got cluster spec string: {cluster_spec_string}.'
+            )
             cluster_spec = json.loads(cluster_spec_string)
             CHIEF_NODE_LABELS = {'workerpool0', 'chief', 'master'}
             write_file = cluster_spec['task']['type'] in CHIEF_NODE_LABELS
 
         if write_file:
             executor_output_path = self._input['outputs']['outputFile']
+            logging.info(
+                f'[More logging] Path for output: {executor_output_path}.'
+            )
             os.makedirs(os.path.dirname(executor_output_path), exist_ok=True)
+            logging.info(
+                f'[More logging] Made directories: {executor_output_path}.'
+            )
             with open(executor_output_path, 'w') as f:
                 f.write(json.dumps(self._executor_output))
+            logging.info(
+                f'[More logging] Successfully wrote (called within write function): {executor_output_path}.'
+            )
 
     def execute(self):
         annotations = inspect.getfullargspec(self._func).annotations
@@ -342,9 +360,24 @@ class Executor():
 
             elif isinstance(v, type_annotations.InputPath):
                 func_kwargs[k] = self._get_input_artifact_path(k)
-
+        logging.info(
+            f'[More logging] Calling function,'
+        )
         result = self._func(**func_kwargs)
+        logging.info(
+            f'[More logging] Function called successfully.'
+        )
+        logging.info(
+            f'[More logging] Got output: {str(result)}'
+        )
+        logging.info(
+            f'[More logging] Writing executor output.'
+        )
+        
         self._write_executor_output(result)
+        logging.info(
+            f'[More logging] Executor output written successfully.'
+        )
 
 
 def create_artifact_instance(
