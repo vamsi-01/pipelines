@@ -22,8 +22,8 @@ LATEST_KFP_SDK_RELEASE=$(pip show kfp | grep "Version:" | awk '{print $2}' | awk
 echo "Installed latest KFP SDK version: $LATEST_KFP_SDK_RELEASE"
 
 # install in normal mode, not editable mode, to emulate typical user upgrade behavior
-pip3 install sdk/python/kfp-dsl
 pip3 install sdk/python
+# HEAD version will only be different on a release PR, which bumps the version
 HEAD_KFP_SDK_VERSION=$(pip show kfp | grep "Version:" | awk '{print $2}')
 echo "Successfully upgraded to KFP SDK version @ HEAD: $HEAD_KFP_SDK_VERSION"
 
