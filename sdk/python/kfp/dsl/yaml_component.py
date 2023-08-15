@@ -13,8 +13,10 @@
 # limitations under the License.
 """Component loaded from YAML."""
 
+from google.protobuf import json_format
 from kfp.dsl import base_component
 from kfp.dsl import structures
+from kfp.pipeline_spec import pipeline_spec_pb2
 
 
 class YamlComponent(base_component.BaseComponent):
@@ -36,20 +38,14 @@ class YamlComponent(base_component.BaseComponent):
         self.component_yaml = component_yaml
 
     @property
-    def pipeline_spec(self) -> 'pipeline_spec_pb2.PipelineSpec':
+    def pipeline_spec(self) -> pipeline_spec_pb2.PipelineSpec:
         """Returns the pipeline spec of the component."""
-
-        from google.protobuf import json_format
-        from kfp.components import load_yaml_utilities
-        from kfp.pipeline_spec import pipeline_spec_pb2
-
-        component_dict = load_yaml_utilities._load_documents_from_yaml(
+        component_dict = structures.load_documents_from_yaml(
             self.component_yaml)[0]
         is_v1 = 'implementation' in set(component_dict.keys())
         if is_v1:
             return self.component_spec.to_pipeline_spec()
         else:
-
             return json_format.ParseDict(component_dict,
                                          pipeline_spec_pb2.PipelineSpec())
 

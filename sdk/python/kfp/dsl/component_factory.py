@@ -20,6 +20,7 @@ import textwrap
 from typing import Callable, List, Mapping, Optional, Tuple, Type, Union
 import warnings
 
+import docstring_parser
 from kfp.dsl import container_component_artifact_channel
 from kfp.dsl import container_component_class
 from kfp.dsl import graph_component
@@ -123,9 +124,9 @@ def _get_packages_to_install_command(
     return ['sh', '-c', install_python_packages_script]
 
 
-def _get_kfp_dsl_requirement() -> str:
+def _get_default_kfp_package_path() -> str:
     import kfp
-    return f'kfp-dsl=={kfp.__version__}'
+    return f'kfp=={kfp.__version__}'
 
 
 def _get_function_source_definition(func: Callable) -> str:
@@ -174,9 +175,6 @@ def extract_component_interface(
     parameters = list(signature.parameters.values())
 
     original_docstring = inspect.getdoc(func)
-
-    import docstring_parser
-
     parsed_docstring = docstring_parser.parse(original_docstring)
 
     inputs = {}
@@ -477,7 +475,7 @@ def create_component_from_func(
 
     if install_kfp_package and target_image is None:
         if kfp_package_path is None:
-            kfp_package_path = _get_kfp_dsl_requirement()
+            kfp_package_path = _get_default_kfp_package_path()
         packages_to_install.append(kfp_package_path)
 
     packages_to_install_command = _get_packages_to_install_command(
@@ -624,7 +622,7 @@ def create_graph_component_from_func(
 
 def get_pipeline_description(
     decorator_description: Union[str, None],
-    docstring: 'docstring_parser.Docstring',
+    docstring: docstring_parser.Docstring,
 ) -> Union[str, None]:
     """Obtains the correct pipeline description from the pipeline decorator's
     description argument and the parsed docstring.

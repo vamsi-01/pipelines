@@ -17,10 +17,12 @@ import inspect
 from typing import Callable, Optional
 import uuid
 
+from kfp.compiler import pipeline_spec_builder as builder
 from kfp.dsl import base_component
 from kfp.dsl import pipeline_channel
 from kfp.dsl import pipeline_context
 from kfp.dsl import structures
+from kfp.pipeline_spec import pipeline_spec_pb2
 
 
 class GraphComponent(base_component.BaseComponent):
@@ -63,8 +65,6 @@ class GraphComponent(base_component.BaseComponent):
         pipeline_group = dsl_pipeline.groups[0]
         pipeline_group.name = uuid.uuid4().hex
 
-        from kfp.compiler import pipeline_spec_builder as builder
-
         pipeline_spec, platform_spec = builder.create_pipeline_spec(
             pipeline=dsl_pipeline,
             component_spec=self.component_spec,
@@ -83,7 +83,7 @@ class GraphComponent(base_component.BaseComponent):
         self.component_spec.platform_spec = platform_spec
 
     @property
-    def pipeline_spec(self) -> 'pipeline_spec_pb2.PipelineSpec':
+    def pipeline_spec(self) -> pipeline_spec_pb2.PipelineSpec:
         """Returns the pipeline spec of the component."""
         return self.component_spec.implementation.graph
 
