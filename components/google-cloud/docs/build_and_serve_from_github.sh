@@ -1,5 +1,5 @@
 # run from components/google-cloud
-pip3 install -e "..[docs]"
+# pip3 install -e "..[docs]"
 builddir=$(mktemp -d)
 sphinx-build -M html "source" $builddir
 pushd $builddir/html
