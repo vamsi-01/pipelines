@@ -45,7 +45,7 @@ _RESOURCE_NAME_KEY = 'resourceName'
 
 
 class VertexModel(dsl.Artifact):
-  """An artifact representing a Vertex AI `Model resource <https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.models>`_."""
+  """An artifact representing a Vertex AI [Model resource](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.models)."""
   schema_title = 'google.VertexModel'
   schema_version = '0.0.1'
   schema = textwrap.dedent("""\
@@ -86,7 +86,7 @@ properties:
 
 
 class VertexEndpoint(dsl.Artifact):
-  """An artifact representing a Vertex AI `Endpoint resource <https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.endpoints>`_."""
+  """An artifact representing a Vertex AI [Endpoint resource](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.endpoints)."""
   schema_title = 'google.VertexEndpoint'
   schema_version = '0.0.1'
   schema = textwrap.dedent("""\
@@ -127,7 +127,7 @@ properties:
 
 
 class VertexBatchPredictionJob(dsl.Artifact):
-  """An artifact representing a Vertex AI `BatchPredictionJob resource <https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.batchPredictionJobs#resource:-batchpredictionjob>`_."""
+  """An artifact representing a Vertex AI [BatchPredictionJob resource](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.batchPredictionJobs#resource:-batchpredictionjob)."""
   schema_title = 'google.VertexBatchPredictionJob'
   schema_version = '0.0.1'
   schema = textwrap.dedent("""\
@@ -195,7 +195,7 @@ properties:
 
 
 class VertexDataset(dsl.Artifact):
-  """An artifact representing a Vertex AI `Dataset resource <https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.datasets>`_."""
+  """An artifact representing a Vertex AI [Dataset resource](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.datasets)."""
   schema_title = 'google.VertexDataset'
   schema_version = '0.0.1'
   schema = textwrap.dedent("""\
@@ -236,7 +236,7 @@ properties:
 
 
 class BQMLModel(dsl.Artifact):
-  """An artifact representing a Google Cloud `BQML Model resource <https://cloud.google.com/bigquery/docs/reference/rest/v2/models>`_."""
+  """An artifact representing a Google Cloud [BQML Model resource](https://cloud.google.com/bigquery/docs/reference/rest/v2/models)."""
   schema_title = 'google.BQMLModel'
   schema_version = '0.0.1'
   schema = textwrap.dedent("""\
@@ -282,7 +282,7 @@ properties:
 
 
 class BQTable(dsl.Artifact):
-  """An artifact representing a Google Cloud `BQ Table resource <https://cloud.google.com/bigquery/docs/reference/rest/v2/tables>`_."""
+  """An artifact representing a Google Cloud [BQ Table resource](https://cloud.google.com/bigquery/docs/reference/rest/v2/tables)."""
   schema_title = 'google.BQTable'
   schema_version = '0.0.1'
   schema = textwrap.dedent("""\
@@ -330,7 +330,7 @@ properties:
 
 
 class UnmanagedContainerModel(dsl.Artifact):
-  """An artifact representing a Vertex AI `unmanaged container model <https://cloud.google.com/vertex-ai/docs/reference/rest/v1/ModelContainerSpec>`_."""
+  """An artifact representing a Vertex AI [unmanaged container model](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/ModelContainerSpec)."""
   schema_title = 'google.UnmanagedContainerModel'
   schema_version = '0.0.1'
   schema = textwrap.dedent("""\
@@ -410,7 +410,7 @@ properties:
 
 
 class ClassificationMetrics(dsl.Artifact):
-  """An artifact representing evaluation `classification metrics <https://cloud.google.com/vertex-ai/docs/tabular-data/classification-regression/evaluate-model#classification_1>`_."""
+  """An artifact representing evaluation [classification metrics](https://cloud.google.com/vertex-ai/docs/tabular-data/classification-regression/evaluate-model#classification_1)."""
 
   schema_title = 'google.ClassificationMetrics'
   schema_version = '0.0.1'
@@ -586,7 +586,7 @@ properties:
 
 
 class RegressionMetrics(dsl.Artifact):
-  """An artifact representing evaluation `regression metrics <https://cloud.google.com/vertex-ai/docs/tabular-data/classification-regression/evaluate-model#regression_1>`_."""
+  """An artifact representing evaluation [regression metrics](https://cloud.google.com/vertex-ai/docs/tabular-data/classification-regression/evaluate-model#regression_1)."""
 
   schema_title = 'google.RegressionMetrics'
   schema_version = '0.0.1'
@@ -652,7 +652,7 @@ properties:
 
 
 class ForecastingMetrics(dsl.Artifact):
-  """An artifact representing evaluation `forecasting metrics <https://cloud.google.com/vertex-ai/docs/tabular-data/forecasting/evaluate-model#metrics>`_."""
+  """An artifact representing evaluation [forecasting metrics](https://cloud.google.com/vertex-ai/docs/tabular-data/forecasting/evaluate-model#metrics)."""
 
   schema_title = 'google.ForecastingMetrics'
   schema_version = '0.0.1'

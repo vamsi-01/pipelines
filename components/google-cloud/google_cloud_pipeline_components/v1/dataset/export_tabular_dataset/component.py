@@ -31,7 +31,7 @@ def tabular_dataset_export(
     project: str = _placeholders.PROJECT_ID_PLACEHOLDER,
 ):
   # fmt: off
-  """Exports `Dataset <https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.datasets>`_ to a GCS output directory.
+  """Exports [Dataset](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.datasets) to a GCS output directory.
 
   Args:
       output_dir: The Google Cloud Storage location where the output is to

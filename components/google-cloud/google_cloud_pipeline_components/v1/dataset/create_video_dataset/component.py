@@ -35,7 +35,7 @@ def video_dataset_create(
     project: str = _placeholders.PROJECT_ID_PLACEHOLDER,
 ):
   # fmt: off
-  """Creates a new video `Dataset <https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.datasets>`_ and optionally imports data into Dataset when
+  """Creates a new video [Dataset](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.datasets) and optionally imports data into Dataset when
   ``source`` and ``import_schema_uri`` are passed.
 
   Args:
@@ -51,8 +51,8 @@ def video_dataset_create(
       import_schema_uri: Points to a YAML file stored on Google Cloud
           Storage describing the import format. Validation will be
           done against the schema. The schema is defined as an
-          `OpenAPI 3.0.2 Schema
-          Object <https://tinyurl.com/y538mdwt>`_.
+          [OpenAPI 3.0.2 Schema
+          Object](https://tinyurl.com/y538mdwt).
       data_item_labels: Labels that will be applied to newly imported DataItems. If
           an identical DataItem as one being imported already exists
           in the Dataset, then these labels will be appended to these

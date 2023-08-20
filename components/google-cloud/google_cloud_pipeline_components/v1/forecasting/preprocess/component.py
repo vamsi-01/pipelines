@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from typing import Optional
 
 from kfp import dsl
@@ -26,8 +25,8 @@ def forecasting_preprocessing(
     preprocessing_bigquery_dataset: Optional[str] = '',
     location: Optional[str] = 'US',
 ):
-  # fmt: off
-  """Preprocesses BigQuery tables for training or prediction.
+    # fmt: off
+    """Preprocesses BigQuery tables for training or prediction.
 
   Creates a BigQuery table for training or prediction based on the input tables.
   For training, a primary table is required. Optionally, you can include some
@@ -44,24 +43,24 @@ def forecasting_preprocessing(
   Returns:
     preprocess_metadata
   """
-  # fmt: on
+    # fmt: on
 
-  return dsl.ContainerSpec(
-      image=(
-          'us-docker.pkg.dev/vertex-ai/time-series-forecasting/forecasting:prod'
-      ),
-      command=['python', '/launcher.py'],
-      args=[
-          'forecasting_preprocess',
-          '--project_id',
-          project,
-          '--input_table_specs',
-          input_tables,
-          '--bigquery_dataset_id',
-          preprocessing_bigquery_dataset,
-          '--preprocess_metadata_path',
-          preprocess_metadata,
-          '--location',
-          location,
-      ],
-  )
+    return dsl.ContainerSpec(
+        image=(
+            'us-docker.pkg.dev/vertex-ai/time-series-forecasting/forecasting:prod'
+        ),
+        command=['python', '/launcher.py'],
+        args=[
+            'forecasting_preprocess',
+            '--project_id',
+            project,
+            '--input_table_specs',
+            input_tables,
+            '--bigquery_dataset_id',
+            preprocessing_bigquery_dataset,
+            '--preprocess_metadata_path',
+            preprocess_metadata,
+            '--location',
+            location,
+        ],
+    )

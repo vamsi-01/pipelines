@@ -33,12 +33,11 @@ loader.exec_module(version)
 
 # Get the long descriptions including link to RELEASE notes from README files.
 with open("README.md") as fp:
-  _GCPC_LONG_DESCRIPTION = fp.read()
+    _GCPC_LONG_DESCRIPTION = fp.read()
 
 yaml_data = glob.glob(relative_data_path + "/**/*.yaml", recursive=True)
 json_data = glob.glob(
-    relative_data_path + "/**/automl/**/*.json", recursive=True
-)
+    relative_data_path + "/**/automl/**/*.json", recursive=True)
 setuptools.setup(
     name="google-cloud-pipeline-components",
     version=version.__version__,
@@ -46,8 +45,7 @@ setuptools.setup(
         "This SDK enables a set of First Party (Google owned) pipeline"
         " components that allow users to take their experience from Vertex AI"
         " SDK and other Google Cloud services and create a corresponding"
-        " pipeline using KFP or Managed Pipelines."
-    ),
+        " pipeline using KFP or Managed Pipelines."),
     long_description=_GCPC_LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
     url="https://github.com/kubeflow/pipelines/tree/master/components/google-cloud",
@@ -67,6 +65,7 @@ setuptools.setup(
             "protobuf<4.0.0dev,>=3.19.0",
             "grpcio-status<=1.47.0",
         ] + [
+            'commonmark==0.9.1',
             "autodocsumm==0.2.9",
             "sphinx==5.0.2",
             "sphinx-immaterial==0.9.0",
@@ -85,12 +84,14 @@ setuptools.setup(
         "google-cloud-aiplatform>=1.14.0,<2",
     ],
     project_urls={
-        "User Documentation": "https://cloud.google.com/vertex-ai/docs/pipelines/components-introduction",
-        "Reference Documentation": (
-            "https://google-cloud-pipeline-components.readthedocs.io/"
-        ),
-        "Source": "https://github.com/kubeflow/pipelines/tree/master/components/google-cloud",
-        "Release Notes": "https://github.com/kubeflow/pipelines/tree/master/components/google-cloud/RELEASE.md",
+        "User Documentation":
+            "https://cloud.google.com/vertex-ai/docs/pipelines/components-introduction",
+        "Reference Documentation":
+            ("https://google-cloud-pipeline-components.readthedocs.io/"),
+        "Source":
+            "https://github.com/kubeflow/pipelines/tree/master/components/google-cloud",
+        "Release Notes":
+            "https://github.com/kubeflow/pipelines/tree/master/components/google-cloud/RELEASE.md",
     },
     dependency_links=[],
     classifiers=[

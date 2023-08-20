@@ -22,11 +22,11 @@ def serialize_parameters(
     parameters: Dict[str, hyperparameter_tuning._ParameterSpec]
 ) -> List[Dict[str, Any]]:
   # fmt: off
-  """Utility for converting a hyperparameter tuning `ParameterSpec <https://cloud.google.com/vertex-ai/docs/reference/rest/v1/StudySpec#ParameterSpec>`_ into a list of dictionaries.
+  """Utility for converting a hyperparameter tuning [ParameterSpec](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/StudySpec#ParameterSpec) into a list of dictionaries.
 
   Args:
       parameters (Dict[str, hyperparameter_tuning._ParameterSpec]): Dictionary
-        of paramater ids to subclasses of `_ParameterSpec <https://github.com/googleapis/python-aiplatform/blob/1fda4172baaf200414d95e7217bfef0e500cc16a/google/cloud/aiplatform/hyperparameter_tuning.py#L51>`_. Supported subclasses include: ``DoubleParameterSpec``,
+        of paramater ids to subclasses of [_ParameterSpec](https://github.com/googleapis/python-aiplatform/blob/1fda4172baaf200414d95e7217bfef0e500cc16a/google/cloud/aiplatform/hyperparameter_tuning.py#L51). Supported subclasses include: ``DoubleParameterSpec``,
         ``IntegerParameterSpec``, ``CategoricalParameterSpace``, ``DiscreteParameterSpec``.
 
         :Example:
@@ -59,7 +59,7 @@ def serialize_parameters(
 
 def serialize_metrics(metric_spec: Dict[str, str]) -> List[Dict[str, Any]]:
   # fmt: off
-  """Utility for converting a hyperparameter tuning `MetricSpec <https://cloud.google.com/vertex-ai/docs/reference/rest/v1/StudySpec#metricspec>`_ into a list of dictionaries.
+  """Utility for converting a hyperparameter tuning [MetricSpec](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/StudySpec#metricspec) into a list of dictionaries.
 
   Args:
       metric_spec (Dict[str, str]): Dictionary representing metrics to

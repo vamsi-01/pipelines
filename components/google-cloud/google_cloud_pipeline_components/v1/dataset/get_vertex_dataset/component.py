@@ -25,7 +25,7 @@ def get_vertex_dataset(
     gcp_resources: dsl.OutputPath(str),
 ):
   # fmt: off
-  """Gets a `Dataset <https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.datasets>`_ artifact as a Vertex Dataset artifact.
+  """Gets a [Dataset](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.datasets) artifact as a Vertex Dataset artifact.
 
   Args:
     dataset_resource_name: Vertex Dataset resource name in the format of ``projects/{project}/locations/{location}/datasets/{dataset}``.

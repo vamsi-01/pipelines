@@ -70,26 +70,26 @@ def create_custom_training_job_from_component(
     base_output_directory: str = '',
     labels: Optional[Dict[str, str]] = None,
 ) -> Callable:
-  """Convert a KFP component into Vertex AI `custom training job <https://cloud.google.com/vertex-ai/docs/training/create-custom-job>`_ using the `CustomJob <https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.customJobs>`_ API.
+  """Convert a KFP component into Vertex AI [custom training job](https://cloud.google.com/vertex-ai/docs/training/create-custom-job) using the [CustomJob](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.customJobs) API.
 
-  This utility converts a `KFP component
-  <https://www.kubeflow.org/docs/components/pipelines/v2/components/>`_
+  This utility converts a [KFP component
+ ](https://www.kubeflow.org/docs/components/pipelines/v2/components/)
   provided to ``component_spec`` into ``CustomTrainingJobOp`` component. Your
   components inputs, outputs, and logic are carried over, with additional
-  `CustomJob
-  <https://cloud.google.com/vertex-ai/docs/reference/rest/v1/CustomJobSpec>`_
+  [CustomJob
+ ](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/CustomJobSpec)
   parameters exposed.
 
   Note that this utility constructs a ClusterSpec where the master and all the
   workers use the same spec, meaning all disk/machine spec related parameters
   will apply to all replicas. This is suitable for uses cases such as executing
-  a training component over multiple replicas with `MultiWorkerMirroredStrategy
-  <https://www.tensorflow.org/api_docs/python/tf/distribute/MultiWorkerMirroredStrategy>`_
-  or `MirroredStrategy
-  <https://www.tensorflow.org/api_docs/python/tf/distribute/MirroredStrategy>`_.
+  a training component over multiple replicas with [MultiWorkerMirroredStrategy
+ ](https://www.tensorflow.org/api_docs/python/tf/distribute/MultiWorkerMirroredStrategy)
+  or [MirroredStrategy
+ ](https://www.tensorflow.org/api_docs/python/tf/distribute/MirroredStrategy).
 
-  See `Create custom training jobs
-  <https://cloud.google.com/vertex-ai/docs/training/create-custom-job>`_ for
+  See [Create custom training jobs
+ ](https://cloud.google.com/vertex-ai/docs/training/create-custom-job) for
   more information.
 
   Args:
@@ -98,14 +98,14 @@ def create_custom_training_job_from_component(
       name will be used instead.
     replica_count: The count of instances in the cluster. One replica always
       counts towards the master in worker_pool_spec[0] and the remaining
-      replicas will be allocated in worker_pool_spec[1]. See `more information.
-      <https://cloud.google.com/vertex-ai/docs/training/distributed-training#configure_a_distributed_training_job>`_
+      replicas will be allocated in worker_pool_spec[1]. See [more information.
+     ](https://cloud.google.com/vertex-ai/docs/training/distributed-training#configure_a_distributed_training_job)
     machine_type: The type of the machine to run the CustomJob. The default
-      value is "n1-standard-4". See `more information
-      <https://cloud.google.com/vertex-ai/docs/training/configure-compute#machine-types>`_.
+      value is "n1-standard-4". See [more information
+     ](https://cloud.google.com/vertex-ai/docs/training/configure-compute#machine-types).
     accelerator_type: The type of accelerator(s) that may be attached to the
-      machine per ``accelerator_count``. See `more information
-      <https://cloud.google.com/vertex-ai/docs/reference/rest/v1/MachineSpec#acceleratortype>`_.
+      machine per ``accelerator_count``. See [more information
+     ](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/MachineSpec#acceleratortype).
     accelerator_count: The number of accelerators to attach to the machine.
       Defaults to 1 if ``accelerator_type`` is set.
     boot_disk_type: Type of the boot disk (default is "pd-ssd"). Valid values:
@@ -122,11 +122,11 @@ def create_custom_training_job_from_component(
       gets restarted. This feature can be used by distributed training jobs that
       are not resilient to workers leaving and joining a job.
     service_account: Sets the default service account for workload run-as
-      account. The `service account
-      <https://cloud.google.com/vertex-ai/docs/pipelines/configure-project#service-account>`_
+      account. The [service account
+     ](https://cloud.google.com/vertex-ai/docs/pipelines/configure-project#service-account)
       running the pipeline submitting jobs must have act-as permission on this
-      run-as account. If unspecified, the Vertex AI Custom Code `Service Agent
-      <https://cloud.google.com/vertex-ai/docs/general/access-control#service-agents>`_
+      run-as account. If unspecified, the Vertex AI Custom Code [Service Agent
+     ](https://cloud.google.com/vertex-ai/docs/general/access-control#service-agents)
       for the CustomJob's project.
     network: The full name of the Compute Engine network to which the job should
       be peered. For example, ``projects/12345/global/networks/myVPC``. Format
@@ -139,25 +139,25 @@ def create_custom_training_job_from_component(
       will be encrypted with the provided encryption key.
     tensorboard: The name of a Vertex AI Tensorboard resource to which this
       CustomJob will upload Tensorboard logs.
-    enable_web_access: Whether you want Vertex AI to enable `interactive shell
+    enable_web_access: Whether you want Vertex AI to enable [interactive shell
       access
-      <https://cloud.google.com/vertex-ai/docs/training/monitor-debug-interactive-shell>`_
+     ](https://cloud.google.com/vertex-ai/docs/training/monitor-debug-interactive-shell)
       to training containers. If ``True``, you can access interactive shells at
       the URIs given by [CustomJob.web_access_uris][].
     reserved_ip_ranges: A list of names for the reserved IP ranges under the VPC
       network that can be used for this job. If set, we will deploy the job
       within the provided IP ranges. Otherwise, the job will be deployed to any
       IP ranges under the provided VPC network.
-    nfs_mounts: A list of `NfsMount
-      <https://cloud.devsite.corp.google.com/vertex-ai/docs/reference/rest/v1/CustomJobSpec#NfsMount>`_
+    nfs_mounts: A list of [NfsMount
+     ](https://cloud.devsite.corp.google.com/vertex-ai/docs/reference/rest/v1/CustomJobSpec#NfsMount)
       resource specs in Json dict format. For more details about mounting NFS
-      for CustomJob, see `Mount an NFS share for custom training
-      <https://cloud.devsite.corp.google.com/vertex-ai/docs/training/train-nfs-share>`_.
+      for CustomJob, see [Mount an NFS share for custom training
+     ](https://cloud.devsite.corp.google.com/vertex-ai/docs/training/train-nfs-share).
     base_output_directory: The Cloud Storage location to store the output of
-      this CustomJob or HyperparameterTuningJob. See `more information
-      <https://cloud.google.com/vertex-ai/docs/reference/rest/v1/GcsDestination>`_.
+      this CustomJob or HyperparameterTuningJob. See [more information
+     ](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/GcsDestination).
     labels: The labels with user-defined metadata to organize the CustomJob. See
-      `more information <https://goo.gl/xmQnxf>`_.
+      [more information](https://goo.gl/xmQnxf).
 
   Returns:
     A KFP component with CustomJob specification applied.

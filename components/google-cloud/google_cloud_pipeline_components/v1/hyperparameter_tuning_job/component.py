@@ -45,7 +45,7 @@ def hyperparameter_tuning_job(
   """Creates a Vertex AI hyperparameter tuning job and waits for
   it to complete.
 
-  See `more information. <https://cloud.google.com/vertex-ai/docs/training/using-hyperparameter-tuning>`_
+  See [more information.](https://cloud.google.com/vertex-ai/docs/training/using-hyperparameter-tuning)
 
 
   Args:
@@ -97,7 +97,7 @@ def hyperparameter_tuning_job(
                 'batch_size': hpt.DiscreteParameterSpec(values=[128, 256], scale='linear')
             })
 
-        Parameters specs should be subclasses of `_ParameterSpec <https://github.com/googleapis/python-aiplatform/blob/1fda4172baaf200414d95e7217bfef0e500cc16a/google/cloud/aiplatform/hyperparameter_tuning.py#L51>`_. Supported subclasses include: ``DoubleParameterSpec``,
+        Parameters specs should be subclasses of [_ParameterSpec](https://github.com/googleapis/python-aiplatform/blob/1fda4172baaf200414d95e7217bfef0e500cc16a/google/cloud/aiplatform/hyperparameter_tuning.py#L51). Supported subclasses include: ``DoubleParameterSpec``,
         ``IntegerParameterSpec``, ``CategoricalParameterSpace``, ``DiscreteParameterSpec``.
       max_trial_count: The desired total number of Trials.
       parallel_trial_count: The desired number of Trials to
@@ -145,7 +145,7 @@ def hyperparameter_tuning_job(
       project: Project to run the HyperparameterTuningJob in. Defaults to the project in which the PipelineJob is run.
 
   Returns:
-      gcp_resources: Serialized JSON of ``gcp_resources`` `proto <https://github.com/kubeflow/pipelines/tree/master/components/google-cloud/google_cloud_pipeline_components/proto>`_ which contains the GCP resource ID of the Hyperparameter Tuning job.
+      gcp_resources: Serialized JSON of ``gcp_resources`` [proto](https://github.com/kubeflow/pipelines/tree/master/components/google-cloud/google_cloud_pipeline_components/proto) which contains the GCP resource ID of the Hyperparameter Tuning job.
   """
   # fmt: on
   return ContainerSpec(

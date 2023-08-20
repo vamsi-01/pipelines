@@ -65,20 +65,20 @@ def model_batch_predict(
     project: str = _placeholders.PROJECT_ID_PLACEHOLDER,
 ):
   # fmt: off
-  """Creates a Google Cloud Vertex `BatchPredictionJob <https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.batchPredictionJobs>`_ and waits for it to complete.
+  """Creates a Google Cloud Vertex [BatchPredictionJob](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.batchPredictionJobs) and waits for it to complete.
 
-  For more details, see `BatchPredictionJob.Create <https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.batchPredictionJobs/create>`_.
+  For more details, see [BatchPredictionJob.Create](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.batchPredictionJobs/create).
 
   Args:
       job_display_name: The user-defined name of this BatchPredictionJob.
       location: Location for creating the BatchPredictionJob.
       instances_format: The format in which instances are
-        given, must be one of the `Model <https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.models>`_'s supportedInputStorageFormats.
+        given, must be one of the [Model](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.models)'s supportedInputStorageFormats.
         For more details about this input config, see
-        `InputConfig <https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.batchPredictionJobs#InputConfig.>`_
+        [InputConfig](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.batchPredictionJobs#InputConfig.)
       predictions_format: The format in which Vertex AI gives the predictions. Must be one of the
         Model's supportedOutputStorageFormats.
-        For more details about this output config, see `OutputConfig <https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.batchPredictionJobs#OutputConfig>`_.
+        For more details about this output config, see [OutputConfig](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.batchPredictionJobs#OutputConfig).
       model: The Model used to get predictions via this job. Must share the same
         ancestor Location. Starting this job has no impact on any existing
         deployments of the Model and their resources. Either this or
@@ -88,8 +88,8 @@ def model_batch_predict(
         this or model must be specified.
       gcs_source_uris: Google Cloud Storage URI(-s) to your instances to run batch prediction
         on. They must match ``instances_format``. May contain wildcards. For more
-        information on wildcards, see `WildcardNames <https://cloud.google.com/storage/docs/gsutil/addlhelp/WildcardNames>`_.
-        For more details about this input config, see `InputConfig <https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.batchPredictionJobs#InputConfig>`_.
+        information on wildcards, see [WildcardNames](https://cloud.google.com/storage/docs/gsutil/addlhelp/WildcardNames).
+        For more details about this input config, see [InputConfig](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.batchPredictionJobs#InputConfig).
       bigquery_source_input_uri: BigQuery URI to a table, up to 2000 characters long. For example:
         ``projectId.bqDatasetId.bqTableId``  For more details about this input
         config, see
@@ -97,7 +97,7 @@ def model_batch_predict(
       model_parameters: The parameters that govern the predictions. The schema of the parameters
       instance_type: The format of the instance that the Model
         accepts. Vertex AI will convert compatible
-        `InstancesFormat <https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.batchPredictionJobs#InputConfig>`_
+        [InstancesFormat](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.batchPredictionJobs#InputConfig)
         to the specified format. Supported values are:
         ``object``: Each input is converted to JSON object format.
           * For ``bigquery``, each row is converted to an object.
@@ -106,7 +106,7 @@ def model_batch_predict(
         ``array``: Each input is converted to JSON array format.
           * For ``bigquery``, each row is converted to an array. The order
             of columns is determined by the BigQuery column order, unless
-            `included_fields <https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.batchPredictionJobs#InputConfig>`_ is populated.
+            [included_fields](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.batchPredictionJobs#InputConfig) is populated.
             ``included_fields`` must be populated for specifying field orders.
           * For ``jsonl``, if each line of the JSONL input is an object,
             ``included_fields`` must be populated for specifying field orders.
@@ -128,7 +128,7 @@ def model_batch_predict(
       key_field: The name of the field that is considered as a key.
         The values identified by the key field is not included in the
         transformed instances that is sent to the Model. This is similar to
-        specifying this name of the field in `excluded_fields <https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.batchPredictionJobs#InputConfig>`_. In addition,
+        specifying this name of the field in [excluded_fields](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.batchPredictionJobs#InputConfig). In addition,
         the batch prediction output will not include the instances. Instead the
         output will only include the value of the key field, in a field named
         ``key`` in the output:
@@ -186,7 +186,7 @@ def model_batch_predict(
         Model's instance and prediction schemata. The ``errors`` table
         contains rows for which the prediction has failed, it has instance
         columns, as per the instance schema, followed by a single "errors"
-        column, which as values has `google.rpc.Status <Status>`_
+        column, which as values has [google.rpc.Status](Status)
         represented as a STRUCT, and containing only ``code`` and
         ``message``. For more details about this output config, see
         https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.batchPredictionJobs#OutputConfig.

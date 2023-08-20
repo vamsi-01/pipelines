@@ -34,7 +34,7 @@ def tabular_dataset_create(
     project: str = _placeholders.PROJECT_ID_PLACEHOLDER,
 ):
   # fmt: off
-  """Creates a new tabular `Dataset <https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.datasets>`_.
+  """Creates a new tabular [Dataset](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.datasets).
 
   Args:
       display_name: The user-defined name of the Dataset.
