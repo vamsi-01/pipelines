@@ -310,7 +310,7 @@ class Executor():
             # Annotations for parameter types could be written as, for example,
             # `Optional[str]`. In this case, we need to strip off the part
             # `Optional[]` to get the actual parameter type.
-            v = type_annotations.maybe_strip_optional_from_annotation(v)
+            v = type_annotations.strip_optional_if_present(v)
 
             if v == task_final_status.PipelineTaskFinalStatus:
                 value = self._get_input_parameter_value(k)
@@ -329,9 +329,9 @@ class Executor():
                     func_kwargs[k] = value
 
             elif type_annotations.is_Input_Output_artifact_annotation(v):
-                if type_annotations.is_input_artifact(v):
+                if type_annotations.is_artifact_wrapped_in_Input(v):
                     func_kwargs[k] = self._get_input_artifact(k)
-                if type_annotations.is_output_artifact(v):
+                if type_annotations.is_artifact_wrapped_in_Output(v):
                     func_kwargs[k] = self._get_output_artifact(k)
 
             elif isinstance(v, type_annotations.OutputPath):

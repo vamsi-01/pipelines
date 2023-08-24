@@ -56,21 +56,24 @@ class AnnotationsTest(parameterized.TestCase):
         Input,
     ])
     def test_is_input_artifact(self, annotation):
-        self.assertTrue(type_annotations.is_input_artifact(annotation))
+        self.assertTrue(
+            type_annotations.is_artifact_wrapped_in_Input(annotation))
 
     @parameterized.parameters([
         Output[Model],
         Output,
     ])
     def test_is_not_input_artifact(self, annotation):
-        self.assertFalse(type_annotations.is_input_artifact(annotation))
+        self.assertFalse(
+            type_annotations.is_artifact_wrapped_in_Input(annotation))
 
     @parameterized.parameters([
         Output[Model],
         Output[List[Model]],
     ])
     def test_is_output_artifact(self, annotation):
-        self.assertTrue(type_annotations.is_output_artifact(annotation))
+        self.assertTrue(
+            type_annotations.is_artifact_wrapped_in_Output(annotation))
 
     @parameterized.parameters([
         Input[Model],
@@ -78,7 +81,8 @@ class AnnotationsTest(parameterized.TestCase):
         Input,
     ])
     def test_is_not_output_artifact(self, annotation):
-        self.assertFalse(type_annotations.is_output_artifact(annotation))
+        self.assertFalse(
+            type_annotations.is_artifact_wrapped_in_Output(annotation))
 
     def test_get_io_artifact_class(self):
         self.assertEqual(
@@ -95,26 +99,26 @@ class AnnotationsTest(parameterized.TestCase):
 
     def test_get_io_artifact_annotation(self):
         self.assertEqual(
-            type_annotations.get_io_artifact_annotation(Output[Model]),
+            type_annotations.get_input_or_output_marker(Output[Model]),
             OutputAnnotation)
         self.assertEqual(
-            type_annotations.get_io_artifact_annotation(Output[List[Model]]),
+            type_annotations.get_input_or_output_marker(Output[List[Model]]),
             OutputAnnotation)
         self.assertEqual(
-            type_annotations.get_io_artifact_annotation(Input[Model]),
+            type_annotations.get_input_or_output_marker(Input[Model]),
             InputAnnotation)
         self.assertEqual(
-            type_annotations.get_io_artifact_annotation(Input[List[Model]]),
+            type_annotations.get_input_or_output_marker(Input[List[Model]]),
             InputAnnotation)
         self.assertEqual(
-            type_annotations.get_io_artifact_annotation(Input), InputAnnotation)
+            type_annotations.get_input_or_output_marker(Input), InputAnnotation)
         self.assertEqual(
-            type_annotations.get_io_artifact_annotation(Output),
+            type_annotations.get_input_or_output_marker(Output),
             OutputAnnotation)
 
         self.assertEqual(
-            type_annotations.get_io_artifact_annotation(Model), None)
-        self.assertEqual(type_annotations.get_io_artifact_annotation(str), None)
+            type_annotations.get_input_or_output_marker(Model), None)
+        self.assertEqual(type_annotations.get_input_or_output_marker(str), None)
 
     @parameterized.parameters(
         {
@@ -158,8 +162,7 @@ class AnnotationsTest(parameterized.TestCase):
                                                   expected_annotation):
         self.assertEqual(
             expected_annotation,
-            type_annotations.maybe_strip_optional_from_annotation(
-                original_annotation))
+            type_annotations.strip_optional_if_present(original_annotation))
 
     @parameterized.parameters(
         {

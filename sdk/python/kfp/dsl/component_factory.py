@@ -17,10 +17,11 @@ import itertools
 import pathlib
 import re
 import textwrap
-from typing import Callable, List, Mapping, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Type, Union
 import warnings
 
 import docstring_parser
+from kfp import dsl
 from kfp.dsl import container_component_artifact_channel
 from kfp.dsl import container_component_class
 from kfp.dsl import graph_component
@@ -34,6 +35,7 @@ from kfp.dsl.types import type_annotations
 from kfp.dsl.types import type_utils
 
 _DEFAULT_BASE_IMAGE = 'python:3.7'
+_SINGLE_OUTPUT_NAME = 'Output'
 
 
 @dataclasses.dataclass
@@ -151,7 +153,7 @@ def _get_function_source_definition(func: Callable) -> str:
     return '\n'.join(func_code_lines)
 
 
-def _maybe_make_unique(name: str, names: List[str]):
+def maybe_make_unique(name: str, names: List[str]):
     if name not in names:
         return name
 
@@ -163,150 +165,73 @@ def _maybe_make_unique(name: str, names: List[str]):
     raise RuntimeError(f'Too many arguments with the name {name}')
 
 
-def extract_component_interface(
-    func: Callable,
+def get_name_to_specs(
+    signature: inspect.Signature,
     containerized: bool = False,
-    description: Optional[str] = None,
-    name: Optional[str] = None,
-) -> structures.ComponentSpec:
-    single_output_name_const = 'Output'
+) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    """Returns two dictionaries. The first is a mapping of input name to input annotation. The second is a mapping of output name to output annotation."""
+    func_params = list(signature.parameters.values())
 
-    signature = inspect.signature(func)
-    parameters = list(signature.parameters.values())
+    name_to_input_specs = {}
+    name_to_output_specs = {}
+    # split inputs and output
+    for func_param in func_params:
+        name = func_param.name
+        annotation = type_annotations.strip_optional_if_present(
+            func_param.annotation)
 
-    original_docstring = inspect.getdoc(func)
-    parsed_docstring = docstring_parser.parse(original_docstring)
+        if annotation == inspect._empty:
+            raise TypeError(f'Missing type annotation for argument: {name}')
+        if (type_annotations.is_artifact_wrapped_in_Input(annotation) or
+                isinstance(
+                    annotation,
+                    (artifact_types.Artifact, type_annotations.InputPath),
+                ) or type_utils.is_parameter_type(annotation)):
+            name_to_input_specs[maybe_make_unique(
+                name, list(name_to_input_specs))] = make_input_spec(
+                    annotation, func_param)
 
-    inputs = {}
-    outputs = {}
+        elif type_annotations.is_artifact_wrapped_in_Output(
+                annotation) or isinstance(annotation,
+                                          type_annotations.OutputPath):
+            name_to_output_specs[maybe_make_unique(
+                name,
+                list(name_to_output_specs))] = make_output_spec(annotation)
 
-    input_names = set()
-    output_names = set()
-    for parameter in parameters:
-        parameter_type = type_annotations.maybe_strip_optional_from_annotation(
-            parameter.annotation)
-        passing_style = None
-        io_name = parameter.name
-        is_artifact_list = False
-
-        if type_annotations.is_Input_Output_artifact_annotation(parameter_type):
-            # passing_style is either type_annotations.InputAnnotation or
-            # type_annotations.OutputAnnotation.
-            passing_style = type_annotations.get_io_artifact_annotation(
-                parameter_type)
-
-            # parameter_type is a type like typing_extensions.Annotated[kfp.dsl.types.artifact_types.Artifact, <class 'kfp.dsl.types.type_annotations.OutputAnnotation'>] OR typing_extensions.Annotated[typing.List[kfp.dsl.types.artifact_types.Artifact], <class 'kfp.dsl.types.type_annotations.OutputAnnotation'>]
-
-            is_artifact_list = type_annotations.is_list_of_artifacts(
-                parameter_type.__origin__)
-
-            parameter_type = type_annotations.get_io_artifact_class(
-                parameter_type)
-            if not type_annotations.is_artifact_class(parameter_type):
-                raise ValueError(
-                    f'Input[T] and Output[T] are only supported when T is an artifact or list of artifacts. Found `{io_name} with type {parameter_type}`'
-                )
-
-            if parameter.default is not inspect.Parameter.empty:
-                if passing_style in [
-                        type_annotations.OutputAnnotation,
-                        type_annotations.OutputPath,
-                ]:
-                    raise ValueError(
-                        'Default values for Output artifacts are not supported.'
-                    )
-                elif parameter.default is not None:
-                    raise ValueError(
-                        f'Optional Input artifacts may only have default value None. Got: {parameter.default}.'
-                    )
-
-        elif isinstance(
-                parameter_type,
-            (type_annotations.InputPath, type_annotations.OutputPath)):
-            passing_style = type(parameter_type)
-            parameter_type = parameter_type.type
-            if parameter.default is not inspect.Parameter.empty and not (
-                    passing_style == type_annotations.InputPath and
-                    parameter.default is None):
-                raise ValueError(
-                    'Path inputs only support default values of None. Default'
-                    ' values for outputs are not supported.')
-
-        type_struct = type_utils._annotation_to_type_struct(parameter_type)
-        if type_struct is None:
-            raise TypeError(
-                f'Missing type annotation for argument: {parameter.name}')
-
-        if passing_style in [
-                type_annotations.OutputAnnotation, type_annotations.OutputPath
-        ]:
-            if io_name == single_output_name_const:
-                raise ValueError(
-                    f'"{single_output_name_const}" is an invalid parameter name.'
-                )
-            io_name = _maybe_make_unique(io_name, output_names)
-            output_names.add(io_name)
-            if type_annotations.is_artifact_class(parameter_type):
-                schema_version = parameter_type.schema_version
-                output_spec = structures.OutputSpec(
-                    type=type_utils.create_bundled_artifact_type(
-                        type_struct, schema_version),
-                    is_artifact_list=is_artifact_list)
-            else:
-                output_spec = structures.OutputSpec(type=type_struct)
-            outputs[io_name] = output_spec
         else:
-            io_name = _maybe_make_unique(io_name, input_names)
-            input_names.add(io_name)
-            type_ = type_utils.create_bundled_artifact_type(
-                type_struct, parameter_type.schema_version
-            ) if type_annotations.is_artifact_class(
-                parameter_type) else type_struct
-            default = None if parameter.default == inspect.Parameter.empty or type_annotations.is_artifact_class(
-                parameter_type) else parameter.default
-            optional = parameter.default is not inspect.Parameter.empty or type_utils.is_task_final_status_type(
-                type_struct)
-            input_spec = structures.InputSpec(
-                type=type_,
-                default=default,
-                optional=optional,
-                is_artifact_list=is_artifact_list,
-            )
+            type_string = type_utils._annotation_to_type_struct(annotation)
+            name_to_input_specs[maybe_make_unique(
+                name, list(name_to_input_specs))] = make_input_spec(
+                    type_string, func_param)
 
-            inputs[io_name] = input_spec
-
-    #Analyzing the return type annotations.
     return_ann = signature.return_annotation
-    if not containerized:
-        if hasattr(return_ann, '_fields'):  #NamedTuple
+    if containerized:
+        if (return_ann != inspect.Parameter.empty and
+                return_ann != structures.ContainerSpec):
+            raise TypeError(
+                'Return annotation should be either ContainerSpec or omitted for container components.'
+            )
+    else:
+        if return_ann is None or return_ann == inspect.Parameter.empty:
+            pass
+        # NamedTuple
+        elif hasattr(return_ann, '_fields'):
             # Getting field type annotations.
             # __annotations__ does not exist in python 3.5 and earlier
             # _field_types does not exist in python 3.9 and later
             field_annotations = getattr(return_ann, '__annotations__',
                                         None) or getattr(
-                                            return_ann, '_field_types', None)
-            for field_name in return_ann._fields:
-                output_name = _maybe_make_unique(field_name, output_names)
-                output_names.add(output_name)
-                type_var = field_annotations.get(field_name)
-                if type_annotations.is_list_of_artifacts(type_var):
-                    artifact_cls = type_var.__args__[0]
-                    output_spec = structures.OutputSpec(
-                        type=type_utils.create_bundled_artifact_type(
-                            artifact_cls.schema_title,
-                            artifact_cls.schema_version),
-                        is_artifact_list=True)
-                elif type_annotations.is_artifact_class(type_var):
-                    output_spec = structures.OutputSpec(
-                        type=type_utils.create_bundled_artifact_type(
-                            type_var.schema_title, type_var.schema_version))
-                else:
-                    type_struct = type_utils._annotation_to_type_struct(
-                        type_var)
-                    output_spec = structures.OutputSpec(type=type_struct)
-                outputs[output_name] = output_spec
-        # Deprecated dict-based way of declaring multiple outputs. Was only used by
-        # the @component decorator
+                                            return_ann, '_field_types')
+            for name in return_ann._fields:
+                annotation = field_annotations[name]
+                if not type_annotations.is_list_of_artifacts(
+                        annotation) and not type_annotations.is_artifact_class(
+                            annotation):
+                    annotation = type_utils._annotation_to_type_struct(
+                        annotation)
+                name_to_output_specs[maybe_make_unique(
+                    name,
+                    list(name_to_output_specs))] = make_output_spec(annotation)
         elif isinstance(return_ann, dict):
             warnings.warn(
                 'The ability to specify multiple outputs using the dict syntax'
@@ -314,40 +239,85 @@ def extract_component_interface(
                 ' 0.1.32. Please use typing.NamedTuple to declare multiple'
                 ' outputs.')
             for output_name, output_type_annotation in return_ann.items():
-                output_type_struct = type_utils._annotation_to_type_struct(
+                output_type = type_utils._annotation_to_type_struct(
                     output_type_annotation)
-                output_spec = structures.OutputSpec(type=output_type_struct)
-                outputs[name] = output_spec
-        elif signature.return_annotation is not None and signature.return_annotation != inspect.Parameter.empty:
-            output_name = _maybe_make_unique(single_output_name_const,
-                                             output_names)
-            # Fixes exotic, but possible collision:
-            #   `def func(output_path: OutputPath()) -> str: ...`
-            output_names.add(output_name)
-            return_ann = signature.return_annotation
-            if type_annotations.is_list_of_artifacts(return_ann):
-                artifact_cls = return_ann.__args__[0]
-                output_spec = structures.OutputSpec(
-                    type=type_utils.create_bundled_artifact_type(
-                        artifact_cls.schema_title, artifact_cls.schema_version),
-                    is_artifact_list=True)
-            elif type_annotations.is_artifact_class(return_ann):
-                output_spec = structures.OutputSpec(
-                    type=type_utils.create_bundled_artifact_type(
-                        return_ann.schema_title, return_ann.schema_version),
-                    is_artifact_list=False)
-            else:
-                type_struct = type_utils._annotation_to_type_struct(return_ann)
-                output_spec = structures.OutputSpec(type=type_struct)
+                name_to_output_specs[maybe_make_unique(
+                    output_name, list(name_to_output_specs))] = output_type
+        elif return_ann is not None and return_ann != inspect.Parameter.empty:
+            name_to_output_specs[maybe_make_unique(
+                _SINGLE_OUTPUT_NAME,
+                list(name_to_output_specs))] = make_output_spec(return_ann)
+        else:
+            raise TypeError(
+                f'Unknown type annotation {annotation}. Please use a known parameter or artifact annotation.'
+            )
+    return name_to_input_specs, name_to_output_specs
 
-            outputs[output_name] = output_spec
-    elif return_ann != inspect.Parameter.empty and return_ann != structures.ContainerSpec:
-        raise TypeError(
-            'Return annotation should be either ContainerSpec or omitted for container components.'
+
+def canonicalize_annotation(annotation: Any):
+    """Does cleaning on annotations that are common between input and output annotations"""
+    if type_annotations.is_Input_Output_artifact_annotation(annotation):
+        annotation = type_annotations.strip_Input_or_Output_marker(annotation)
+    if isinstance(annotation,
+                  (type_annotations.InputPath, type_annotations.OutputPath)):
+        annotation = annotation.type
+    return annotation
+
+
+from typing import List
+
+
+def make_input_output_spec_args(annotation: Any) -> Dict[str, Any]:
+    """Gets a dict of kwargs shared between InputSpec and OutputSpec."""
+    is_artifact_list = type_annotations.is_list_of_artifacts(annotation)
+    if is_artifact_list:
+        annotation = type_annotations.get_inner_type(annotation)
+
+    if type_annotations.issubclass_of_artifact(annotation):
+        typ = type_utils.create_bundled_artifact_type(annotation.schema_title,
+                                                      annotation.schema_version)
+    else:
+        typ = type_utils._annotation_to_type_struct(annotation)
+    return {'type': typ, 'is_artifact_list': is_artifact_list}
+
+
+def make_output_spec(annotation: Any) -> structures.OutputSpec:
+    annotation = canonicalize_annotation(annotation)
+    args = make_input_output_spec_args(annotation)
+    return structures.OutputSpec(**args)
+
+
+def make_input_spec(annotation: Any,
+                    inspect_param: inspect.Parameter) -> structures.InputSpec:
+    """Makes an InputSpec from a cleaned output annotation."""
+    annotation = canonicalize_annotation(annotation)
+    input_output_spec_args = make_input_output_spec_args(annotation)
+
+    if (type_annotations.issubclass_of_artifact(annotation) or
+            input_output_spec_args['is_artifact_list']
+       ) and inspect_param.default not in {None, inspect._empty}:
+        raise ValueError(
+            f'Optional Input artifacts may only have default value None. Got: {inspect_param.default}.'
         )
 
-    component_name = name or _python_function_name_to_component_name(
-        func.__name__)
+    default = None if inspect_param.default == inspect.Parameter.empty or type_annotations.issubclass_of_artifact(
+        annotation) else inspect_param.default
+
+    optional = inspect_param.default is not inspect.Parameter.empty or type_utils.is_task_final_status_type(
+        getattr(inspect_param.annotation, '__name__', ''))
+    return structures.InputSpec(
+        **input_output_spec_args,
+        default=default,
+        optional=optional,
+    )
+
+
+def extract_component_interface(
+    func: Callable,
+    containerized: bool = False,
+    description: Optional[str] = None,
+    name: Optional[str] = None,
+) -> structures.ComponentSpec:
 
     def assign_descriptions(
         inputs_or_outputs: Mapping[str, Union[structures.InputSpec,
@@ -379,23 +349,32 @@ def extract_component_interface(
 
         return None
 
-    assign_descriptions(inputs, parsed_docstring.params)
+    signature = inspect.signature(func)
+    name_to_input_spec, name_to_output_spec = get_name_to_specs(
+        signature, containerized)
+    original_docstring = inspect.getdoc(func)
+    parsed_docstring = docstring_parser.parse(original_docstring)
+
+    assign_descriptions(name_to_input_spec, parsed_docstring.params)
 
     modified_parsed_docstring = parse_docstring_with_return_as_args(
         original_docstring)
     if modified_parsed_docstring is not None:
-        assign_descriptions(outputs, modified_parsed_docstring.params)
+        assign_descriptions(name_to_output_spec,
+                            modified_parsed_docstring.params)
 
     description = get_pipeline_description(
         decorator_description=description,
         docstring=parsed_docstring,
     )
 
+    component_name = name or _python_function_name_to_component_name(
+        func.__name__)
     return structures.ComponentSpec(
         name=component_name,
         description=description,
-        inputs=inputs or None,
-        outputs=outputs or None,
+        inputs=name_to_input_spec or None,
+        outputs=name_to_output_spec or None,
         implementation=structures.Implementation(),
     )
 
@@ -535,7 +514,7 @@ def make_input_for_parameterized_container_component_function(
                                  Type[artifact_types.Artifact]]
 ) -> Union[placeholders.Placeholder, container_component_artifact_channel
            .ContainerComponentArtifactChannel]:
-    if type_annotations.is_input_artifact(annotation):
+    if type_annotations.is_artifact_wrapped_in_Input(annotation):
 
         if type_annotations.is_list_of_artifacts(annotation.__origin__):
             return placeholders.InputListOfArtifactsPlaceholder(name)
@@ -543,7 +522,7 @@ def make_input_for_parameterized_container_component_function(
             return container_component_artifact_channel.ContainerComponentArtifactChannel(
                 io_type='input', var_name=name)
 
-    elif type_annotations.is_output_artifact(annotation):
+    elif type_annotations.is_artifact_wrapped_in_Output(annotation):
 
         if type_annotations.is_list_of_artifacts(annotation.__origin__):
             return placeholders.OutputListOfArtifactsPlaceholder(name)
@@ -581,7 +560,7 @@ def create_container_component_from_func(
     parameters = list(signature.parameters.values())
     arg_list = []
     for parameter in parameters:
-        parameter_type = type_annotations.maybe_strip_optional_from_annotation(
+        parameter_type = type_annotations.strip_optional_if_present(
             parameter.annotation)
         arg_list.append(
             make_input_for_parameterized_container_component_function(

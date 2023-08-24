@@ -36,7 +36,7 @@ from kfp.dsl.types import artifact_types
 from kfp.dsl.types import type_utils
 from kfp.pipeline_spec import pipeline_spec_pb2
 import yaml
-
+from kfp.dsl import component_factory
 # must be defined here to avoid circular imports
 group_type_to_dsl_class = {
     tasks_group.TasksGroupType.PIPELINE: pipeline_context.Pipeline,
@@ -44,8 +44,6 @@ group_type_to_dsl_class = {
     tasks_group.TasksGroupType.FOR_LOOP: tasks_group.ParallelFor,
     tasks_group.TasksGroupType.EXIT_HANDLER: tasks_group.ExitHandler,
 }
-
-_SINGLE_OUTPUT_NAME = 'Output'
 
 
 def to_protobuf_value(value: type_utils.PARAMETER_TYPES) -> struct_pb2.Value:
@@ -1760,7 +1758,7 @@ def convert_pipeline_outputs_to_dict(
     if pipeline_outputs is None:
         return {}
     elif isinstance(pipeline_outputs, pipeline_channel.PipelineChannel):
-        return {_SINGLE_OUTPUT_NAME: pipeline_outputs}
+        return {component_factory._SINGLE_OUTPUT_NAME: pipeline_outputs}
     elif isinstance(pipeline_outputs, tuple) and hasattr(
             pipeline_outputs, '_asdict'):
         return dict(pipeline_outputs._asdict())
