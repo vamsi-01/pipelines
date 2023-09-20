@@ -311,6 +311,25 @@ class Else(_ConditionBase):
         )
 
 
+class OneOf(pipeline_channel.PipelineChannel):
+
+    def __init__(self, *channels) -> None:
+        self.channels = channels
+        
+        # self.output = output
+        first_channel = channels[0]
+        channel_type = first_channel.channel_type
+        if isinstance(first_channel, pipeline_channel.PipelineArtifactChannel):
+            raise Exception
+
+        super().__init__(
+            first_channel.name,
+            channel_type=channel_type,
+            task_name=first_channel.task_name,
+        )
+    # TODO: validate channel types
+
+
 class InvalidControlFlowException(Exception):
     pass
 

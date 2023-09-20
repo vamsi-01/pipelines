@@ -130,6 +130,7 @@ def build_task_spec_for_task(
 
     for input_name, input_value in task.inputs.items():
 
+        # TODO: tasks_group.OneOf
         if isinstance(input_value,
                       pipeline_channel.PipelineArtifactChannel) or (
                           isinstance(input_value, for_loop.Collected) and
@@ -165,6 +166,7 @@ def build_task_spec_for_task(
                     input_name].component_input_artifact = (
                         component_input_artifact)
 
+        # TODO: tasks_group.OneOf
         elif isinstance(input_value,
                         pipeline_channel.PipelineParameterChannel) or (
                             isinstance(input_value, for_loop.Collected) and
@@ -289,6 +291,9 @@ def build_task_spec_for_task(
 
             pipeline_task_spec.inputs.parameters[
                 input_name].runtime_value.constant.string_value = input_value
+
+        elif isinstance(input_value, tasks_group.OneOf):
+            print('HEY')
 
         elif isinstance(input_value, (str, int, float, bool, dict, list)):
 
@@ -1674,7 +1679,6 @@ def create_pipeline_spec(
 
     pipeline_spec.root.CopyFrom(
         _build_component_spec_from_component_spec_structure(component_spec))
-
     # TODO: add validation of returned outputs -- it's possible to return
     # an output from a task in a condition group, for example, which isn't
     # caught until submission time using Vertex SDK client
@@ -1699,6 +1703,7 @@ def create_pipeline_spec(
         condition_channels=condition_channels,
         name_to_for_loop_group=name_to_for_loop_group,
     )
+
     outputs, modified_pipeline_outputs_dict = compiler_utils.get_outputs_for_all_groups(
         pipeline=pipeline,
         task_name_to_parent_groups=task_name_to_parent_groups,
@@ -1736,7 +1741,8 @@ def create_pipeline_spec(
         deployment_config=deployment_config,
         platform_spec=platform_spec,
     )
-
+    print(pipeline_spec.root)
+    print(modified_pipeline_outputs_dict)
     _build_dag_outputs(
         component_spec=pipeline_spec.root,
         dag_outputs=modified_pipeline_outputs_dict,
