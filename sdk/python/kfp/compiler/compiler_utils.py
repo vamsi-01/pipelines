@@ -16,6 +16,7 @@
 import collections
 from copy import deepcopy
 from typing import DefaultDict, Dict, List, Mapping, Set, Tuple, Union
+from kfp import dsl
 
 from kfp.dsl import for_loop
 from kfp.dsl import pipeline_channel
@@ -430,6 +431,29 @@ def make_new_channel_for_collected_outputs(
         )
 
 
+def make_new_channel_for_oneof_outputs(
+    channel_name: str,
+    starting_channel: pipeline_channel.PipelineChannel,
+    task_name: str,
+) -> pipeline_channel.PipelineChannel:
+    """Creates a new PipelineParameterChannel/PipelineArtifactChannel for a dsl.OneOf channel from the original task output."""
+    if isinstance(starting_channel, pipeline_channel.PipelineParameterChannel):
+        return pipeline_channel.PipelineParameterChannel(
+            channel_name,
+            channel_type=starting_channel.channel_type,
+            task_name=task_name)
+    elif isinstance(starting_channel, pipeline_channel.PipelineArtifactChannel):
+        return pipeline_channel.PipelineArtifactChannel(
+            channel_name,
+            channel_type=starting_channel.channel_type,
+            task_name=task_name,
+            is_artifact_list=True)
+    else:
+        ValueError(
+            f'Got unknown PipelineChannel: {starting_channel!r}. Expected an instance of {pipeline_channel.PipelineArtifactChannel.__name__!r} or {pipeline_channel.PipelineParameterChannel.__name__!r}.'
+        )
+
+
 def get_outputs_for_all_groups(
     pipeline: pipeline_context.Pipeline,
     task_name_to_parent_groups: Mapping[str, List[str]],
@@ -551,6 +575,41 @@ def get_outputs_for_all_groups(
                         starting_channel=channel.output,
                         task_name=upstream_name,
                     )
+            # elif isinstance(channel, dsl.OneOf):
+            #     channels = channel.channels
+            #     import copy
+            #     for subchannel in copy.deepcopy(channels):
+            #         surfaced_output_name = additional_input_name_for_pipeline_channel(
+            #             subchannel)
+            #         upstream_groups = task_name_to_parent_groups[
+            #             subchannel.task_name][1:]
+            #         producer_task_name = upstream_groups.pop()
+            #         # process upstream groups from the inside out, until getting to the pipeline level
+            #         for upstream_name in reversed(upstream_groups):
+            #             new_channel = make_new_channel_for_oneof_outputs(
+            #                 channel_name=subchannel.name,
+            #                 starting_channel=subchannel,
+            #                 task_name=producer_task_name,
+            #             )
+
+            #             # on each iteration, mutate the channel being consumed so
+            #             # that it references the last parent group surfacer
+            #             subchannel.name = surfaced_output_name
+            #             subchannel.task_name = upstream_name
+
+            #             # for the next iteration, set the consumer to the current
+            #             # surfacer (parent group)
+            #             producer_task_name = upstream_name
+            #             outputs[upstream_name][
+            #                 surfaced_output_name] = new_channel
+
+            #         # after surfacing from all inner TasksGroup, change the PipelineChannel output to also return from the correct TasksGroup
+            #         pipeline_outputs_dict[
+            #             output_key] = make_new_channel_for_oneof_outputs(
+            #                 channel_name=surfaced_output_name,
+            #                 starting_channel=subchannel,
+            #                 task_name=upstream_name,
+            #             )
     return outputs, pipeline_outputs_dict
 
 

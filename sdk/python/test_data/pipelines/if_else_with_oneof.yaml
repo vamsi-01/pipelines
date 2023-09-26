@@ -1,8 +1,16 @@
 # PIPELINE DEFINITION
-# Name: roll-die-pipeline
+# Name: outer-pipeline
+# Outputs:
+#    Output: str
 components:
   comp-condition-1:
     dag:
+      outputs:
+        parameters:
+          pipelinechannel--print-and-return-Output:
+            valueFromParameter:
+              outputParameterKey: Output
+              producerSubtask: print-and-return
       tasks:
         print-and-return:
           cachingOptions:
@@ -18,10 +26,20 @@ components:
             name: print-and-return
     inputDefinitions:
       parameters:
-        pipelinechannel--flip-three-sided-die-Output:
+        pipelinechannel--flip-coin-Output:
+          parameterType: STRING
+    outputDefinitions:
+      parameters:
+        pipelinechannel--print-and-return-Output:
           parameterType: STRING
   comp-condition-2:
     dag:
+      outputs:
+        parameters:
+          pipelinechannel--print-and-return-2-Output:
+            valueFromParameter:
+              outputParameterKey: Output
+              producerSubtask: print-and-return-2
       tasks:
         print-and-return-2:
           cachingOptions:
@@ -37,29 +55,66 @@ components:
             name: print-and-return-2
     inputDefinitions:
       parameters:
-        pipelinechannel--flip-three-sided-die-Output:
+        pipelinechannel--flip-coin-Output:
           parameterType: STRING
-  comp-condition-3:
+    outputDefinitions:
+      parameters:
+        pipelinechannel--print-and-return-2-Output:
+          parameterType: STRING
+  comp-flip-coin:
+    executorLabel: exec-flip-coin
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: STRING
+  comp-flip-coin-pipeline:
     dag:
+      outputs:
+        parameters:
+          Output:
+            valueFromParameter:
+              outputParameterKey: pipelinechannel--print-and-return-2-Output
+              producerSubtask: condition-2
       tasks:
-        print-and-return-3:
+        condition-1:
+          componentRef:
+            name: comp-condition-1
+          dependentTasks:
+          - flip-coin
+          inputs:
+            parameters:
+              pipelinechannel--flip-coin-Output:
+                taskOutputParameter:
+                  outputParameterKey: Output
+                  producerTask: flip-coin
+          taskInfo:
+            name: condition-1
+          triggerPolicy:
+            condition: inputs.parameter_values['pipelinechannel--flip-coin-Output']
+              == 'heads'
+        condition-2:
+          componentRef:
+            name: comp-condition-2
+          dependentTasks:
+          - flip-coin
+          inputs:
+            parameters:
+              pipelinechannel--flip-coin-Output:
+                taskOutputParameter:
+                  outputParameterKey: Output
+                  producerTask: flip-coin
+          taskInfo:
+            name: condition-2
+          triggerPolicy:
+            condition: '!(inputs.parameter_values[''pipelinechannel--flip-coin-Output'']
+              == ''heads'')'
+        flip-coin:
           cachingOptions:
             enableCache: true
           componentRef:
-            name: comp-print-and-return-3
-          inputs:
-            parameters:
-              text:
-                runtimeValue:
-                  constant: Draw!
+            name: comp-flip-coin
           taskInfo:
-            name: print-and-return-3
-    inputDefinitions:
-      parameters:
-        pipelinechannel--flip-three-sided-die-Output:
-          parameterType: STRING
-  comp-flip-three-sided-die:
-    executorLabel: exec-flip-three-sided-die
+            name: flip-coin
     outputDefinitions:
       parameters:
         Output:
@@ -96,13 +151,13 @@ components:
           parameterType: STRING
 deploymentSpec:
   executors:
-    exec-flip-three-sided-die:
+    exec-flip-coin:
       container:
         args:
         - --executor_input
         - '{{$}}'
         - --function_to_execute
-        - flip_three_sided_die
+        - flip_coin
         command:
         - sh
         - -c
@@ -122,10 +177,8 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef flip_three_sided_die() -> str:\n    import random\n    val =\
-          \ random.randint(0, 2)\n\n    if val == 0:\n        return 'heads'\n   \
-          \ elif val == 1:\n        return 'tails'\n    else:\n        return 'draw'\n\
-          \n"
+          \ *\n\ndef flip_coin() -> str:\n    import random\n    return 'heads' if\
+          \ random.randint(0, 1) == 0 else 'tails'\n\n"
         image: python:3.7
     exec-print-and-return:
       container:
@@ -215,66 +268,41 @@ deploymentSpec:
           \ text\n\n"
         image: python:3.7
 pipelineInfo:
-  name: roll-die-pipeline
+  name: outer-pipeline
 root:
   dag:
+    outputs:
+      parameters:
+        Output:
+          valueFromParameter:
+            outputParameterKey: Output
+            producerSubtask: print-and-return
     tasks:
-      condition-1:
-        componentRef:
-          name: comp-condition-1
-        dependentTasks:
-        - flip-three-sided-die
-        inputs:
-          parameters:
-            pipelinechannel--flip-three-sided-die-Output:
-              taskOutputParameter:
-                outputParameterKey: Output
-                producerTask: flip-three-sided-die
-        taskInfo:
-          name: condition-1
-        triggerPolicy:
-          condition: inputs.parameter_values['pipelinechannel--flip-three-sided-die-Output']
-            == 'heads'
-      condition-2:
-        componentRef:
-          name: comp-condition-2
-        dependentTasks:
-        - flip-three-sided-die
-        inputs:
-          parameters:
-            pipelinechannel--flip-three-sided-die-Output:
-              taskOutputParameter:
-                outputParameterKey: Output
-                producerTask: flip-three-sided-die
-        taskInfo:
-          name: condition-2
-        triggerPolicy:
-          condition: '!(inputs.parameter_values[''pipelinechannel--flip-three-sided-die-Output'']
-            == ''heads'') && inputs.parameter_values[''pipelinechannel--flip-three-sided-die-Output'']
-            == ''tails'''
-      condition-3:
-        componentRef:
-          name: comp-condition-3
-        dependentTasks:
-        - flip-three-sided-die
-        inputs:
-          parameters:
-            pipelinechannel--flip-three-sided-die-Output:
-              taskOutputParameter:
-                outputParameterKey: Output
-                producerTask: flip-three-sided-die
-        taskInfo:
-          name: condition-3
-        triggerPolicy:
-          condition: '!(inputs.parameter_values[''pipelinechannel--flip-three-sided-die-Output'']
-            == ''heads'') && !(inputs.parameter_values[''pipelinechannel--flip-three-sided-die-Output'']
-            == ''tails'')'
-      flip-three-sided-die:
+      flip-coin-pipeline:
         cachingOptions:
           enableCache: true
         componentRef:
-          name: comp-flip-three-sided-die
+          name: comp-flip-coin-pipeline
         taskInfo:
-          name: flip-three-sided-die
+          name: flip-coin-pipeline
+      print-and-return:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-print-and-return-3
+        dependentTasks:
+        - flip-coin-pipeline
+        inputs:
+          parameters:
+            text:
+              taskOutputParameter:
+                outputParameterKey: Output
+                producerTask: flip-coin-pipeline
+        taskInfo:
+          name: print-and-return
+  outputDefinitions:
+    parameters:
+      Output:
+        parameterType: STRING
 schemaVersion: 2.1.0
 sdkVersion: kfp-2.2.0

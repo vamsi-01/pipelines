@@ -33,8 +33,8 @@ def add_container(nums: List[int], sum: dsl.OutputPath(int)):
 def math_pipeline() -> List[int]:
     with dsl.ParallelFor([1, 2, 3]) as x:
         t = double(num=x)
-    add(nums=dsl.Collected(t.output))
-    add_container(nums=dsl.Collected(t.output))
+    # add(nums=dsl.Collected(t.output))
+    # add_container(nums=dsl.Collected(t.output))
     return dsl.Collected(t.output)
 
 

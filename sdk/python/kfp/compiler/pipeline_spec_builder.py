@@ -417,7 +417,7 @@ def _build_component_spec_from_component_spec_structure(
     return component_spec
 
 
-def _connect_dag_outputs(
+def _connect_single_dag_outputs(
     component_spec: pipeline_spec_pb2.ComponentSpec,
     output_name: str,
     output_channel: pipeline_channel.PipelineChannel,
@@ -451,13 +451,62 @@ def _connect_dag_outputs(
             output_name].value_from_parameter.output_parameter_key = output_channel.name
 
 
+def _connect_multi_dag_outputs(
+    component_spec: pipeline_spec_pb2.ComponentSpec,
+    output_name: str,
+    output_channel: pipeline_channel.MultiChannel,
+) -> None:
+    """Connects dag output to a subtask output.
+
+    Args:
+        component_spec: The component spec to modify its dag outputs.
+        output_name: The name of the dag output.
+        output_channel: The pipeline channel selected for the dag output.
+    """
+    # if isinstance(output_channel, pipeline_channel.PipelineArtifactChannel):
+    #     if output_name not in component_spec.output_definitions.artifacts:
+    #         raise ValueError(
+    #             f'Pipeline or component output not defined: {output_name}. You may be missing a type annotation.'
+    #         )
+    #     component_spec.dag.outputs.artifacts[
+    #         output_name].artifact_selectors.append(
+    #             pipeline_spec_pb2.DagOutputsSpec.ArtifactSelectorSpec(
+    #                 producer_subtask=output_channel.task_name,
+    #                 output_artifact_key=output_channel.name,
+    #             ))
+    if isinstance(output_channel.first_channel,
+                  pipeline_channel.PipelineParameterChannel):
+        if output_name not in component_spec.output_definitions.parameters:
+            raise ValueError(
+                f'Pipeline or component output not defined: {output_name}. You may be missing a type annotation.'
+            )
+        for channel in output_channel.channels:
+            print(channel)
+            component_spec.dag.outputs.parameters[
+                output_name].value_from_oneof.parameter_selectors.append(
+                    pipeline_spec_pb2.DagOutputsSpec.ParameterSelectorSpec(
+                        producer_subtask=channel.task_name,
+                        output_parameter_key=channel.name,
+                    ))
+
+
 def _build_dag_outputs(
     component_spec: pipeline_spec_pb2.ComponentSpec,
     dag_outputs: Dict[str, pipeline_channel.PipelineChannel],
 ) -> None:
     """Builds DAG output spec."""
     for output_name, output_channel in dag_outputs.items():
-        _connect_dag_outputs(component_spec, output_name, output_channel)
+        print(type(output_channel))
+        if isinstance(output_channel, pipeline_channel.PipelineChannel):
+            _connect_single_dag_outputs(component_spec, output_name,
+                                        output_channel)
+        elif isinstance(output_channel, pipeline_channel.MultiChannel):
+            _connect_multi_dag_outputs(component_spec, output_name,
+                                       output_channel)
+        else:
+            raise ValueError(
+                f"Got unknown pipeline output '{output_name}'' of type {output_channel}."
+            )
     # Valid dag outputs covers all outptus in component definition.
     for output_name in component_spec.output_definitions.artifacts:
         if output_name not in component_spec.dag.outputs.artifacts:
@@ -1809,7 +1858,9 @@ def convert_pipeline_outputs_to_dict(
     output name to PipelineChannel."""
     if pipeline_outputs is None:
         return {}
-    elif isinstance(pipeline_outputs, pipeline_channel.PipelineChannel):
+    elif isinstance(
+            pipeline_outputs,
+        (pipeline_channel.PipelineChannel, pipeline_channel.MultiChannel)):
         return {component_factory.SINGLE_OUTPUT_NAME: pipeline_outputs}
     elif isinstance(pipeline_outputs, tuple) and hasattr(
             pipeline_outputs, '_asdict'):

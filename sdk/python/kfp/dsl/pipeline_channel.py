@@ -265,6 +265,23 @@ class PipelineArtifactChannel(PipelineChannel):
         )
 
 
+class MultiChannel:
+    """Container of multiple pipeline parameter channels."""
+
+    def __init__(
+        self,
+        channels=List[Union[PipelineParameterChannel, PipelineArtifactChannel]],
+    ) -> None:
+        self.channels = channels
+        self.first_channel = channels[0]
+
+
+class OneOf(MultiChannel):
+
+    def __init__(self, *channels) -> None:
+        super().__init__(channels=channels,)
+
+
 def create_pipeline_channel(
     name: str,
     channel_type: Union[str, Dict],
