@@ -310,6 +310,62 @@ class Else(_ConditionBase):
         )
 
 
+class _OneOfParameter(pipeline_channel.PipelineParameterChannel):
+
+    def __init__(self, *channels) -> None:
+        self.channels = channels
+        first_channel = channels[0]
+
+        if isinstance(first_channel, pipeline_channel.PipelineArtifactChannel):
+            raise Exception(
+                f'Should not construct a {_OneOfParameter.__name__} channel for an artifact.'
+            )
+
+        super().__init__(
+            first_channel.name,
+            channel_type=first_channel.channel_type,
+            task_name=first_channel.task_name,
+        )
+
+
+class _OneOfArtifact(pipeline_channel.PipelineParameterChannel):
+
+    def __init__(self, *channels) -> None:
+        self.channels = channels
+        first_channel = channels[0]
+
+        if isinstance(first_channel, pipeline_channel.PipelineParameterChannel):
+            raise Exception(
+                f'Should not construct a {_OneOfArtifact.__name__} channel for a parameter.'
+            )
+
+        super().__init__(
+            first_channel.name,
+            channel_type=first_channel.channel_type,
+            task_name=first_channel.task_name,
+        )
+
+
+class OneOf(pipeline_channel.PipelineChannel):
+
+    def __new__(cls, *channels) -> Union[_OneOfParameter, _OneOfArtifact]:
+        first_channel = channels[0]
+        if isinstance(first_channel, pipeline_channel.PipelineArtifactChannel):
+            instance = super(OneOf, cls).__new__(_OneOfArtifact)
+            _OneOfArtifact.__init__(instance, *channels)
+            return instance
+        elif isinstance(first_channel,
+                        pipeline_channel.PipelineParameterChannel):
+            instance = super(OneOf, cls).__new__(_OneOfParameter)
+            _OneOfParameter.__init__(instance, *channels)
+            return instance
+        else:
+            # TODO: validate that this is the correct behavior, update error message, test
+            raise ValueError(
+                f'Got unknown value passed to OneOf: {first_channel}. Expected either a parameter or artifact outputted by an upstream task.'
+            )
+
+
 class InvalidControlFlowException(Exception):
     pass
 

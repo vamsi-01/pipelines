@@ -241,6 +241,7 @@ if os.environ.get('_KFP_RUNTIME', 'false') != 'true':
     from kfp.dsl.tasks_group import Else
     from kfp.dsl.tasks_group import ExitHandler
     from kfp.dsl.tasks_group import If
+    from kfp.dsl.tasks_group import OneOf
     from kfp.dsl.tasks_group import ParallelFor
     __all__.extend([
         'component',
@@ -252,6 +253,7 @@ if os.environ.get('_KFP_RUNTIME', 'false') != 'true':
         'If',
         'Elif',
         'Else',
+        'OneOf',
         'ExitHandler',
         'ParallelFor',
         'Collected',

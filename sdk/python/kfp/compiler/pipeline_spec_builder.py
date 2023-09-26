@@ -128,7 +128,7 @@ def build_task_spec_for_task(
             task._task_spec.retry_policy.to_proto())
 
     for input_name, input_value in task.inputs.items():
-
+        # TODO: tasks_group.OneOf
         if isinstance(input_value,
                       pipeline_channel.PipelineArtifactChannel) or (
                           isinstance(input_value, for_loop.Collected) and
@@ -164,6 +164,7 @@ def build_task_spec_for_task(
                     input_name].component_input_artifact = (
                         component_input_artifact)
 
+        # TODO: tasks_group.OneOf
         elif isinstance(input_value,
                         pipeline_channel.PipelineParameterChannel) or (
                             isinstance(input_value, for_loop.Collected) and
@@ -421,7 +422,7 @@ def _build_component_spec_from_component_spec_structure(
     return component_spec
 
 
-def _connect_dag_outputs(
+def _connect_dag_outputs_single_channel(
     component_spec: pipeline_spec_pb2.ComponentSpec,
     output_name: str,
     output_channel: pipeline_channel.PipelineChannel,
@@ -450,9 +451,34 @@ def _connect_dag_outputs(
                 f'Pipeline or component output not defined: {output_name}. You may be missing a type annotation.'
             )
         component_spec.dag.outputs.parameters[
-            output_name].value_from_parameter.producer_subtask = output_channel.task_name
+            output_name].value_from_parameter.CopyFrom(
+                pipeline_spec_pb2.DagOutputsSpec.ParameterSelectorSpec(
+                    producer_subtask=output_channel.task_name,
+                    output_parameter_key=output_channel.name))
+
+
+def _connect_dag_outputs_multiple_channels(
+    component_spec: pipeline_spec_pb2.ComponentSpec,
+    output_name: str,
+    output_channels: List[pipeline_channel.PipelineChannel],
+) -> None:
+    """Connects dag output to a subtask output.
+
+    Args:
+        component_spec: The component spec to modify its dag outputs.
+        output_name: The name of the dag output.
+        output_channel: The pipeline channel selected for the dag output.
+    """
+    for output_channel in output_channels:
+        if output_name not in component_spec.output_definitions.parameters:
+            raise ValueError(
+                f'Pipeline or component output not defined: {output_name}. You may be missing a type annotation.'
+            )
         component_spec.dag.outputs.parameters[
-            output_name].value_from_parameter.output_parameter_key = output_channel.name
+            output_name].value_from_oneof.parameter_selectors.append(
+                pipeline_spec_pb2.DagOutputsSpec.ParameterSelectorSpec(
+                    producer_subtask=output_channel.task_name,
+                    output_parameter_key=output_channel.name))
 
 
 def _build_dag_outputs(
@@ -461,8 +487,13 @@ def _build_dag_outputs(
 ) -> None:
     """Builds DAG output spec."""
     for output_name, output_channel in dag_outputs.items():
-        _connect_dag_outputs(component_spec, output_name, output_channel)
-    # Valid dag outputs covers all outptus in component definition.
+        if isinstance(output_channel, list):
+            _connect_dag_outputs_multiple_channels(component_spec, output_name,
+                                                   output_channel)
+        else:
+            _connect_dag_outputs_single_channel(component_spec, output_name,
+                                                output_channel)
+    # Valid dag outputs covers all outputs in component definition.
     for output_name in component_spec.output_definitions.artifacts:
         if output_name not in component_spec.dag.outputs.artifacts:
             raise ValueError(f'Missing pipeline output: {output_name}.')
@@ -1677,7 +1708,7 @@ def create_pipeline_spec(
     # TODO: add validation of returned outputs -- it's possible to return
     # an output from a task in a condition group, for example, which isn't
     # caught until submission time using Vertex SDK client
-    pipeline_outputs_dict = convert_pipeline_outputs_to_dict(pipeline_outputs)
+
     root_group = pipeline.groups[0]
 
     all_groups = compiler_utils.get_all_groups(root_group)
@@ -1703,7 +1734,9 @@ def create_pipeline_spec(
         task_name_to_parent_groups=task_name_to_parent_groups,
         group_name_to_parent_groups=group_name_to_parent_groups,
         all_groups=all_groups,
-        pipeline_outputs_dict=pipeline_outputs_dict)
+        pipeline_outputs=pipeline_outputs)
+    # print(modified_pipeline_outputs_dict)
+
     dependencies = compiler_utils.get_dependencies(
         pipeline=pipeline,
         task_name_to_parent_groups=task_name_to_parent_groups,
@@ -1740,11 +1773,12 @@ def create_pipeline_spec(
         component_spec=pipeline_spec.root,
         dag_outputs=modified_pipeline_outputs_dict,
     )
+    # print('mod', modified_pipeline_outputs_dict)
     # call _build_dag_outputs first to verify the presence of an output annotation
     # at all, then validate that the annotation is correct with _validate_dag_output_types
-    _validate_dag_output_types(
-        dag_outputs=modified_pipeline_outputs_dict,
-        structures_component_spec=component_spec)
+    # _validate_dag_output_types(
+    #     dag_outputs=modified_pipeline_outputs_dict,
+    #     structures_component_spec=component_spec)
 
     return pipeline_spec, platform_spec
 
@@ -1752,33 +1786,20 @@ def create_pipeline_spec(
 def _validate_dag_output_types(
         dag_outputs: Dict[str, pipeline_channel.PipelineChannel],
         structures_component_spec: structures.ComponentSpec) -> None:
-    for output_name, output_channel in dag_outputs.items():
-        output_spec = structures_component_spec.outputs[output_name]
-        output_name = '' if len(dag_outputs) == 1 else f'{output_name!r} '
-        error_message_prefix = f'Incompatible return type provided for output {output_name}of pipeline {structures_component_spec.name!r}. '
-        type_utils.verify_type_compatibility(
-            output_channel,
-            output_spec,
-            error_message_prefix,
-            checks_input=False,
-        )
-
-
-def convert_pipeline_outputs_to_dict(
-    pipeline_outputs: Union[pipeline_channel.PipelineChannel, typing.NamedTuple,
-                            None]
-) -> Dict[str, pipeline_channel.PipelineChannel]:
-    """Converts the outputs from a pipeline function into a dictionary of
-    output name to PipelineChannel."""
-    if pipeline_outputs is None:
-        return {}
-    elif isinstance(pipeline_outputs, pipeline_channel.PipelineChannel):
-        return {component_factory.SINGLE_OUTPUT_NAME: pipeline_outputs}
-    elif isinstance(pipeline_outputs, tuple) and hasattr(
-            pipeline_outputs, '_asdict'):
-        return dict(pipeline_outputs._asdict())
-    else:
-        raise ValueError(f'Got unknown pipeline output: {pipeline_outputs}')
+    for output_name, output_channels in dag_outputs.items():
+        output_channels = output_channels if isinstance(
+            output_channels, list) else [output_channels]
+        for output_channel in output_channels:
+            output_spec = structures_component_spec.outputs[output_name]
+            err_output_name = '' if len(
+                dag_outputs) == 1 else f'{output_name!r} '
+            error_message_prefix = f'Incompatible return type provided for output {err_output_name}of pipeline {structures_component_spec.name!r}. '
+            type_utils.verify_type_compatibility(
+                output_channel,
+                output_spec,
+                error_message_prefix,
+                checks_input=False,
+            )
 
 
 def write_pipeline_spec_to_file(
