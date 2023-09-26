@@ -585,7 +585,12 @@ def get_outputs_for_all_groups(
                             ) and upstream_group.display_name == 'conditional-group':
                                 if channel.surfacer_pipeline is None:
                                     raise ValueError
-                                outputs[upstream_name]['foo'] = channel
+                                outputs[upstream_name][
+                                    'foo'] = make_new_channel_for_oneof_outputs(
+                                        channel_name='foo',
+                                        starting_channel=channel,
+                                        task_name=upstream_name,
+                                    )
                             else:
                                 raise ValueError(
                                     f'Expected to surface outputs from a conditional context manager. Got {upstream_group.group_type}.'
