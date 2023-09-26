@@ -148,7 +148,7 @@ class PipelineTask:
                 from kfp.dsl import pipeline_context
                 pipeline = pipeline_context.Pipeline.get_default_pipeline()
                 value.surfacer_pipeline = pipeline.groups[-1].groups[0]
-                value.name = 'foo'
+                value.name = 'Output'
                 self.channel_inputs.append(value)
         self._channel_inputs.extend(
             pipeline_channel.extract_pipeline_channels_from_any([

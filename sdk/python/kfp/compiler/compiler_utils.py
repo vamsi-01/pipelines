@@ -261,7 +261,7 @@ def get_inputs_for_all_groups(
             if isinstance(channel, dsl.OneOf):
                 channels_to_add.append(
                     pipeline_channel.create_pipeline_channel(
-                        name='foo',
+                        name='Output',
                         channel_type=channel.channel_type,
                         task_name=channel.surfacer_pipeline.name,
                         is_artifact_list=getattr(channel, 'is_artifact_list',
@@ -501,7 +501,7 @@ def get_outputs_for_all_groups(
     }
 
     outputs = collections.defaultdict(dict)
-
+    processed_oneofs: Dict[dsl.OneOf, pipeline_channel.PipelineChannel] = {}
     # handle dsl.Collected consumed by tasks
     for task in pipeline.tasks.values():
         for channel in task.channel_inputs:
@@ -585,16 +585,16 @@ def get_outputs_for_all_groups(
                             ) and upstream_group.display_name == 'conditional-group':
                                 if channel.surfacer_pipeline is None:
                                     raise ValueError
-                                outputs[upstream_name][
-                                    'foo'] = make_new_channel_for_oneof_outputs(
-                                        channel_name='foo',
-                                        starting_channel=channel,
-                                        task_name=upstream_name,
-                                    )
+                                outputs[upstream_name]['Output'] = channel
                             else:
                                 raise ValueError(
                                     f'Expected to surface outputs from a conditional context manager. Got {upstream_group.group_type}.'
                                 )
+                processed_oneofs[channel] = make_new_channel_for_oneof_outputs(
+                    channel_name='Output',
+                    starting_channel=channel,
+                    task_name=upstream_name,
+                )
 
         # handle dsl.Collected returned from pipeline
     for output_key, channel in pipeline_outputs_dict.items():
@@ -629,43 +629,49 @@ def get_outputs_for_all_groups(
                     task_name=upstream_name,
                 )
         elif isinstance(channel, dsl.OneOf):
-            for subchannel in channel.channels:
-                surfaced_output_name = additional_input_name_for_pipeline_channel(
-                    subchannel)
-                upstream_groups = task_name_to_parent_groups[
-                    subchannel.task_name][1:]
-                producer_task_name = upstream_groups.pop()
-                # process upstream groups from the inside out, until getting to the pipeline level
-                for j, upstream_name in enumerate(reversed(upstream_groups)):
-                    upstream_group = group_name_to_group[upstream_name]
-                    if j == 0:
-                        if isinstance(upstream_group,
-                                      tasks_group._ConditionBase):
-                            # TODO: should this be something other than deepcopy?
-                            outputs[upstream_name][
-                                surfaced_output_name] = copy.deepcopy(
-                                    subchannel)
+            if channel in processed_oneofs:
+                # after surfacing from all inner TasksGroup, change the PipelineChannel output to also return from the correct TasksGroup
+                pipeline_outputs_dict[output_key] = processed_oneofs[channel]
 
-                            # on each iteration, mutate the channel being consumed so
-                            # that it references the last parent group surfacer
-                            subchannel.name = surfaced_output_name
-                            subchannel.task_name = upstream_name
-                    elif j == 1:
-                        if isinstance(
-                                upstream_group, tasks_group.TasksGroup
-                        ) and upstream_group.display_name == 'conditional-group':
-                            outputs[upstream_name][output_key] = channel
-                        else:
-                            raise ValueError(
-                                f'Expected to surface outputs from a conditional context manager. Got {upstream_group.group_type}.'
-                            )
-            # after surfacing from all inner TasksGroup, change the PipelineChannel output to also return from the correct TasksGroup
-            pipeline_outputs_dict[
-                output_key] = make_new_channel_for_oneof_outputs(
-                    channel_name=output_key,
-                    starting_channel=channel,
-                    task_name=upstream_name,
-                )
+            else:
+                for subchannel in channel.channels:
+                    surfaced_output_name = additional_input_name_for_pipeline_channel(
+                        subchannel)
+                    upstream_groups = task_name_to_parent_groups[
+                        subchannel.task_name][1:]
+                    producer_task_name = upstream_groups.pop()
+                    # process upstream groups from the inside out, until getting to the pipeline level
+                    for j, upstream_name in enumerate(
+                            reversed(upstream_groups)):
+                        upstream_group = group_name_to_group[upstream_name]
+                        if j == 0:
+                            if isinstance(upstream_group,
+                                          tasks_group._ConditionBase):
+                                # TODO: should this be something other than deepcopy?
+                                outputs[upstream_name][
+                                    surfaced_output_name] = copy.deepcopy(
+                                        subchannel)
+
+                                # on each iteration, mutate the channel being consumed so
+                                # that it references the last parent group surfacer
+                                subchannel.name = surfaced_output_name
+                                subchannel.task_name = upstream_name
+                        elif j == 1:
+                            if isinstance(
+                                    upstream_group, tasks_group.TasksGroup
+                            ) and upstream_group.display_name == 'conditional-group':
+                                outputs[upstream_name][output_key] = channel
+                            else:
+                                raise ValueError(
+                                    f'Expected to surface outputs from a conditional context manager. Got {upstream_group.group_type}.'
+                                )
+                pipeline_outputs_dict[
+                    output_key] = make_new_channel_for_collected_outputs(
+                        # make unique name?
+                        channel_name='Output',
+                        starting_channel=channel.output,
+                        task_name=upstream_name,
+                    )
 
     return outputs, pipeline_outputs_dict
 

@@ -287,9 +287,14 @@ class MultiChannel:
 
 
 class OneOf(MultiChannel):
+    identifier = 0
 
     def __init__(self, *channels) -> None:
-        super().__init__(channels=channels,)
+        super().__init__(channels=channels)
+
+    @classmethod
+    def increment_identifer(cls) -> None:
+        cls.identifier += 1
 
 
 def create_pipeline_channel(

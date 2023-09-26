@@ -1,5 +1,7 @@
 # PIPELINE DEFINITION
 # Name: flip-coin-pipeline
+# Outputs:
+#    Output: str
 components:
   comp-condition-2:
     dag:
@@ -69,7 +71,7 @@ components:
     dag:
       outputs:
         parameters:
-          foo:
+          Output:
             valueFromOneof:
               parameterSelectors:
               - outputParameterKey: pipelinechannel--print-and-return-Output
@@ -107,7 +109,7 @@ components:
           parameterType: STRING
     outputDefinitions:
       parameters:
-        foo:
+        Output:
           parameterType: STRING
   comp-print-and-return:
     executorLabel: exec-print-and-return
@@ -261,6 +263,12 @@ pipelineInfo:
   name: flip-coin-pipeline
 root:
   dag:
+    outputs:
+      parameters:
+        Output:
+          valueFromParameter:
+            outputParameterKey: Output
+            producerSubtask: pipeline-1
     tasks:
       flip-coin:
         cachingOptions:
@@ -293,9 +301,13 @@ root:
           parameters:
             text:
               taskOutputParameter:
-                outputParameterKey: foo
+                outputParameterKey: Output
                 producerTask: pipeline-1
         taskInfo:
           name: print-and-return-3
+  outputDefinitions:
+    parameters:
+      Output:
+        parameterType: STRING
 schemaVersion: 2.1.0
 sdkVersion: kfp-2.3.0
