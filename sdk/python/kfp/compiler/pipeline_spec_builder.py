@@ -254,7 +254,6 @@ def build_task_spec_for_task(
                     additional_input_name)._to_string()
                 input_value = input_value.replace(channel.pattern,
                                                   additional_input_placeholder)
-
                 if channel.task_name:
                     # Value is produced by an upstream task.
                     if channel.task_name in tasks_in_current_dag:
@@ -278,6 +277,8 @@ def build_task_spec_for_task(
                 else:
                     # Value is from pipeline input. (or loop?)
                     component_input_parameter = channel.full_name
+                    # print('component_input_parameter',
+                    #   component_input_parameter)
                     if component_input_parameter not in parent_component_inputs.parameters:
                         component_input_parameter = (
                             compiler_utils.

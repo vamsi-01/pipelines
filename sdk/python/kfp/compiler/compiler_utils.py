@@ -204,7 +204,6 @@ def get_inputs_for_all_groups(
         task_condition_inputs = list(condition_channels[task.name])
 
         for channel in task.channel_inputs + task_condition_inputs:
-
             # If the value is already provided (immediate value), then no
             # need to expose it as input for its parent groups.
             if getattr(channel, 'value', None):
@@ -304,7 +303,10 @@ def get_inputs_for_all_groups(
                 # TODO: revisit if this is correct.
                 if getattr(task, 'is_exit_handler', False):
                     continue
-
+                print('processing task', task.name)
+                print(task_name_to_parent_groups[task.name])
+                print()
+                # print(channel)
                 # For PipelineChannel as a result of constant value used as
                 # loop items, we have to go from bottom-up because the
                 # PipelineChannel can be originated from the middle a DAG,
@@ -342,7 +344,7 @@ def get_inputs_for_all_groups(
                                 channels_to_add.pop()
                                 if not channels_to_add:
                                     break
-
+    print(inputs)
     return inputs
 
 
