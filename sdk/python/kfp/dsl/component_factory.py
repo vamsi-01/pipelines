@@ -255,10 +255,13 @@ def extract_component_interface(
                     raise ValueError(
                         'Default values for Output artifacts are not supported.'
                     )
-                elif parameter.default is not None:
-                    raise ValueError(
-                        f'Optional Input artifacts may only have default value None. Got: {parameter.default}.'
-                    )
+                # the default
+                default = parameter.default
+
+                # elif parameter.default is not None:
+                #     raise ValueError(
+                #         f'Optional Input artifacts may only have default value None. Got: {parameter.default}.'
+                #     )
 
         elif isinstance(
                 parameter_type,

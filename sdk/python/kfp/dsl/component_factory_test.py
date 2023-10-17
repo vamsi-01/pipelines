@@ -22,9 +22,11 @@ from kfp.dsl import Input
 from kfp.dsl import Output
 from kfp.dsl import structures
 from kfp.dsl.component_decorator import component
-from kfp.dsl.types.artifact_types import Artifact
-from kfp.dsl.types.artifact_types import Model
+from kfp.dsl import Artifact
+from kfp.dsl import Model
 from kfp.dsl.types.type_annotations import OutputPath
+from kfp.pipeline_spec import pipeline_spec_pb2
+from google.protobuf import struct_pb2
 
 
 def strip_kfp_version(command: List[str]) -> List[str]:
@@ -285,6 +287,128 @@ class TestOutputListsOfArtifactsTemporarilyBlocked(unittest.TestCase):
             @dsl.container_component
             def comp(output_list: Output[List[Artifact]]):
                 return dsl.ContainerSpec(image='alpine')
+
+
+class TestInputArtifactConstants(unittest.TestCase):
+
+    def test_single_artifact_input(self):
+
+        @dsl.component
+        def comp(a: Input[Artifact]):
+            print(a)
+
+        @dsl.pipeline
+        def my_pipeline():
+            comp(a=Artifact(name='a', uri='gs://foo/bar', metadata={'k': 'v'}))
+
+        metadata = struct_pb2.Struct()
+        metadata.update({'k': 'v'})
+        self.assertEqual(
+            comp.pipeline_spec.root.dag['comp'].inputs.artifacts['a'].constant
+            .artifacts[0],
+            pipeline_spec_pb2.RuntimeArtifact(
+                name='a',
+                uri='gs://foo/bar',
+                metadata=metadata,
+                type=pipeline_spec_pb2.ArtifactTypeSchema(
+                    schema_title='system.Artifact')),
+        )
+
+    def test_list_of_artifacts_input(self):
+
+        @dsl.component
+        def comp(a: List[Input[Model]]):
+            print(a)
+
+        @dsl.pipeline
+        def my_pipeline():
+            comp(a=[
+                Model(name='a1', uri='gs://foo/bar', metadata={'k': 'v1'}),
+                Model(name='a2', uri='gs://foo/baz', metadata={'k': 'v2'})
+            ])
+
+        metadata = struct_pb2.Struct()
+        metadata.update({'k': 'v1'})
+        self.assertEqual(
+            comp.pipeline_spec.root.dag['comp'].inputs.artifacts['a'].constant
+            .artifacts[0],
+            pipeline_spec_pb2.RuntimeArtifact(
+                name='a1',
+                uri='gs://foo/bar',
+                metadata=metadata,
+                type=pipeline_spec_pb2.ArtifactTypeSchema(
+                    schema_title='system.Model')),
+        )
+
+        metadata = struct_pb2.Struct()
+        metadata.update({'k': 'v2'})
+        self.assertEqual(
+            comp.pipeline_spec.root.dag['comp'].inputs.artifacts['a'].constant
+            .artifacts[0],
+            pipeline_spec_pb2.RuntimeArtifact(
+                name='a2',
+                uri='gs://foo/baz',
+                metadata=metadata,
+                type=pipeline_spec_pb2.ArtifactTypeSchema(
+                    schema_title='system.Model')),
+        )
+
+    def test_single_artifact_default(self):
+
+        # test with artifact name, even though cannot set a name on Vertex
+        @dsl.component
+        def comp(a: Input[Artifact] = Artifact(
+            name='a', uri='gs://foo/bar', metadata={'k': 'v'})):
+            print(a)
+
+        metadata = struct_pb2.Struct()
+        metadata.update({'k': 'v'})
+        self.assertEqual(
+            comp.pipeline_spec.components['comp-comp'].input_definitions
+            .artifacts['a'].default_value.artifacts[0],
+            pipeline_spec_pb2.RuntimeArtifact(
+                name='a',
+                uri='gs://foo/bar',
+                metadata=metadata,
+                type=pipeline_spec_pb2.ArtifactTypeSchema(
+                    schema_title='system.Artifact')),
+        )
+
+    def test_list_of_artifacts_default(self):
+
+        # test with artifact name, even though cannot set a name on Vertex
+        @dsl.component
+        def comp(a: List[Input[Model]] = [
+            Model(name='a1', uri='gs://foo/bar', metadata={'k': 'v1'}),
+            Model(name='a2', uri='gs://foo/baz', metadata={'k': 'v2'})
+        ]):
+            print(a)
+
+        metadata = struct_pb2.Struct()
+        metadata.update({'k': 'v1'})
+        self.assertEqual(
+            comp.pipeline_spec.components['comp-comp'].input_definitions
+            .artifacts['a'].default_value.artifacts[0],
+            pipeline_spec_pb2.RuntimeArtifact(
+                name='a1',
+                uri='gs://foo/bar',
+                metadata=metadata,
+                type=pipeline_spec_pb2.ArtifactTypeSchema(
+                    schema_title='system.Model')),
+        )
+
+        metadata = struct_pb2.Struct()
+        metadata.update({'k': 'v2'})
+        self.assertEqual(
+            comp.pipeline_spec.components['comp-comp'].input_definitions
+            .artifacts['a'].default_value.artifacts[0],
+            pipeline_spec_pb2.RuntimeArtifact(
+                name='a2',
+                uri='gs://foo/baz',
+                metadata=metadata,
+                type=pipeline_spec_pb2.ArtifactTypeSchema(
+                    schema_title='system.Model')),
+        )
 
 
 if __name__ == '__main__':
