@@ -14,7 +14,7 @@
 """Base class for KFP components."""
 
 import abc
-from typing import List
+from typing import List, Union
 
 from kfp.dsl import pipeline_task
 from kfp.dsl import structures
@@ -63,12 +63,22 @@ class BaseComponent(abc.ABC):
                     f'Output lists of artifacts are only supported for pipelines. Got output list of artifacts for output parameter {output_name!r} of component {self.name!r}.'
                 )
 
-    def __call__(self, *args, **kwargs) -> pipeline_task.PipelineTask:
+    def __call__(
+        self, *args, **kwargs
+    ) -> Union[pipeline_task.PipelineTask, 'local_executor.LocalTask']:
         """Creates a PipelineTask object.
 
         The arguments are generated on the fly based on component input
         definitions.
         """
+        from kfp.dsl import pipeline_context
+        from kfp.local import local_executor
+        if pipeline_context.Pipeline.get_default_pipeline() is None:
+            return local_executor.run_single_component(
+                pipeline_spec=self.pipeline_spec,
+                arguments=kwargs,
+            )
+
         task_inputs = {}
 
         if args:
