@@ -16,7 +16,7 @@ from typing import Any, Dict
 
 # TODO: nest
 from kfp import local
-from kfp.local import configuration
+from kfp.local import config
 from kfp.local import utils
 from kfp.local.container_runner import ContainerRunnerImpl
 from kfp.local.local_task import LocalTask
@@ -44,7 +44,7 @@ def run_single_component(
     pipeline_spec: pipeline_spec_pb2.PipelineSpec,
     arguments: Dict[str, Any],
 ) -> LocalTask:
-    if configuration.LocalRunnerConfig.instance is None:
+    if config.LocalRunnerConfig.instance is None:
         raise RuntimeError(
             f'You must initiatize the local execution session using {local.__name__}.{local.init.__name__}().'
         )
@@ -52,7 +52,7 @@ def run_single_component(
     return run_single_component_implementation(
         pipeline_spec=pipeline_spec,
         arguments=arguments,
-        pipeline_root=configuration.LocalRunnerConfig.instance.pipeline_root,
+        pipeline_root=config.LocalRunnerConfig.instance.pipeline_root,
     )
 
 
@@ -79,7 +79,7 @@ def run_single_component_implementation(
         executor_input=executor_input,
     )
 
-    if isinstance(configuration.LocalRunnerConfig.instance.runner,
+    if isinstance(config.LocalRunnerConfig.instance.runner,
                   local.SubprocessRunner):
         runner = SubprocessRunnerImpl(
             full_command=full_command,
@@ -88,7 +88,7 @@ def run_single_component_implementation(
             component_spec=component_spec,
         )
         return runner.run()
-    elif isinstance(configuration.LocalRunnerConfig.instance.runner,
+    elif isinstance(config.LocalRunnerConfig.instance.runner,
                     local.ContainerRunner):
         runner = ContainerRunnerImpl(
             full_command=full_command,
@@ -99,4 +99,6 @@ def run_single_component_implementation(
         )
         return runner.run()
     else:
-        raise ValueError(f'Got unknown argument for runner: {local._runner}')
+        raise ValueError(
+            f'Got unknown argument for runner: {config.LocalRunnerConfig.instance.runner}'
+        )

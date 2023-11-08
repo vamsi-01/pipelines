@@ -29,10 +29,7 @@ from kfp.local import subprocess_runner
 
 
 @parameterized.parameters([
-    # (local_runner.SubprocessRunner(use_venv=True),),
-    (
-        local.SubprocessRunner(use_venv=False),),
-    # (local_runner.ContainerRunner(),),
+    (local.SubprocessRunner(use_venv=False),),
 ])
 class TestLightweightPythonComponents(unittest.TestCase):
 
@@ -309,10 +306,7 @@ class TestLightweightPythonComponents(unittest.TestCase):
 
 
 @parameterized.parameters([
-    # (local_runner.SubprocessRunner(use_venv=True),),
-    (
-        local.SubprocessRunner(use_venv=False),),
-    # (local_runner.ContainerRunner(),),
+    (local.SubprocessRunner(use_venv=False),),
 ])
 class TestInvalidArguments(unittest.TestCase):
 

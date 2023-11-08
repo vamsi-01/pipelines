@@ -18,14 +18,14 @@ import unittest
 
 from kfp import dsl
 from kfp import local
-from kfp.local import configuration
+from kfp.local import config
 from kfp.local import local_executor
 
 
 class TestRunSingleComponent(unittest.TestCase):
 
     def tearDown(self):
-        configuration.LocalRunnerConfig.instance = None
+        config.LocalRunnerConfig.instance = None
 
     def test_initialized(self):
         local.init()

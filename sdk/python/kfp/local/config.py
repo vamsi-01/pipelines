@@ -34,30 +34,15 @@ class SubprocessRunner(LocalRunnerType):
     def validate(self):
         pass
 
-    # import subprocess
-    # import sys
-    #     def check_venv():
-    # # Determine the Python executable (consider virtual environments)
-    #         python_executable = sys.executable
-
-    #         # Try to run `python -m venv` using the subprocess module
-    #         try:
-    #             subprocess.run([python_executable, "-m", "venv", "--help"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    #         except subprocess.CalledProcessError as e:
-    #             raise RuntimeError("The 'venv' module is not available.") from e
-    #         except FileNotFoundError as e:
-    #             raise RuntimeError("Python is not installed or not found in the system's PATH.") from e
-
 
 @dataclasses.dataclass
 class ContainerRunner(LocalRunnerType):
-    pass
 
     def validate_docker_py_lib_is_installed(self) -> None:
         try:
             import docker
         except ModuleNotFoundError as e:
-            raise RuntimeError(
+            raise ModuleNotFoundError(
                 'The Docker SDK for Python is not installed. Please run `pip install docker` and try again.'
             ) from e
 

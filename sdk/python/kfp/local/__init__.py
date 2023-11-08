@@ -13,9 +13,14 @@
 # limitations under the License.
 """Local runner code."""
 
-from kfp.local.configuration import ContainerRunner
-from kfp.local.configuration import init
-from kfp.local.configuration import LocalRunnerType
-from kfp.local.configuration import SubprocessRunner
+from kfp.local.config import ContainerRunner
+from kfp.local.config import init
+from kfp.local.config import LocalRunnerType
+from kfp.local.config import SubprocessRunner
 
-__all__ = ['SubprocessRunner', 'ContainerRunner', 'LocalRunnerType', 'init']
+__all__ = [
+    'SubprocessRunner',
+    'ContainerRunner',
+    'LocalRunnerType',
+    'init',
+]
