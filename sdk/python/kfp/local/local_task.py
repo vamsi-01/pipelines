@@ -35,9 +35,8 @@ class LocalTask:
         """
         self._outputs = outputs
 
-    # TODO: make private
     @staticmethod
-    def from_messages(
+    def _from_messages(
         executor_input: pipeline_spec_pb2.ExecutorInput,
         component_spec: pipeline_spec_pb2.ComponentSpec,
     ):
@@ -156,7 +155,7 @@ def artifact_list_to_dsl_artifact(
     return dsl_artifacts if is_artifact_list else dsl_artifacts[0]
 
 
-# TODO: we don't really need to do this -- we can always just map data from ExecutorInput
+# TODO: maybe remove. we don't really need to do this -- we can always just map data from ExecutorInput
 def add_type_to_executor_output(
     executor_input: pipeline_spec_pb2.ExecutorInput,
     executor_output: pipeline_spec_pb2.ExecutorOutput,

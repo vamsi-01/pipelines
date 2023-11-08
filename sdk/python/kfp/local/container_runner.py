@@ -40,8 +40,8 @@ class ContainerRunnerImpl:
 
     def run(self) -> local_task.LocalTask:
         run_component_in_container(self.full_command, self.image)
-        return local_task.LocalTask.from_messages(self.executor_input,
-                                                  self.component_spec)
+        return local_task.LocalTask._from_messages(self.executor_input,
+                                                   self.component_spec)
 
 
 def run_component_in_container(

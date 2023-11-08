@@ -38,8 +38,8 @@ class SubprocessRunnerImpl:
     def run(self) -> local_task.LocalTask:
         full_command = use_current_python_executable(self.full_command)
         run_local_subprocess(full_command=full_command)
-        return local_task.LocalTask.from_messages(self.executor_input,
-                                                  self.component_spec)
+        return local_task.LocalTask._from_messages(self.executor_input,
+                                                   self.component_spec)
 
 
 def run_local_subprocess(
@@ -60,7 +60,6 @@ def run_local_subprocess(
         # already logged
         # we don't want multiple layers of logging prefixes
         print(result.stdout)
-    # TODO: cleanup local tempdir
 
 
 def use_current_python_executable(full_command: List[str]) -> List[str]:

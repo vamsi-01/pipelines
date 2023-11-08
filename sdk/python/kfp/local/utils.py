@@ -21,12 +21,15 @@ from google.protobuf import json_format
 from kfp.compiler import pipeline_spec_builder
 from kfp.pipeline_spec import pipeline_spec_pb2
 
+_EXECUTOR_OUTPUT_FILE = 'executor_output.json'
+
 
 def construct_executor_input(
     component_spec: pipeline_spec_pb2.ComponentSpec,
     arguments: Dict[str, Any],
     pipeline_root: str,
 ) -> pipeline_spec_pb2.ExecutorInput:
+    """Constructs the executor input message for a task execution."""
     input_parameter_keys = list(
         component_spec.input_definitions.parameters.keys())
     input_artifact_keys = list(
@@ -65,8 +68,7 @@ def construct_executor_input(
             ) for artifact_name, artifact_spec in
             output_artifact_specs_dict.items()
         },
-        # TODO: use constant for executor_output.json?
-        output_file=os.path.join(pipeline_root, 'executor_output.json'),
+        output_file=os.path.join(pipeline_root, _EXECUTOR_OUTPUT_FILE),
     )
     return pipeline_spec_pb2.ExecutorInput(
         inputs=inputs,
@@ -79,6 +81,7 @@ def make_artifact_list(
     artifact_type: pipeline_spec_pb2.ArtifactTypeSchema,
     pipeline_root: str,
 ) -> pipeline_spec_pb2.ArtifactList:
+    """Constructs an ArtifactList instance for an artifact in ExecutorInput."""
     return pipeline_spec_pb2.ArtifactList(artifacts=[
         pipeline_spec_pb2.RuntimeArtifact(
             name=name,
@@ -94,6 +97,7 @@ def replace_placeholders(
     full_command: List[str],
     executor_input: str,
 ) -> List[str]:
+    """Iterates over each element in the command and replaces placeholders."""
     return [
         replace_placeholder_for_element(el, executor_input)
         for el in full_command
@@ -104,6 +108,7 @@ def replace_placeholder_for_element(
     element: str,
     executor_input: pipeline_spec_pb2.ExecutorInput,
 ) -> str:
+    """Replaces placeholders for a single element."""
     PLACEHOLDER_MAP: Dict[str, str] = {'{{$}}': executor_input}
     for placeholder, resolved in PLACEHOLDER_MAP.items():
         element = element.replace(placeholder,
