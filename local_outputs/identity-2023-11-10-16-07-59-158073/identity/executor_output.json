@@ -1,0 +1,1 @@
+{"parameterValues": {"my_string": "foo", "my_int": 10}, "artifacts": {"my_artifact": {"artifacts": [{"name": "my_artifact", "uri": "./local_outputs/identity-2023-11-10-16-07-59-158073/identity/my_artifact", "metadata": {"foo": "bar"}}]}}}

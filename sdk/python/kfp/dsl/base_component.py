@@ -14,7 +14,7 @@
 """Base class for KFP components."""
 
 import abc
-from typing import List
+from typing import List, Union
 
 from kfp.dsl import pipeline_task
 from kfp.dsl import structures
@@ -63,12 +63,27 @@ class BaseComponent(abc.ABC):
                     f'Output lists of artifacts are only supported for pipelines. Got output list of artifacts for output parameter {output_name!r} of component {self.name!r}.'
                 )
 
-    def __call__(self, *args, **kwargs) -> pipeline_task.PipelineTask:
+    def __call__(
+        self, *args, **kwargs
+    ) -> Union[pipeline_task.PipelineTask, 'local_executor.LocalTask']:
         """Creates a PipelineTask object.
 
         The arguments are generated on the fly based on component input
         definitions.
         """
+        from kfp.dsl import pipeline_context
+        from kfp.local import task_dispatcher
+        if pipeline_context.Pipeline.get_default_pipeline() is None:
+            from kfp.dsl import graph_component
+            if isinstance(self, graph_component.GraphComponent):
+                # Other validation to infer whether the user is attempting to execute a pipeline locally lives in the kfp/local/ directory. Add this check here, since it is the last place where we can check whether the BaseComponent is a GraphComponent.
+                raise NotImplementedError(
+                    'Local pipeline execution is not currently supported.')
+            return task_dispatcher.run_single_component(
+                pipeline_spec=self.pipeline_spec,
+                arguments=kwargs,
+            )
+
         task_inputs = {}
 
         if args:
