@@ -15,6 +15,7 @@
 
 import abc
 from typing import List, Union
+import kfp
 
 from kfp.dsl import pipeline_task
 from kfp.dsl import structures
@@ -73,7 +74,8 @@ class BaseComponent(abc.ABC):
         """
         from kfp.dsl import pipeline_context
         from kfp.local import task_dispatcher
-        if pipeline_context.Pipeline.get_default_pipeline() is None:
+        if pipeline_context.Pipeline.get_default_pipeline(
+        ) is None and kfp.local.config.LocalExecutionConfig.instance is not None:
             from kfp.dsl import graph_component
             if isinstance(self, graph_component.GraphComponent):
                 # Other validation to infer whether the user is attempting to execute a pipeline locally lives in the kfp/local/ directory. Add this check here, since it is the last place where we can check whether the BaseComponent is a GraphComponent.

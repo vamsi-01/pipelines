@@ -91,7 +91,7 @@ class Artifact:
 
     def _get_path(self) -> Optional[str]:
         # the uri is the local path for local execution
-        if os.environ.get('LOCAL_SESSION', 'true'):
+        if os.environ.get('LOCAL_SESSION') == 'true':
             return self.uri
 
         if self.uri.startswith('gs://'):
