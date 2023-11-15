@@ -360,10 +360,10 @@ def make_input_spec(annotation: Any,
     """Makes an InputSpec from a cleaned output annotation."""
     annotation = canonicalize_annotation(annotation)
     input_output_spec_args = make_input_output_spec_args(annotation)
-
-    if (type_annotations.issubclass_of_artifact(annotation) or
+    if (
+            type_annotations.issubclass_of_artifact(annotation) or
             input_output_spec_args['is_artifact_list']
-       ) and inspect_param.default not in {None, inspect._empty}:
+    ) and inspect_param.default is not None and inspect_param.default is not inspect._empty:
         raise ValueError(
             f'Optional Input artifacts may only have default value None. Got: {inspect_param.default}.'
         )
@@ -447,6 +447,14 @@ def extract_component_interface(
     )
 
 
+EXECUTOR_MODULE = 'kfp.dsl.executor_main'
+CONTAINERIZED_PYTHON_COMPONENT_COMMAND = [
+    'python3',
+    '-m',
+    EXECUTOR_MODULE,
+]
+
+
 def _get_command_and_args_for_lightweight_component(
         func: Callable) -> Tuple[List[str], List[str]]:
     imports_source = [
@@ -465,11 +473,11 @@ def _get_command_and_args_for_lightweight_component(
     command = [
         'sh',
         '-ec',
-        textwrap.dedent('''\
+        textwrap.dedent(f'''\
                     program_path=$(mktemp -d)
 
                     printf "%s" "$0" > "$program_path/ephemeral_component.py"
-                    _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main \
+                    _KFP_RUNTIME=true python3 -m {EXECUTOR_MODULE} \
                         --component_module_path \
                         "$program_path/ephemeral_component.py" \
                         "$@"
@@ -489,11 +497,6 @@ def _get_command_and_args_for_lightweight_component(
 
 def _get_command_and_args_for_containerized_component(
         function_name: str) -> Tuple[List[str], List[str]]:
-    command = [
-        'python3',
-        '-m',
-        'kfp.dsl.executor_main',
-    ]
 
     args = [
         '--executor_input',
@@ -501,7 +504,7 @@ def _get_command_and_args_for_containerized_component(
         '--function_to_execute',
         function_name,
     ]
-    return command, args
+    return CONTAINERIZED_PYTHON_COMPONENT_COMMAND, args
 
 
 def create_component_from_func(
