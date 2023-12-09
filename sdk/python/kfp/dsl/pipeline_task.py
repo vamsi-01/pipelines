@@ -190,7 +190,6 @@ class PipelineTask:
         from kfp.local import task_dispatcher
 
         if self.pipeline_spec is not None:
-            # Other validation to infer whether the user is attempting to execute a pipeline locally lives in the kfp/local/ directory. Add this check here, since it is the last place where we can check whether the BaseComponent is a GraphComponent.
             raise NotImplementedError(
                 'Local pipeline execution is not currently supported.')
         self._outputs = task_dispatcher.run_single_component(

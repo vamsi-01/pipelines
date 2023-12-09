@@ -65,16 +65,6 @@ def _run_single_component_implementation(
     if component_spec.input_definitions != pipeline_spec.root.input_definitions or component_spec.output_definitions != pipeline_spec.root.output_definitions:
         raise NotImplementedError(
             'Local pipeline execution is not currently supported.')
-    # include the input artifact constant check above the validate_arguments check
-    # for a better error message
-    # we also perform this check further downstream in the executor input
-    # construction utilities, since that's where the logic needs to be
-    # implemented as well
-    validate_arguments(
-        arguments=arguments,
-        component_spec=component_spec,
-        component_name=component_name,
-    )
     return {}
 
 
