@@ -42,6 +42,7 @@ class ExecutorTest(parameterized.TestCase):
     def setUp(cls):
         cls.maxDiff = None
         cls._test_dir = tempfile.mkdtemp()
+        print('THIS IS IT', cls._test_dir)
 
         cls.prev_gcs_prefix = artifact_types._GCS_LOCAL_MOUNT_PREFIX
         cls.prev_minio_prefix = artifact_types._MINIO_LOCAL_MOUNT_PREFIX
@@ -1720,7 +1721,8 @@ class TestDictToArtifact(parameterized.TestCase):
         # with artifact_cls
         self.assertIsInstance(
             executor.create_artifact_instance(
-                runtime_artifact, artifact_cls=artifact_cls), expected_type)
+                runtime_artifact, fallback_artifact_cls=artifact_cls),
+            expected_type)
 
         # without artifact_cls
         self.assertIsInstance(
