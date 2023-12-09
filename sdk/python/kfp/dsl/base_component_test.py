@@ -19,6 +19,10 @@ from kfp import dsl
 from kfp.dsl import placeholders
 from kfp.dsl import python_component
 from kfp.dsl import structures
+from unittest.mock import patch
+
+from kfp import dsl
+from kfp.dsl import pipeline_task
 
 component_op = python_component.PythonComponent(
     # dummy python_func not used in behavior that is being tested
@@ -56,6 +60,36 @@ component_op = python_component.PythonComponent(
 
 
 class BaseComponentTest(unittest.TestCase):
+
+    @patch.object(pipeline_task, 'PipelineTask', autospec=True)
+    def test_instantiate_component_with_keyword_arguments(
+            self, mock_PipelineTask):
+
+        component_op(input1='hello', input2=100, input3=1.23, input4=3.21)
+
+        mock_PipelineTask.assert_called_once_with(
+            component_spec=component_op.component_spec,
+            args={
+                'input1': 'hello',
+                'input2': 100,
+                'input3': 1.23,
+                'input4': 3.21,
+            },
+            execute_locally=False)
+
+    @patch.object(pipeline_task, 'PipelineTask', autospec=True)
+    def test_instantiate_component_omitting_arguments_with_default(
+            self, mock_PipelineTask):
+
+        component_op(input1='hello', input2=100)
+
+        mock_PipelineTask.assert_called_once_with(
+            component_spec=component_op.component_spec,
+            args={
+                'input1': 'hello',
+                'input2': 100,
+            },
+            execute_locally=False)
 
     def test_instantiate_component_with_positional_arugment(self):
         with self.assertRaisesRegex(

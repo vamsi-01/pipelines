@@ -30,14 +30,13 @@ from kfp.dsl import Dataset
 from kfp.dsl import Output
 from kfp.local import testing_utilities
 
-# runners, cleanup
-params = [
+runners = [
     (local.SubprocessRunner(use_venv=False),
      local.SubprocessRunner(use_venv=True)),
 ]
 
 
-@parameterized.parameters(list(itertools.product(*params)))
+@parameterized.parameters(list(itertools.product(*runners)))
 class TestLightweightPythonComponentLogic(
         testing_utilities.LocalRunnerEnvironmentTestCase):
 
@@ -161,9 +160,8 @@ class TestLightweightPythonComponentLogic(
         self.assertEqual(actual.name, 'a')
         self.assertTrue(actual.uri.endswith('/a'))
         self.assertEqual(actual.metadata, {'foo': 'bar'})
-        if not cleanup:
-            with open(actual.path) as f:
-                contents = f.read()
+        with open(actual.path) as f:
+            contents = f.read()
             self.assertEqual(contents, 'hello')
 
     def test_single_artifact_output_pythonic(self, runner):
@@ -183,9 +181,8 @@ class TestLightweightPythonComponentLogic(
         self.assertEqual(actual.name, 'a')
         self.assertTrue(actual.uri.endswith('/a'))
         self.assertEqual(actual.metadata, {'foo': 'bar'})
-        if not cleanup:
-            with open(actual.path) as f:
-                contents = f.read()
+        with open(actual.path) as f:
+            contents = f.read()
             self.assertEqual(contents, 'hello')
 
     def test_multiple_artifact_outputs_traditional(self, runner):
@@ -215,9 +212,8 @@ class TestLightweightPythonComponentLogic(
         self.assertIsInstance(actual_a, Artifact)
         self.assertEqual(actual_a.name, 'a')
         self.assertTrue(actual_a.uri.endswith('/a'))
-        if not cleanup:
-            with open(actual_a.path) as f:
-                contents = f.read()
+        with open(actual_a.path) as f:
+            contents = f.read()
             self.assertEqual(contents, 'hello')
         self.assertEqual(actual_a.metadata, {'foo': 'bar'})
 
@@ -225,9 +221,8 @@ class TestLightweightPythonComponentLogic(
         self.assertEqual(actual_b.name, 'b')
         self.assertTrue(actual_b.uri.endswith('/b'))
         self.assertEqual(actual_b.metadata, {'baz': 'bat'})
-        if not cleanup:
-            with open(actual_b.path) as f:
-                contents = f.read()
+        with open(actual_b.path) as f:
+            contents = f.read()
             self.assertEqual(contents, 'goodbye')
 
     def test_multiple_artifact_outputs_pythonic(self, runner):
@@ -260,18 +255,16 @@ class TestLightweightPythonComponentLogic(
         self.assertIsInstance(actual_a, Artifact)
         self.assertEqual(actual_a.name, 'a')
         self.assertTrue(actual_a.uri.endswith('/a'))
-        if not cleanup:
-            with open(actual_a.path) as f:
-                contents = f.read()
+        with open(actual_a.path) as f:
+            contents = f.read()
             self.assertEqual(contents, 'hello')
         self.assertEqual(actual_a.metadata, {'foo': 'bar'})
 
         self.assertIsInstance(actual_b, Dataset)
         self.assertEqual(actual_b.name, 'b')
         self.assertTrue(actual_b.uri.endswith('/b'))
-        if not cleanup:
-            with open(actual_b.path) as f:
-                contents = f.read()
+        with open(actual_b.path) as f:
+            contents = f.read()
             self.assertEqual(contents, 'goodbye')
         self.assertEqual(actual_b.metadata, {'baz': 'bat'})
 
