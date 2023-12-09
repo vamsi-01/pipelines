@@ -13,18 +13,35 @@
 # limitations under the License.
 """Utilities for testing local execution."""
 
+import contextlib
 import datetime
+import functools
+import os
+import pathlib
+import shutil
+import tempfile
+from typing import Iterator
 import unittest
 from unittest import mock
 
 from absl.testing import parameterized
 from google.protobuf import json_format
+from google.protobuf import message
 from kfp import components
 from kfp import dsl
 from kfp.local import config as local_config
 
+_LOCAL_KFP_PACKAGE_PATH = os.path.join(
+    os.path.dirname(__file__),
+    os.path.pardir,
+    os.path.pardir,
+)
+
 
 class LocalRunnerEnvironmentTestCase(parameterized.TestCase):
+    """Test class that uses an isolated filesystem and updates the
+    dsl.component decorator to install from the local KFP source, rather than
+    the latest release."""
 
     def setUp(self):
         from kfp.dsl import pipeline_task
@@ -32,9 +49,23 @@ class LocalRunnerEnvironmentTestCase(parameterized.TestCase):
         # start each test case without an uninitialized environment
         local_config.LocalExecutionConfig.instance = None
 
+        with contextlib.ExitStack() as stack:
+            stack.enter_context(isolated_filesystem())
+            self._working_dir = pathlib.Path.cwd()
+            self.addCleanup(stack.pop_all().close)
+
     def tearDown(self) -> None:
         from kfp.dsl import pipeline_task
         pipeline_task.TEMPORARILY_BLOCK_LOCAL_EXECUTION = True
+
+    @classmethod
+    def setUpClass(cls):
+        cls.original_component, dsl.component = dsl.component, functools.partial(
+            dsl.component, kfp_package_path=_LOCAL_KFP_PACKAGE_PATH)
+
+    @classmethod
+    def tearDownClass(cls):
+        dsl.component = cls.original_component
 
 
 class MockedDatetimeTestCase(unittest.TestCase):
@@ -52,6 +83,17 @@ class MockedDatetimeTestCase(unittest.TestCase):
         mock_now.strftime.return_value = '2023-10-10-13-32-59-420710'
 
 
+def write_proto_to_json_file(
+    proto_message: message.Message,
+    file_path: str,
+) -> None:
+    """Writes proto_message to file_path as JSON."""
+    json_string = json_format.MessageToJson(proto_message)
+
+    with open(file_path, 'w') as json_file:
+        json_file.write(json_string)
+
+
 def compile_and_load_component(
     base_component: dsl.base_component.BaseComponent,
 ) -> dsl.yaml_component.YamlComponent:
@@ -59,3 +101,18 @@ def compile_and_load_component(
     YamlComponent."""
     return components.load_component_from_text(
         json_format.MessageToJson(base_component.pipeline_spec))
+
+
+@contextlib.contextmanager
+def isolated_filesystem() -> Iterator[str]:
+    cwd = os.getcwd()
+    dt = tempfile.mkdtemp()
+    os.chdir(dt)
+
+    try:
+        yield dt
+    finally:
+        os.chdir(cwd)
+
+        with contextlib.suppress(OSError):
+            shutil.rmtree(dt)

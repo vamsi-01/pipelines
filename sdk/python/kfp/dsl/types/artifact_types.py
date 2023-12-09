@@ -14,7 +14,7 @@
 """Classes and utilities for using and creating artifacts in components."""
 
 import os
-from typing import Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type
 import warnings
 
 _GCS_LOCAL_MOUNT_PREFIX = '/gcs/'
@@ -74,6 +74,13 @@ class Artifact:
         self.name = name or ''
         self.metadata = metadata or {}
 
+    def __eq__(self, other: Any) -> bool:
+        try:
+            return self.name == other.name and self.uri == other.uri and self.metadata == other.metadata and self.schema_title == other.schema_title and self.schema_version == other.schema_version and type(
+                self) == type(other)
+        except AttributeError:
+            return False
+
     @property
     def path(self) -> str:
         return self._get_path()
@@ -89,7 +96,8 @@ class Artifact:
             return _MINIO_LOCAL_MOUNT_PREFIX + self.uri[len('minio://'):]
         elif self.uri.startswith('s3://'):
             return _S3_LOCAL_MOUNT_PREFIX + self.uri[len('s3://'):]
-        return None
+        # the uri is the local path for local execution
+        return self.uri
 
     def _set_path(self, path: str) -> None:
         self.uri = convert_local_path_to_remote_path(path)
