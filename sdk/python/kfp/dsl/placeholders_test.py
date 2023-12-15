@@ -14,7 +14,7 @@
 """Contains tests for kfp.dsl.placeholders."""
 import os
 import tempfile
-from typing import Any, List
+from typing import Any, Dict, List
 
 from absl.testing import parameterized
 from kfp import compiler
@@ -528,6 +528,28 @@ class OtherPlaceholderTests(parameterized.TestCase):
                 "prefix-{{$.inputs.parameters['text1']}}",
                 "{{$.outputs.artifacts['output_artifact'].uri}}/0",
             ])
+
+    def test_primitive_placeholder_can_be_used_in_dict(self):
+
+        @dsl.container_component
+        def echo_bool(dictionary: Dict = {}):
+            return dsl.ContainerSpec(
+                image='alpine', command=['sh', '-c', f'echo {dictionary}'])
+
+        self.assertEqual(
+            echo_bool.component_spec.implementation.container.command,
+            ['sh', '-c', "echo {{$.inputs.parameters['dictionary']}}"])
+
+    def test_primitive_placeholder_can_be_used_in_list(self):
+
+        @dsl.container_component
+        def echo_bool(my_list: List = []):
+            return dsl.ContainerSpec(
+                image='alpine', command=['sh', '-c', f'echo {my_list}'])
+
+        self.assertEqual(
+            echo_bool.component_spec.implementation.container.command,
+            ['sh', '-c', "echo {{$.inputs.parameters['my_list']}}"])
 
     def test_cannot_use_concat_placeholder_in_f_string(self):
 

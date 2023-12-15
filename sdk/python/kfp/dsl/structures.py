@@ -600,6 +600,26 @@ class ComponentSpec:
             check_placeholder_references_valid_io_name(valid_inputs,
                                                        valid_outputs, arg)
 
+    def convert_placeholder_objs_to_strings(self):
+        """Recursively converts all placeholder objects to strings by calling the __str__ method."""
+        if self.implementation.container is None:
+            return
+
+        def stringify(data: Any) -> Any:
+            if isinstance(data, dict):
+                return {
+                    str(key): stringify(value) for key, value in data.items()
+                }
+            elif isinstance(data, list):
+                return [stringify(element) for element in data]
+            else:
+                return str(data)
+
+        self.implementation.container.command = stringify(
+            self.implementation.container.command)
+        self.implementation.container.args = stringify(
+            self.implementation.container.args)
+
     @classmethod
     def from_v1_component_spec(
             cls,

@@ -14,9 +14,10 @@
 """Base class for KFP components."""
 
 import abc
-from typing import List
+from typing import Any, List
 
 from kfp.dsl import pipeline_context
+from kfp.dsl import placeholders
 from kfp.dsl import pipeline_task
 from kfp.dsl import structures
 from kfp.dsl.types import type_utils
@@ -72,12 +73,25 @@ class BaseComponent(abc.ABC):
         """
         task_inputs = {}
 
+        def stringify(data: Any) -> Any:
+            if isinstance(data, dict):
+                return {
+                    str(key): stringify(value) for key, value in data.items()
+                }
+            elif isinstance(data, list):
+                return [stringify(element) for element in data]
+            elif isinstance(data, placeholders.Placeholder):
+                return str(data)
+            else:
+                return data
+
         if args:
             raise TypeError(
                 'Components must be instantiated using keyword arguments. Positional '
                 f'parameters are not allowed (found {len(args)} such parameters for '
                 f'component "{self.name}").')
 
+        kwargs = stringify(kwargs)
         for k, v in kwargs.items():
             if k not in self._component_inputs:
                 raise TypeError(

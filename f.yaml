@@ -1,0 +1,50 @@
+# PIPELINE DEFINITION
+# Name: echo-bool
+# Inputs:
+#    my_list: list [Default: ['foo', 'bar']]
+components:
+  comp-echo-bool:
+    executorLabel: exec-echo-bool
+    inputDefinitions:
+      parameters:
+        my_list:
+          defaultValue:
+          - foo
+          - bar
+          isOptional: true
+          parameterType: LIST
+deploymentSpec:
+  executors:
+    exec-echo-bool:
+      container:
+        command:
+        - sh
+        - -c
+        - echo {{$.inputs.parameters['my_list']}}
+        image: alpine
+pipelineInfo:
+  name: echo-bool
+root:
+  dag:
+    tasks:
+      echo-bool:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-echo-bool
+        inputs:
+          parameters:
+            my_list:
+              componentInputParameter: my_list
+        taskInfo:
+          name: echo-bool
+  inputDefinitions:
+    parameters:
+      my_list:
+        defaultValue:
+        - foo
+        - bar
+        isOptional: true
+        parameterType: LIST
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.4.0
