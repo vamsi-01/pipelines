@@ -190,6 +190,7 @@ class Executor:
         if is_parameter(annotation_type):
             origin_type = getattr(annotation_type, '__origin__',
                                   None) or annotation_type
+            print(origin_type)
             # relax float-typed return to allow both int and float.
             if origin_type == float:
                 accepted_types = (int, float)
@@ -337,6 +338,7 @@ class Executor:
 
             elif is_parameter(v):
                 value = self.get_input_parameter_value(k)
+                print('THE VALUE', value)
                 if value is not None:
                     func_kwargs[k] = value
 
