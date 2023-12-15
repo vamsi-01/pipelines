@@ -190,7 +190,7 @@ class Executor:
         if is_parameter(annotation_type):
             origin_type = getattr(annotation_type, '__origin__',
                                   None) or annotation_type
-            print(origin_type)
+            print('ORIGIN TYPE', origin_type)
             # relax float-typed return to allow both int and float.
             if origin_type == float:
                 accepted_types = (int, float)
