@@ -1,0 +1,174 @@
+# PIPELINE DEFINITION
+# Name: p
+components:
+  comp-comp:
+    executorLabel: exec-comp
+    inputDefinitions:
+      parameters:
+        bool_in:
+          parameterType: BOOLEAN
+        dict_in:
+          parameterType: STRUCT
+        float_in:
+          parameterType: NUMBER_DOUBLE
+        int_in:
+          parameterType: NUMBER_INTEGER
+        list_in:
+          parameterType: LIST
+        str_in:
+          parameterType: STRING
+    outputDefinitions:
+      parameters:
+        bool_out:
+          parameterType: BOOLEAN
+        dict_out:
+          parameterType: STRUCT
+        float_out:
+          parameterType: NUMBER_DOUBLE
+        int_out:
+          parameterType: NUMBER_INTEGER
+        list_out:
+          parameterType: LIST
+        str_out:
+          parameterType: STRING
+  comp-comp-2:
+    executorLabel: exec-comp-2
+    inputDefinitions:
+      parameters:
+        bool_in:
+          parameterType: BOOLEAN
+        dict_in:
+          parameterType: STRUCT
+        float_in:
+          parameterType: NUMBER_DOUBLE
+        int_in:
+          parameterType: NUMBER_INTEGER
+        list_in:
+          parameterType: LIST
+        str_in:
+          parameterType: STRING
+    outputDefinitions:
+      parameters:
+        bool_out:
+          parameterType: BOOLEAN
+        dict_out:
+          parameterType: STRUCT
+        float_out:
+          parameterType: NUMBER_DOUBLE
+        int_out:
+          parameterType: NUMBER_INTEGER
+        list_out:
+          parameterType: LIST
+        str_out:
+          parameterType: STRING
+deploymentSpec:
+  executors:
+    exec-comp:
+      container:
+        args:
+        - mkdir -p $(dirname {{$.outputs.parameters['str_out'].output_file}}) && echo
+          {{$.inputs.parameters['str_in']}} > {{$.outputs.parameters['str_out'].output_file}}
+          &&mkdir -p $(dirname {{$.outputs.parameters['int_out'].output_file}}) &&
+          echo "{{$.inputs.parameters['int_in']}}" > {{$.outputs.parameters['int_out'].output_file}}
+          &&mkdir -p $(dirname {{$.outputs.parameters['float_out'].output_file}})
+          && echo "{{$.inputs.parameters['float_in']}}" > {{$.outputs.parameters['float_out'].output_file}}
+          &&mkdir -p $(dirname {{$.outputs.parameters['bool_out'].output_file}}) &&
+          echo "true" > {{$.outputs.parameters['bool_out'].output_file}} && mkdir
+          -p $(dirname {{$.outputs.parameters['dict_out'].output_file}}) && echo "{}"  >
+          {{$.outputs.parameters['dict_out'].output_file}} && mkdir -p $(dirname {{$.outputs.parameters['list_out'].output_file}})
+          && echo '["a", "b", "c"]' > {{$.outputs.parameters['list_out'].output_file}}
+        command:
+        - sh
+        - -c
+        image: alpine
+    exec-comp-2:
+      container:
+        args:
+        - mkdir -p $(dirname {{$.outputs.parameters['str_out'].output_file}}) && echo
+          {{$.inputs.parameters['str_in']}} > {{$.outputs.parameters['str_out'].output_file}}
+          &&mkdir -p $(dirname {{$.outputs.parameters['int_out'].output_file}}) &&
+          echo "{{$.inputs.parameters['int_in']}}" > {{$.outputs.parameters['int_out'].output_file}}
+          &&mkdir -p $(dirname {{$.outputs.parameters['float_out'].output_file}})
+          && echo "{{$.inputs.parameters['float_in']}}" > {{$.outputs.parameters['float_out'].output_file}}
+          &&mkdir -p $(dirname {{$.outputs.parameters['bool_out'].output_file}}) &&
+          echo "true" > {{$.outputs.parameters['bool_out'].output_file}} && mkdir
+          -p $(dirname {{$.outputs.parameters['dict_out'].output_file}}) && echo "{}"  >
+          {{$.outputs.parameters['dict_out'].output_file}} && mkdir -p $(dirname {{$.outputs.parameters['list_out'].output_file}})
+          && echo '["a", "b", "c"]' > {{$.outputs.parameters['list_out'].output_file}}
+        command:
+        - sh
+        - -c
+        image: alpine
+pipelineInfo:
+  name: p
+root:
+  dag:
+    tasks:
+      comp:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-comp
+        inputs:
+          parameters:
+            bool_in:
+              runtimeValue:
+                constant: false
+            dict_in:
+              runtimeValue:
+                constant:
+                  x: y
+            float_in:
+              runtimeValue:
+                constant: 2.718
+            int_in:
+              runtimeValue:
+                constant: 100.0
+            list_in:
+              runtimeValue:
+                constant:
+                - a
+                - b
+                - c
+            str_in:
+              runtimeValue:
+                constant: foo
+        taskInfo:
+          name: comp
+      comp-2:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-comp-2
+        dependentTasks:
+        - comp
+        inputs:
+          parameters:
+            bool_in:
+              taskOutputParameter:
+                outputParameterKey: bool_out
+                producerTask: comp
+            dict_in:
+              taskOutputParameter:
+                outputParameterKey: dict_out
+                producerTask: comp
+            float_in:
+              taskOutputParameter:
+                outputParameterKey: float_out
+                producerTask: comp
+            int_in:
+              taskOutputParameter:
+                outputParameterKey: int_out
+                producerTask: comp
+            list_in:
+              taskOutputParameter:
+                outputParameterKey: list_out
+                producerTask: comp
+            str_in:
+              taskOutputParameter:
+                outputParameterKey: str_out
+                producerTask: comp
+        taskInfo:
+          name: comp-2
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.4.0

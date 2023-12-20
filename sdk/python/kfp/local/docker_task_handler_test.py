@@ -22,9 +22,31 @@ from kfp.dsl import Artifact
 from kfp.dsl import Output
 from kfp.local import docker_task_handler
 from kfp.local import testing_utilities
+import unittest
+from unittest import mock
+from kfp.local import docker_task_handler
+from typing import List, Dict, Any
+
+from kfp import dsl
+from kfp import local
+from kfp.dsl import pipeline_task
 
 
-class DockerMockTestCase(unittest.TestCase):
+def run_docker_container_mock(
+    client: 'docker.DockerClient',
+    image: str,
+    command: List[str],
+    volumes: Dict[str, Any],
+) -> int:
+    """Run commands/args in a subprocess. Effectively the same as the SubprocessRunner, but allows more than just Container Components.
+    
+    This allows us to test the Container Component and placeholder resolution logic E2E."""
+    from kfp.local import subprocess_task_handler
+    return subprocess_task_handler.run_local_subprocess(command)
+
+
+class DockerContainerClientMock(unittest.TestCase):
+    """Mocks the client"""
 
     def setUp(self):
         super().setUp()
@@ -47,7 +69,7 @@ class DockerMockTestCase(unittest.TestCase):
         self.docker_mock.reset_mock()
 
 
-class TestRunDockerContainer(DockerMockTestCase):
+class TestRunDockerContainer(DockerContainerClientMock):
 
     def test_no_volumes(self):
         docker_task_handler.run_docker_container(
@@ -89,7 +111,7 @@ class TestRunDockerContainer(DockerMockTestCase):
             }})
 
 
-class TestDockerTaskHandler(DockerMockTestCase):
+class TestDockerTaskHandler(DockerContainerClientMock):
 
     def test_get_volumes_to_mount(self):
         handler = docker_task_handler.DockerTaskHandler(
@@ -164,8 +186,8 @@ class TestAddLatestTagIfNotPresent(unittest.TestCase):
         self.assertEqual(actual, expected)
 
 
-class TestE2E(DockerMockTestCase,
-              testing_utilities.LocalRunnerEnvironmentTestCase):
+class TestPythonComponent(DockerContainerClientMock,
+                          testing_utilities.LocalRunnerEnvironmentTestCase):
 
     def test_python(self):
         local.init(runner=local.DockerRunner())
@@ -257,6 +279,81 @@ class TestE2E(DockerMockTestCase,
         ][0]
         self.assertEqual(kwargs['volumes'][root_vol_key]['bind'], root_vol_key)
         self.assertEqual(kwargs['volumes'][root_vol_key]['mode'], 'rw')
+
+
+class TestE2EContainerComponent(
+        testing_utilities.LocalRunnerEnvironmentTestCase,):
+
+    def setUp(self):
+        super().setUp()
+        self.docker_mock = mock.Mock()
+        patcher = mock.patch('docker.from_env')
+        self.mocked_docker_client = patcher.start().return_value
+
+        self.run_docker_container_patch = mock.patch.object(
+            docker_task_handler,
+            'run_docker_container',
+            side_effect=run_docker_container_mock,
+        )
+        self.mocked_run_docker_container = self.run_docker_container_patch.start(
+        )
+
+    def teardown(self):
+        super().tearDown()
+        self.docker_mock.reset_mock()
+        self.mocked_docker_client.reset_mock()
+        self.run_docker_container_patch.stop()
+
+    def test_parameters(self):
+
+        local.init(runner=local.DockerRunner())
+
+        pipeline_task.TEMPORARILY_BLOCK_LOCAL_EXECUTION = False
+
+        @dsl.container_component
+        def comp(
+                str_in: str,
+                int_in: int,
+                float_in: float,
+                bool_in: bool,
+                dict_in: dict,
+                list_in: list,
+                str_out: dsl.OutputPath(str),
+                int_out: dsl.OutputPath(int),
+                float_out: dsl.OutputPath(float),
+                bool_out: dsl.OutputPath(bool),
+                dict_out: dsl.OutputPath(dict),
+                list_out: dsl.OutputPath(list),
+        ):
+            return dsl.ContainerSpec(
+                image='alpine',
+                command=[
+                    'sh',
+                    '-c',
+                ],
+                args=[
+                    f'mkdir -p $(dirname {str_out}) && echo {str_in} > {str_out} &&'
+                    f'mkdir -p $(dirname {int_out}) && echo "{int_in}" > {int_out} &&'
+                    f'mkdir -p $(dirname {float_out}) && echo "{float_in}" > {float_out} &&'
+                    f'mkdir -p $(dirname {bool_out}) && echo {bool_in} > {bool_out} && '
+                    f'mkdir -p $(dirname {dict_out}) && echo {dict_in}  > {dict_out} && '
+                    f'mkdir -p $(dirname {list_out}) && echo \'["a", "b", "c"]\' > {list_out}'
+                ],
+            )
+
+        task = comp(
+            str_in='foo',
+            int_in=100,
+            float_in=2.718,
+            bool_in=False,
+            dict_in={'x': 'y'},
+            list_in=['a', 'b', 'c'])
+        self.assertEqual(task.outputs['str_out'], 'foo')
+        self.assertEqual(task.outputs['int_out'], 100)
+        self.assertEqual(task.outputs['float_out'], 2.718)
+        self.assertFalse(task.outputs['bool_out'])
+        self.assertEqual(task.outputs['dict_out'], {'x': 'y'})
+        self.assertEqual(task.outputs['list_out'], ['a', 'b', 'c'])
 
 
 if __name__ == '__main__':
