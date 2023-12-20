@@ -404,6 +404,16 @@ class TestLightweightPythonComponentLogic(
         self.assertEqual(task.outputs['out_param'], 'HelloHello')
         self.assertEqual(task.outputs['Output'], 1)
 
+    def test_outputpath_result_not_written(self):
+        local.init(runner=local.SubprocessRunner(use_venv=True))
+
+        @dsl.component
+        def my_comp(out_param: dsl.OutputPath(str)):
+            pass
+
+        task = my_comp()
+        self.assertEmpty(task.outputs)
+
 
 if __name__ == '__main__':
     unittest.main()
