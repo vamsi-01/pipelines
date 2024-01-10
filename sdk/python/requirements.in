@@ -1,6 +1,6 @@
 # After any updates to this file, requirements.txt should be regenerated running
 # the following in this folder:
-# TODO: run pip-compile once kfp-pipeline-spec 0.3.0 is released
+
 # pip-compile --no-emit-index-url requirements.in
 
 click>=8.0.0,<9
