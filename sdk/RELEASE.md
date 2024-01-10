@@ -3,6 +3,7 @@
 ## Features
 
 ## Breaking changes
+* Migrate to `protobuf==4`. Drop support for `protobuf==3`. [\#10307](https://github.com/kubeflow/pipelines/pull/10307)
 
 ## Deprecations
 
