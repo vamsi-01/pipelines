@@ -55,35 +55,15 @@ class CloudRunTaskHandler(task_handler_interface.ITaskHandler):
             self.client,
             job_name,
         )
-        print(f"Job name: {job_name}")
-        print("TODO: stream logs")
-        print(run_op.metadata.annotations)
-        execution_id = run_op.metadata.annotations[
-            'run.googleapis.com/execution-id']
-        print('View logs on the console:',
-              make_execution_url(
-                  self.runner.location,
-                  execution_id,
-              ))
+        print_task_urls(
+            self.runner.location,
+            job_name,
+        )
         is_success = wait_and_return_success(run_op)
         return status.Status.SUCCESS if is_success else status.Status.FAILURE
 
 
 from google.cloud import logging_v2
-
-
-def stream_cloud_run_logs(
-    project: str,
-    location: str,
-    job_id: str,
-):
-    client = logging_v2.LoggingServiceV2Client()
-    resource_names = [f"projects/{project}"]
-    filter = f'resource.type="cloud_run_job" AND resource.labels.job_name="{job_id}" AND resource.labels.location="{location}"'
-
-    for entry in client.list_log_entries(
-            resource_names=resource_names, filter=filter):
-        print(entry)
 
 
 def make_job(
@@ -125,7 +105,7 @@ def wait_and_return_success(run_op: operation.Operation) -> bool:
         for condition in run_op.result().conditions:
             if condition.type_ == 'Completed':
                 return condition.state == 'CONDITION_SUCCEEDED'
-    except:
+    except Exception:
         return False
     return False
 
@@ -147,3 +127,17 @@ def make_execution_url(
     job_id: str,
 ) -> str:
     return f'https://console.cloud.google.com/run/jobs/executions/details/{location}/{job_id}/tasks'
+
+
+def print_task_urls(
+    location: str,
+    job_resource_name: str,
+):
+    from google.cloud import run_v2
+    client = run_v2.ExecutionsClient()
+    executions = client.list_executions(parent=job_resource_name)
+
+    execution = min(executions, key=lambda e: e.create_time)
+    cloud_run_url = make_execution_url(location, execution.name.rsplit('/')[-1])
+    print(f"Cloud Run URL: {cloud_run_url}")
+    print(f"Logs URL: {execution.log_uri}")

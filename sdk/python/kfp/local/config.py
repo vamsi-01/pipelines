@@ -71,10 +71,17 @@ class CloudRunRunner:
 
     def __post_init__(self):
         try:
-            import docker  # noqa
+            from google.cloud import run_v2  # noqa
         except ImportError as e:
             raise ImportError(
                 f"Package 'google-cloud-run' must be installed to use {CloudRunRunner.__name__!r}. Install it using 'pip install docker'."
+            ) from e
+
+        try:
+            from google.cloud import logging
+        except ImportError as e:
+            raise ImportError(
+                f"Package 'google-cloud-logging' must be installed to use {CloudRunRunner.__name__!r}. Install it using 'pip install docker'."
             ) from e
 
 
