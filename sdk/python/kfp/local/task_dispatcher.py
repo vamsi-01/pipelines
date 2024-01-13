@@ -16,6 +16,7 @@ import logging
 from typing import Any, Dict
 
 from kfp import local
+from kfp.local import cloud_run_task_handler
 from kfp.local import config
 from kfp.local import docker_task_handler
 from kfp.local import executor_input_utils
@@ -111,6 +112,8 @@ def _run_single_component_implementation(
                 subprocess_task_handler.SubprocessTaskHandler,
             local.DockerRunner:
                 docker_task_handler.DockerTaskHandler,
+            local.CloudRunRunner:
+                cloud_run_task_handler.CloudRunTaskHandler,
         }
     TaskHandler = task_handler_map[runner_type]
 

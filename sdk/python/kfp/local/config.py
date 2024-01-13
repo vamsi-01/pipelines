@@ -57,6 +57,27 @@ class DockerRunner:
             ) from e
 
 
+@dataclasses.dataclass
+class CloudRunRunner:
+    """Runner that indicates that local tasks should be run as a Docker
+    container.
+
+    Args:
+        project: The Google Cloud project in which to create and run the task as a Cloud Run job.
+        location: The Google Cloud location in which to create and run the task as a Cloud Run job.
+    """
+    project: str
+    location: str
+
+    def __post_init__(self):
+        try:
+            import docker  # noqa
+        except ImportError as e:
+            raise ImportError(
+                f"Package 'google-cloud-run' must be installed to use {CloudRunRunner.__name__!r}. Install it using 'pip install docker'."
+            ) from e
+
+
 class LocalExecutionConfig:
     instance = None
 
@@ -76,7 +97,7 @@ class LocalExecutionConfig:
         pipeline_root: str,
         raise_on_error: bool,
     ) -> None:
-        permitted_runners = (SubprocessRunner, DockerRunner)
+        permitted_runners = (SubprocessRunner, DockerRunner, CloudRunRunner)
         if not isinstance(runner, permitted_runners):
             raise ValueError(
                 f'Got unknown runner {runner} of type {runner.__class__.__name__}. Runner should be one of the following types: {". ".join(prunner.__name__ for prunner in permitted_runners)}.'

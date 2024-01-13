@@ -13,6 +13,7 @@
 # limitations under the License.
 """The KFP local runner."""
 
+from kfp.local.config import CloudRunRunner
 from kfp.local.config import DockerRunner
 from kfp.local.config import init
 from kfp.local.config import SubprocessRunner
@@ -20,5 +21,6 @@ from kfp.local.config import SubprocessRunner
 __all__ = [
     'init',
     'SubprocessRunner',
+    'CloudRunRunner',
     'DockerRunner',
 ]
