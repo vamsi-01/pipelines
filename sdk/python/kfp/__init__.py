@@ -32,6 +32,11 @@ if sys.version_info < (3, 8):
 TYPE_CHECK = True
 
 import os
+from kfp.dsl import task
+from kfp.dsl import pipeline
+from kfp.local import init
+from kfp.local import CloudRunRunner
+from kfp.entrypoint import entrypoint
 
 # compile-time only dependencies
 if os.environ.get('_KFP_RUNTIME', 'false') != 'true':

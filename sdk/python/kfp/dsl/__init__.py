@@ -258,7 +258,7 @@ Example:
 
 # compile-time only dependencies
 if os.environ.get('_KFP_RUNTIME', 'false') != 'true':
-    from kfp.dsl.component_decorator import component
+    from kfp.dsl.component_decorator import task
     from kfp.dsl.container_component_decorator import container_component
     # TODO: Collected should be moved to pipeline_channel.py, consistent with OneOf
     from kfp.dsl.for_loop import Collected
@@ -276,7 +276,7 @@ if os.environ.get('_KFP_RUNTIME', 'false') != 'true':
     from kfp.dsl.tasks_group import If
     from kfp.dsl.tasks_group import ParallelFor
     __all__.extend([
-        'component',
+        'task',
         'container_component',
         'pipeline',
         'importer',

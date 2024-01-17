@@ -19,15 +19,15 @@ import warnings
 from kfp.dsl import component_factory
 
 
-def component(func: Optional[Callable] = None,
-              *,
-              base_image: Optional[str] = None,
-              target_image: Optional[str] = None,
-              packages_to_install: List[str] = None,
-              pip_index_urls: Optional[List[str]] = None,
-              output_component_file: Optional[str] = None,
-              install_kfp_package: bool = True,
-              kfp_package_path: Optional[str] = None):
+def task(func: Optional[Callable] = None,
+         *,
+         base_image: Optional[str] = None,
+         target_image: Optional[str] = None,
+         packages_to_install: List[str] = None,
+         pip_index_urls: Optional[List[str]] = None,
+         output_component_file: Optional[str] = None,
+         install_kfp_package: bool = True,
+         kfp_package_path: Optional[str] = None):
     """Decorator for Python-function based components.
 
     A KFP component can either be a lightweight component or a containerized
@@ -107,7 +107,7 @@ def component(func: Optional[Callable] = None,
 
     if func is None:
         return functools.partial(
-            component,
+            task,
             base_image=base_image,
             target_image=target_image,
             packages_to_install=packages_to_install,

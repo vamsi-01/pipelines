@@ -1,15 +1,25 @@
-from kfp import dsl
-from kfp import local
-from kfp.dsl import *
+from kfp import task
+from kfp import entrypoint
+import kfp
 
-local.init(
-    runner=local.config.CloudRunRunner(
-        project='cjmccarthy-kfp', location='us-central1'))
+kfp.init(
+    runner=kfp.CloudRunRunner(project='cjmccarthy-kfp', location='us-central1'))
 
 
-@dsl.component
+@task
 def identity(string: str) -> str:
     return string
 
 
-identity(string='foo')
+@task
+def identity(string: str) -> str:
+    return string
+
+
+@entrypoint
+def my_pipeline(string: str = 'string'):
+    op1 = identity(string=string)
+    op2 = identity(string=op1.output)
+
+
+my_pipeline()

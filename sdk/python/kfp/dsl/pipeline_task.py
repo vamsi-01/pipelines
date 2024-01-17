@@ -179,8 +179,7 @@ class PipelineTask:
             if not isinstance(value, pipeline_channel.PipelineChannel)
         ])
 
-        if execute_locally:
-            self._execute_locally(args=args)
+        self._execute_locally(args=args)
 
     def _execute_locally(self, args: Dict[str, Any]) -> None:
         """Execute the pipeline task locally.
@@ -188,11 +187,6 @@ class PipelineTask:
         Set the task state to FINAL and update the outputs.
         """
         from kfp.local import task_dispatcher
-
-        if self.pipeline_spec is not None:
-            raise NotImplementedError(
-                'Local pipeline execution is not currently supported.')
-
         self._outputs = task_dispatcher.run_single_component(
             pipeline_spec=self.component_spec.to_pipeline_spec(),
             arguments=args,

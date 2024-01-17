@@ -53,34 +53,34 @@ class GraphComponent(base_component.BaseComponent):
                     is_artifact_list=input_spec.is_artifact_list,
                 ))
 
-        with pipeline_context.Pipeline(
-                self.component_spec.name) as dsl_pipeline:
-            pipeline_outputs = pipeline_func(*args_list)
+        # with pipeline_context.Pipeline(
+        #         self.component_spec.name) as dsl_pipeline:
+        #     pipeline_outputs = pipeline_func(*args_list)
 
-        if not dsl_pipeline.tasks:
-            raise ValueError('Task is missing from pipeline.')
+        # if not dsl_pipeline.tasks:
+        #     raise ValueError('Task is missing from pipeline.')
 
-        # Making the pipeline group name unique to prevent name clashes with
-        # templates
-        pipeline_group = dsl_pipeline.groups[0]
-        pipeline_group.name = uuid.uuid4().hex
+        # # Making the pipeline group name unique to prevent name clashes with
+        # # templates
+        # pipeline_group = dsl_pipeline.groups[0]
+        # pipeline_group.name = uuid.uuid4().hex
 
-        pipeline_spec, platform_spec = builder.create_pipeline_spec(
-            pipeline=dsl_pipeline,
-            component_spec=self.component_spec,
-            pipeline_outputs=pipeline_outputs,
-        )
+        # pipeline_spec, platform_spec = builder.create_pipeline_spec(
+        #     pipeline=dsl_pipeline,
+        #     component_spec=self.component_spec,
+        #     pipeline_outputs=pipeline_outputs,
+        # )
 
-        pipeline_root = getattr(pipeline_func, 'pipeline_root', None)
-        if pipeline_root is not None:
-            pipeline_spec.default_pipeline_root = pipeline_root
-        if display_name is not None:
-            pipeline_spec.pipeline_info.display_name = display_name
-        if component_spec.description is not None:
-            pipeline_spec.pipeline_info.description = component_spec.description
+        # pipeline_root = getattr(pipeline_func, 'pipeline_root', None)
+        # if pipeline_root is not None:
+        #     pipeline_spec.default_pipeline_root = pipeline_root
+        # if display_name is not None:
+        #     pipeline_spec.pipeline_info.display_name = display_name
+        # if component_spec.description is not None:
+        #     pipeline_spec.pipeline_info.description = component_spec.description
 
-        self.component_spec.implementation.graph = pipeline_spec
-        self.component_spec.platform_spec = platform_spec
+        # self.component_spec.implementation.graph = pipeline_spec
+        # self.component_spec.platform_spec = platform_spec
 
     @property
     def pipeline_spec(self) -> pipeline_spec_pb2.PipelineSpec:
