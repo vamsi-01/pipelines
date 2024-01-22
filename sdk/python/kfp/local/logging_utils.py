@@ -16,6 +16,7 @@ import builtins
 import contextlib
 import datetime
 import logging
+import shutil
 import sys
 from typing import Any, Dict, Generator, List
 
@@ -27,6 +28,7 @@ class Color:
     CYAN = '\033[96m'
     GREEN = '\033[92m'
     RED = '\033[91m'
+    MAGENTA = '\033[95m'
     RESET = '\033[0m'
 
 
@@ -142,6 +144,11 @@ def make_log_lines_for_outputs(outputs: Dict[str, Any]) -> List[str]:
     return output_lines
 
 
+def print_horizontal_line() -> None:
+    columns, _ = shutil.get_terminal_size(fallback=(80, 24))
+    print('-' * columns)
+
+
 def format_task_name(task_name: str) -> str:
     return color_text(f'{task_name!r}', Color.CYAN)
 
@@ -153,3 +160,7 @@ def format_status(task_status: status.Status) -> str:
         return color_text(task_status.name, Color.RED)
     else:
         raise ValueError(f'Got unknown status: {task_status}')
+
+
+def format_pipeline_name(pipeline_name: str) -> str:
+    return color_text(f'{pipeline_name!r}', Color.MAGENTA)
