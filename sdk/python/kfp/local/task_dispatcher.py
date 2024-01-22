@@ -13,7 +13,7 @@
 # limitations under the License.
 """Code for dispatching a local task execution."""
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 
 from kfp import local
 from kfp.local import config
@@ -25,10 +25,11 @@ from kfp.local import placeholder_utils
 from kfp.local import status
 from kfp.local import subprocess_task_handler
 from kfp.local import task_handler_interface
+from kfp.local import utils
 from kfp.pipeline_spec import pipeline_spec_pb2
 
 
-def run_single_component(
+def run_single_task(
     pipeline_spec: pipeline_spec_pb2.PipelineSpec,
     arguments: Dict[str, Any],
 ) -> Dict[str, Any]:
@@ -41,34 +42,57 @@ def run_single_component(
     Returns:
         A LocalTask instance.
     """
-    if config.LocalExecutionConfig.instance is None:
-        raise RuntimeError(
-            f"Local environment not initialized. Please run '{local.__name__}.{local.init.__name__}()' before executing tasks locally."
-        )
+    config.validate_config()
+    component_name, component_spec = list(pipeline_spec.components.items())[0]
+    executor_spec = get_executor_spec(
+        pipeline_spec,
+        component_spec.executor_label,
+    )
+    executor_spec = utils.dict_to_executorspec(executor_spec)
+
     # all global state should be accessed here
     # do not access local config state downstream
-    return _run_single_component_implementation(
-        pipeline_spec=pipeline_spec,
+    outputs, _ = _run_single_task_implementation(
+        pipeline_name=pipeline_spec.pipeline_info.name,
+        component_name=component_name,
+        component_spec=component_spec,
+        executor_spec=executor_spec,
         arguments=arguments,
         pipeline_root=config.LocalExecutionConfig.instance.pipeline_root,
         runner=config.LocalExecutionConfig.instance.runner,
         raise_on_error=config.LocalExecutionConfig.instance.raise_on_error,
     )
+    return outputs
 
 
-def _run_single_component_implementation(
+def get_executor_spec(
     pipeline_spec: pipeline_spec_pb2.PipelineSpec,
+    executor_label: str,
+) -> pipeline_spec_pb2.PipelineDeploymentConfig.ExecutorSpec:
+    return pipeline_spec.deployment_spec['executors'][executor_label]
+
+
+Outputs = Dict[str, Any]
+
+
+def _run_single_task_implementation(
+    pipeline_name: str,
+    component_name: str,
+    component_spec: pipeline_spec_pb2.ComponentSpec,
+    executor_spec: pipeline_spec_pb2.PipelineDeploymentConfig.ExecutorSpec,
     arguments: Dict[str, Any],
     pipeline_root: str,
     runner: config.LocalRunnerType,
     raise_on_error: bool,
-) -> Dict[str, Any]:
-    """The implementation of a single component runner."""
+) -> Tuple[Outputs, status.Statues]:
+    """The implementation of a single component runner.
 
-    component_name, component_spec = list(pipeline_spec.components.items())[0]
+    Returns a tuple of (outputs, status). If status is FAILURE, outputs
+    is an empty dictionary.
+    """
 
     pipeline_resource_name = executor_input_utils.get_local_pipeline_resource_name(
-        pipeline_spec.pipeline_info.name)
+        pipeline_name)
     task_resource_name = executor_input_utils.get_local_task_resource_name(
         component_name)
     task_root = executor_input_utils.construct_local_task_root(
@@ -82,15 +106,9 @@ def _run_single_component_implementation(
         task_root=task_root,
     )
 
-    executor_spec = pipeline_spec.deployment_spec['executors'][
-        component_spec.executor_label]
-
-    container = executor_spec['container']
-    image = container['image']
-
-    command = list(container['command']) if 'command' in container else []
-    args = list(container['args']) if 'args' in container else []
-    full_command = command + args
+    container = executor_spec.container
+    image = container.image
+    full_command = list(container.command) + list(container.args)
 
     executor_input_dict = executor_input_utils.executor_input_to_dict(
         executor_input=executor_input,
@@ -148,7 +166,6 @@ def _run_single_component_implementation(
                 output_string = [
                     f'Task {task_name_for_logs} outputs:',
                     *logging_utils.make_log_lines_for_outputs(outputs),
-                    '\n',
                 ]
                 logging.info('\n'.join(output_string))
             else:
@@ -165,5 +182,7 @@ def _run_single_component_implementation(
         else:
             # for developers; user should never hit this
             raise ValueError(f'Got unknown status: {task_status}')
+        # clearly delineate end of task logs
+        logging_utils.print_horizontal_line()
 
-        return outputs
+        return outputs, task_status

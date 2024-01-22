@@ -16,6 +16,7 @@ import builtins
 import contextlib
 import datetime
 import logging
+import shutil
 import sys
 from typing import Any, Dict, Generator, List
 
@@ -139,3 +140,8 @@ def make_log_lines_for_outputs(outputs: Dict[str, Any]) -> List[str]:
             output_lines.append(f'{key_chars}{value}')
 
     return output_lines
+
+
+def print_horizontal_line() -> None:
+    columns, _ = shutil.get_terminal_size(fallback=(80, 24))
+    print('-' * columns)

@@ -17,6 +17,8 @@ import dataclasses
 import os
 from typing import Union
 
+from kfp import local
+
 
 class LocalRunnerType(abc.ABC):
     """The ABC for user-facing Runner configurations.
@@ -108,3 +110,10 @@ def init(
         pipeline_root=pipeline_root,
         raise_on_error=raise_on_error,
     )
+
+
+def validate_config() -> None:
+    if LocalExecutionConfig.instance is None:
+        raise RuntimeError(
+            f"Local environment not initialized. Please run '{local.__name__}.{init.__name__}()' before executing tasks locally."
+        )
