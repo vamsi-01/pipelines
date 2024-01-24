@@ -16,6 +16,7 @@ from typing import Any, Dict, Optional, Tuple
 
 from kfp.local import config
 from kfp.local import graph_utils
+from kfp.local import importer_handler
 from kfp.local import io
 from kfp.local import status
 from kfp.pipeline_spec import pipeline_spec_pb2
@@ -50,6 +51,8 @@ def run_dag(
         If DAG succeeds, a two-tuple of: (Status.SUCCESS, None).
         If DAG fails, a two-tuple of: (Status.FAILURE, '<task-that-failed>').
     """
+    from kfp.local import task_dispatcher
+
     # prepare IOStore for DAG
     dag_arguments_with_defaults = bind_defaults_to_dag_arguments(
         dag_arguments=dag_arguments,
@@ -78,29 +81,41 @@ def run_dag(
 
         executor_key = component_spec.executor_label
         executor_spec = executors[executor_key]
-        validate_executor(executor_spec)
         task_arguments = make_task_arguments(
             task_inputs_spec=dag_spec.tasks[task_name],
             io_store=io_store,
         )
 
-        from kfp.local import task_dispatcher
-        outputs, task_status = task_dispatcher._run_single_task_implementation(
-            pipeline_resource_name=pipeline_resource_name,
-            component_name=component_name,
-            component_spec=component_spec,
-            executor_spec=executor_spec,
-            arguments=task_arguments,
-            pipeline_root=pipeline_root,
-            runner=runner,
-            # let the outer pipeline raise the error
-            raise_on_error=False,
-            block_input_artifact=False,
-            # provide the same unique job id for each tasks for
-            # placeholder resolution
-            unique_pipeline_id=unique_pipeline_id,
-        )
-
+        if executor_spec.WhichOneof('spec') == 'importer':
+            outputs, task_status = importer_handler.run_importer(
+                pipeline_resource_name=pipeline_resource_name,
+                component_name=component_name,
+                component_spec=component_spec,
+                executor_spec=executor_spec,
+                arguments=task_arguments,
+                pipeline_root=pipeline_root,
+                unique_pipeline_id=unique_pipeline_id,
+            )
+        elif executor_spec.WhichOneof('spec') == 'container':
+            outputs, task_status = task_dispatcher._run_single_task_implementation(
+                pipeline_resource_name=pipeline_resource_name,
+                component_name=component_name,
+                component_spec=component_spec,
+                executor_spec=executor_spec,
+                arguments=task_arguments,
+                pipeline_root=pipeline_root,
+                runner=runner,
+                # let the outer pipeline raise the error
+                raise_on_error=False,
+                block_input_artifact=False,
+                # provide the same unique job id for each tasks for
+                # placeholder resolution
+                unique_pipeline_id=unique_pipeline_id,
+            )
+        else:
+            raise ValueError(
+                'Got unknown spec in ExecutorSpec. Only dsl.component, dsl.container_component, and dsl.importer are supported in local pipeline execution.'
+            )
         if task_status == status.Status.FAILURE:
             return status.Status.FAILURE, task_name
         elif task_status == status.Status.SUCCESS:
@@ -201,25 +216,6 @@ def make_task_arguments(
             raise ValueError(f'Invalid or missing input for {input_name}')
 
     return task_arguments
-
-
-def validate_executor(
-        executor: pipeline_spec_pb2.PipelineDeploymentConfig.ExecutorSpec
-) -> None:
-    """Validates that an ExecutorSpec is a supported executor for local
-    execution.
-
-    Args:
-        executor: The ExecutorSpec to validate.
-    """
-    if executor.WhichOneof('spec') == 'importer':
-        raise ValueError(
-            "Importer is not yet supported by local pipeline execution. Found 'dsl.importer' task in pipeline."
-        )
-    elif executor.WhichOneof('spec') != 'container':
-        raise ValueError(
-            'Got unknown spec in ExecutorSpec. Only dsl.component and dsl.container_component are supported in local pipeline execution.'
-        )
 
 
 def get_dag_output_parameters(
