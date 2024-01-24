@@ -57,6 +57,10 @@ class TestRunPipelineSubprocessRunner(
         def pass_op():
             pass
 
+        @dsl.component
+        def pass_op():
+            pass
+
         @dsl.pipeline
         def my_pipeline():
             pass_op()
@@ -98,6 +102,10 @@ class TestRunPipelineSubprocessRunner(
 
     def test_simple_return(self):
         local.init(local.SubprocessRunner(), pipeline_root=ROOT_FOR_TESTING)
+
+        @dsl.component
+        def identity(string: str) -> str:
+            return string
 
         @dsl.component
         def identity(string: str) -> str:
@@ -285,22 +293,6 @@ class TestRunPipelineSubprocessRunner(
                 files_in_pipeline_root[0],
             ))
         self.assertLen(contents_of_pipeline_dir, 2)
-
-    def test_importer_not_supported(self):
-        local.init(local.SubprocessRunner())
-
-        @dsl.pipeline
-        def my_pipeline():
-            dsl.importer(
-                artifact_uri='/foo/bar',
-                artifact_class=dsl.Artifact,
-            )
-
-        with self.assertRaisesRegex(
-                ValueError,
-                r"Importer is not yet supported by local pipeline execution\. Found 'dsl\.importer' task in pipeline\."
-        ):
-            my_pipeline()
 
     def test_pipeline_in_pipeline_not_supported(self):
         local.init(local.SubprocessRunner())

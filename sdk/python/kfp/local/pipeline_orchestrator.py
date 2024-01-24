@@ -17,6 +17,7 @@ from typing import Any, Dict
 
 from kfp.local import config
 from kfp.local import graph_utils
+from kfp.local import importer_handler
 from kfp.local import io
 from kfp.local import logging_utils
 from kfp.local import placeholder_utils
@@ -163,57 +164,76 @@ def run_dag(
 
         executor_key = component_spec.executor_label
         executor_spec = executors[executor_key]
-        validate_executor(executor_spec)
+
         task_arguments = make_task_arguments(
             task_inputs_spec=dag_spec.tasks[task_name],
             io_store=io_store,
         )
 
-        from kfp.local import task_dispatcher
-        outputs, task_status = task_dispatcher._run_single_task_implementation(
-            pipeline_resource_name=pipeline_resource_name,
-            component_name=component_name,
-            component_spec=component_spec,
-            executor_spec=executor_spec,
-            arguments=task_arguments,
-            pipeline_root=config.LocalExecutionConfig.instance.pipeline_root,
-            runner=config.LocalExecutionConfig.instance.runner,
-            # let the outer pipeline raise the error
-            raise_on_error=False,
-            block_input_artifact=False,
-            # provide the same unique job id for each tasks for
-            # placeholder resolution
-            unique_pipeline_id=placeholder_utils.make_random_id(),
-        )
-        # handle failure
-        pipeline_name_with_color = logging_utils.format_pipeline_name(
-            pipeline_name)
-        task_name_with_color = logging_utils.format_task_name(task_name)
-        status_with_color = logging_utils.format_status(task_status)
-        if task_status == status.Status.FAILURE:
-            msg = f'Pipeline {pipeline_name_with_color} finished with status {status_with_color}. Inner task failed: {task_name_with_color}.'
-            if raise_on_error:
-                raise RuntimeError(msg)
-            with logging_utils.local_logger_context():
-                logging.error(msg)
-            return status.Status.FAILURE
-        elif task_status == status.Status.SUCCESS:
-
-            # handle success and update IO store before next task
-            for key, output in outputs.items():
-                io_store.put_task_output(
-                    task_name,
-                    key,
-                    output,
-                )
+        if executor_spec.WhichOneof('spec') == 'importer':
+            outputs, task_status = importer_handler.run_importer(
+                pipeline_resource_name=pipeline_resource_name,
+                component_name=component_name,
+                component_spec=component_spec,
+                executor_spec=executor_spec,
+                arguments=task_arguments,
+                pipeline_root=config.LocalExecutionConfig.instance
+                .pipeline_root,
+            )
+        elif executor_spec.WhichOneof('spec') == 'container':
+            from kfp.local import task_dispatcher
+            outputs, task_status = task_dispatcher._run_single_task_implementation(
+                pipeline_resource_name=pipeline_resource_name,
+                component_name=component_name,
+                component_spec=component_spec,
+                executor_spec=executor_spec,
+                arguments=task_arguments,
+                pipeline_root=config.LocalExecutionConfig.instance
+                .pipeline_root,
+                runner=config.LocalExecutionConfig.instance.runner,
+                # let the outer pipeline raise the error
+                raise_on_error=False,
+                block_input_artifact=False,
+                # provide the same unique job id for each tasks for
+                # placeholder resolution
+                unique_pipeline_id=placeholder_utils.make_random_id(),
+            )
         else:
-            raise ValueError(f'Got unknown task status: {task_status.name}')
+            raise ValueError(
+                'Got unknown spec in ExecutorSpec. Only dsl.component and dsl.container_component are supported in local pipeline execution.'
+            )
 
+        if task_status == status.Status.FAILURE:
+            maybe_raise_on_failure(task_status)
+
+        # handle failure
+        # update IO store before next task
+        for key, output in outputs.items():
+            io_store.put_task_output(
+                task_name,
+                key,
+                output,
+            )
     msg = f'Pipeline {pipeline_name_with_color} finished with status {status_with_color}'
     with logging_utils.local_logger_context():
         logging.info(msg)
-
+    ...
     return status.Status.SUCCESS
+
+
+def maybe_raise_on_failure(
+    pipeline_name: str,
+    task_name: str,
+    raise_on_error: bool,
+):
+    pipeline_name_with_color = logging_utils.format_pipeline_name(pipeline_name)
+    task_name_with_color = logging_utils.format_task_name(task_name)
+    status_with_color = logging_utils.format_status(status.Status.FAILURE.name)
+    msg = f'Pipeline {pipeline_name_with_color} finished with status {status_with_color}. Inner task failed: {task_name_with_color}.'
+    if raise_on_error:
+        raise RuntimeError(msg)
+    with logging_utils.local_logger_context():
+        logging.error(msg)
 
 
 def bind_defaults_to_dag_arguments(
@@ -300,25 +320,6 @@ def make_task_arguments(
             raise ValueError(f'Invalid or missing input for {input_name}')
 
     return task_arguments
-
-
-def validate_executor(
-        executor: pipeline_spec_pb2.PipelineDeploymentConfig.ExecutorSpec
-) -> None:
-    """Validates that an ExecutorSpec is a supported executor for local
-    execution.
-
-    Args:
-        executor: The ExecutorSpec to validate.
-    """
-    if executor.WhichOneof('spec') == 'importer':
-        raise ValueError(
-            "Importer is not yet supported by local pipeline execution. Found 'dsl.importer' task in pipeline."
-        )
-    elif executor.WhichOneof('spec') != 'container':
-        raise ValueError(
-            'Got unknown spec in ExecutorSpec. Only dsl.component and dsl.container_component are supported in local pipeline execution.'
-        )
 
 
 def get_dag_output_parameters(

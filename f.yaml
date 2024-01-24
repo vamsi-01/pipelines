@@ -1,0 +1,213 @@
+# PIPELINE DEFINITION
+# Name: my-pipeline
+components:
+  comp-identity:
+    executorLabel: exec-identity
+    inputDefinitions:
+      parameters:
+        string:
+          parameterType: STRING
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: STRING
+  comp-identity-2:
+    executorLabel: exec-identity-2
+    inputDefinitions:
+      parameters:
+        string:
+          parameterType: STRING
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: STRING
+  comp-importer:
+    executorLabel: exec-importer
+    inputDefinitions:
+      parameters:
+        metadata:
+          parameterType: STRING
+        metadata-2:
+          parameterType: STRING
+        uri:
+          parameterType: STRING
+    outputDefinitions:
+      artifacts:
+        artifact:
+          artifactType:
+            schemaTitle: system.Artifact
+            schemaVersion: 0.0.1
+  comp-printer:
+    executorLabel: exec-printer
+    inputDefinitions:
+      artifacts:
+        a:
+          artifactType:
+            schemaTitle: system.Artifact
+            schemaVersion: 0.0.1
+deploymentSpec:
+  executors:
+    exec-identity:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - identity
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.6.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef identity(string: str) -> str:\n    return string\n\n"
+        image: python:3.7
+    exec-identity-2:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - identity
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.6.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef identity(string: str) -> str:\n    return string\n\n"
+        image: python:3.7
+    exec-importer:
+      importer:
+        artifactUri:
+          runtimeParameter: uri
+        metadata:
+          '{{$.inputs.parameters[''metadata'']}}': 1.0
+          '{{$.inputs.parameters[''metadata-2'']}}': '{{$.inputs.parameters[''metadata'']}}'
+        typeSchema:
+          schemaTitle: system.Artifact
+          schemaVersion: 0.0.1
+    exec-printer:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - printer
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.6.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef printer(a: Artifact):\n    print(a)\n\n"
+        image: python:3.7
+pipelineInfo:
+  name: my-pipeline
+root:
+  dag:
+    tasks:
+      identity:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-identity
+        inputs:
+          parameters:
+            string:
+              runtimeValue:
+                constant: foo
+        taskInfo:
+          name: identity
+      identity-2:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-identity-2
+        inputs:
+          parameters:
+            string:
+              runtimeValue:
+                constant: /artifact/bar
+        taskInfo:
+          name: identity-2
+      importer:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-importer
+        dependentTasks:
+        - identity
+        - identity-2
+        inputs:
+          parameters:
+            metadata:
+              taskOutputParameter:
+                outputParameterKey: Output
+                producerTask: identity
+            metadata-2:
+              taskOutputParameter:
+                outputParameterKey: Output
+                producerTask: identity-2
+            uri:
+              taskOutputParameter:
+                outputParameterKey: Output
+                producerTask: identity-2
+        taskInfo:
+          name: importer
+      printer:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-printer
+        dependentTasks:
+        - importer
+        inputs:
+          artifacts:
+            a:
+              taskOutputArtifact:
+                outputArtifactKey: artifact
+                producerTask: importer
+        taskInfo:
+          name: printer
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.6.0
