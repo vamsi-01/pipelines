@@ -418,5 +418,39 @@ class TestResolveStructPlaceholders(parameterized.TestCase):
         self.assertEqual(actual, expected)
 
 
+class TestResolveSelfReferencesInExecutorInput(unittest.TestCase):
+
+    def test_simple(self):
+        inp = {
+            'inputs': {
+                'parameterValues': {
+                    'pipelinechannel--identity-Output':
+                        'foo',
+                    'string':
+                        "{{$.inputs.parameters['pipelinechannel--identity-Output']}}-bar"
+                }
+            },
+            'outputs': {
+                'outputFile':
+                    '/foo/bar/my-pipeline-2024-01-26-12-26-24-162075/echo/executor_output.json'
+            }
+        }
+        expected = {
+            'inputs': {
+                'parameterValues': {
+                    'pipelinechannel--identity-Output': 'foo',
+                    'string': 'foo-bar'
+                }
+            },
+            'outputs': {
+                'outputFile':
+                    '/foo/bar/my-pipeline-2024-01-26-12-26-24-162075/echo/executor_output.json'
+            }
+        }
+        actual = placeholder_utils.resolve_self_references_in_executor_input(
+            inp)
+        self.assertEqual(actual, expected)
+
+
 if __name__ == '__main__':
     unittest.main()

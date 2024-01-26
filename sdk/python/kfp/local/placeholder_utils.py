@@ -35,6 +35,8 @@ def replace_placeholders(
 ) -> List[str]:
     """Iterates over each element in the command and replaces placeholders."""
     unique_task_id = make_random_id()
+    executor_input_dict = resolve_self_references_in_executor_input(
+        executor_input_dict=executor_input_dict)
     provided_inputs = get_provided_inputs(executor_input_dict)
     full_command = [
         resolve_struct_placeholders(
@@ -65,6 +67,32 @@ def replace_placeholders(
                 f'Got unknown command element {resolved_el} of type {type(resolved_el)}.'
             )
     return resolved_command
+
+
+def resolve_self_references_in_executor_input(
+        executor_input_dict: str) -> Dict[str, Any]:
+    """Resolve parameter placeholders that point to other parameter
+    placeholders in the same ExecutorInput message.
+
+    This occurs when passing f-strings to a component. For example:
+
+    my_comp(foo=f'bar-{upstream.output}')
+
+    May result in the ExecutorInput message:
+
+    {'inputs': {'parameterValues': {'pipelinechannel--identity-Output': 'foo',
+                                'string': "{{$.inputs.parameters['pipelinechannel--identity-Output']}}-bar"}},
+     'outputs': ...}
+
+    The placeholder "{{$.inputs.parameters['pipelinechannel--identity-Output']}}-bar" points to parameter 'pipelinechannel--identity-Output' with the value 'foo'. This function replaces "{{$.inputs.parameters['pipelinechannel--identity-Output']}}-bar" with 'foo'.
+    """
+    from pprint import pprint
+    pprint(executor_input_dict)
+    for k, v in executor_input_dict['inputs']['parameterValues'].items():
+        if isinstance(v, str):
+            executor_input_dict['inputs']['parameterValues'][
+                k] = resolve_io_placeholders(executor_input_dict, v)
+    return executor_input_dict
 
 
 def flatten_list(l: List[Union[str, list, None]]) -> List[str]:
