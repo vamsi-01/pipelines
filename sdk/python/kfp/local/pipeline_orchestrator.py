@@ -90,7 +90,7 @@ def _run_local_pipeline_implementation(
     # convert to dict for consistency with executors data structure in run_dag
     components = dict(pipeline_spec.components.items())
     io_store = io.IOStore()
-    dag_status, fail_task_name = dag_orchestrator.run_dag(
+    outputs, dag_status, fail_task_name = dag_orchestrator.run_dag(
         pipeline_resource_name=pipeline_resource_name,
         dag_component_spec=pipeline_spec.root,
         executors=executors,
@@ -107,10 +107,7 @@ def _run_local_pipeline_implementation(
             logging.info(
                 f'Pipeline {pipeline_name_with_color} finished with status {status_with_color}'
             )
-        return dag_orchestrator.get_dag_outputs(
-            dag_outputs_spec=pipeline_spec.root.dag.outputs,
-            io_store=io_store,
-        )
+        return outputs
     elif dag_status == status.Status.FAILURE:
         log_and_maybe_raise_for_failure(
             pipeline_name=pipeline_name,

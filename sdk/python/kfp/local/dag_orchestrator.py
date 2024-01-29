@@ -21,6 +21,8 @@ from kfp.local import io
 from kfp.local import status
 from kfp.pipeline_spec import pipeline_spec_pb2
 
+Outputs = Dict[str, Any]
+
 
 def run_dag(
     pipeline_resource_name: str,
@@ -33,7 +35,7 @@ def run_dag(
     pipeline_root: str,
     runner: config.LocalRunnerType,
     unique_pipeline_id: str,
-) -> Tuple[status.Status, Optional[str]]:
+) -> Tuple[Outputs, status.Status, Optional[str]]:
     """Runs a DAGSpec.
 
     Args:
@@ -52,7 +54,6 @@ def run_dag(
         If DAG fails, a two-tuple of: (Status.FAILURE, '<task-that-failed>').
     """
     from kfp.local import task_dispatcher
-
     # prepare IOStore for DAG
     dag_arguments_with_defaults = bind_defaults_to_dag_arguments(
         dag_arguments=dag_arguments,
@@ -64,62 +65,84 @@ def run_dag(
     # execute tasks in order
     dag_spec = dag_component_spec.dag
     sorted_tasks = graph_utils.topological_sort_tasks(dag_spec.tasks)
-    # pipeline_name_with_color = logging_utils.format_pipeline_name(pipeline_name)
     while sorted_tasks:
         task_name = sorted_tasks.pop()
-        component_name = dag_spec.tasks[task_name].component_ref.name
+        task_spec = dag_spec.tasks[task_name]
+        # TODO: support control flow features
+        validate_task_spec_not_loop_or_condition(task_spec=task_spec)
+        component_name = task_spec.component_ref.name
         component_spec = components[component_name]
         implementation = component_spec.WhichOneof('implementation')
-        # TODO: support pipeline-in-pipeline + control flow features
         if implementation == 'dag':
-            raise ValueError(
-                'Control flow features and pipelines in pipelines are are not yet supported in local pipeline execution.'
+            sub_dag_io_store = io.IOStore()
+            # unlikely to exceed default max recursion depth of 1000
+            outputs, task_status, fail_task_name = run_dag(
+                pipeline_resource_name=pipeline_resource_name,
+                dag_component_spec=component_spec,
+                components=components,
+                executors=executors,
+                dag_arguments=make_task_arguments(
+                    task_spec.inputs,
+                    io_store,
+                ),
+                io_store=sub_dag_io_store,
+                pipeline_root=pipeline_root,
+                runner=runner,
+                unique_pipeline_id=unique_pipeline_id,
             )
-        elif implementation != 'executor_label':
+
+        elif implementation == 'executor_label':
+            executor_key = component_spec.executor_label
+            executor_spec = executors[executor_key]
+            task_arguments = make_task_arguments(
+                task_inputs_spec=dag_spec.tasks[task_name].inputs,
+                io_store=io_store,
+            )
+
+            if executor_spec.WhichOneof('spec') == 'importer':
+                outputs, task_status = importer_handler.run_importer(
+                    pipeline_resource_name=pipeline_resource_name,
+                    component_name=component_name,
+                    component_spec=component_spec,
+                    executor_spec=executor_spec,
+                    arguments=task_arguments,
+                    pipeline_root=pipeline_root,
+                    unique_pipeline_id=unique_pipeline_id,
+                )
+            elif executor_spec.WhichOneof('spec') == 'container':
+                outputs, task_status = task_dispatcher.run_single_task_implementation(
+                    pipeline_resource_name=pipeline_resource_name,
+                    component_name=component_name,
+                    component_spec=component_spec,
+                    executor_spec=executor_spec,
+                    arguments=task_arguments,
+                    pipeline_root=pipeline_root,
+                    runner=runner,
+                    # let the outer pipeline raise the error
+                    raise_on_error=False,
+                    block_input_artifact=False,
+                    # provide the same unique job id for each tasks for
+                    # placeholder resolution
+                    unique_pipeline_id=unique_pipeline_id,
+                )
+            else:
+                raise ValueError(
+                    'Got unknown spec in ExecutorSpec. Only dsl.component, dsl.container_component, and dsl.importer are supported in local pipeline execution.'
+                )
+            fail_task_name = task_name if task_status == status.Status.FAILURE else None
+        else:
             raise ValueError(
                 f'Got unknown component implementation: {implementation}')
 
-        executor_key = component_spec.executor_label
-        executor_spec = executors[executor_key]
-        task_arguments = make_task_arguments(
-            task_inputs_spec=dag_spec.tasks[task_name],
-            io_store=io_store,
-        )
-
-        if executor_spec.WhichOneof('spec') == 'importer':
-            outputs, task_status = importer_handler.run_importer(
-                pipeline_resource_name=pipeline_resource_name,
-                component_name=component_name,
-                component_spec=component_spec,
-                executor_spec=executor_spec,
-                arguments=task_arguments,
-                pipeline_root=pipeline_root,
-                unique_pipeline_id=unique_pipeline_id,
-            )
-        elif executor_spec.WhichOneof('spec') == 'container':
-            outputs, task_status = task_dispatcher._run_single_task_implementation(
-                pipeline_resource_name=pipeline_resource_name,
-                component_name=component_name,
-                component_spec=component_spec,
-                executor_spec=executor_spec,
-                arguments=task_arguments,
-                pipeline_root=pipeline_root,
-                runner=runner,
-                # let the outer pipeline raise the error
-                raise_on_error=False,
-                block_input_artifact=False,
-                # provide the same unique job id for each tasks for
-                # placeholder resolution
-                unique_pipeline_id=unique_pipeline_id,
-            )
-        else:
-            raise ValueError(
-                'Got unknown spec in ExecutorSpec. Only dsl.component, dsl.container_component, and dsl.importer are supported in local pipeline execution.'
-            )
+        # exit on the current iteration if failure
         if task_status == status.Status.FAILURE:
-            return status.Status.FAILURE, task_name
+            # redundant information here, since if task_name=='' status will
+            # be FAILURE, but this redundancy makes the code much clearer
+            # compared to using the empty string as a sentinel value
+            return {}, status.Status.FAILURE, fail_task_name
+
+        # update IO store on success
         elif task_status == status.Status.SUCCESS:
-            # update IO store when a task succeeds
             for key, output in outputs.items():
                 io_store.put_task_output(
                     task_name,
@@ -129,7 +152,11 @@ def run_dag(
         else:
             raise ValueError(f'Got unknown task status: {task_status.name}')
 
-    return status.Status.SUCCESS, None
+    dag_outputs = get_dag_outputs(
+        dag_outputs_spec=dag_component_spec.dag.outputs,
+        io_store=io_store,
+    )
+    return dag_outputs, status.Status.SUCCESS, None
 
 
 def bind_defaults_to_dag_arguments(
@@ -177,7 +204,7 @@ def make_task_arguments(
 
     task_arguments = {}
     # handle parameters
-    for input_name, input_spec in task_inputs_spec.inputs.parameters.items():
+    for input_name, input_spec in task_inputs_spec.parameters.items():
         # handle upstream outputs
         if input_spec.HasField('task_output_parameter'):
             task_arguments[input_name] = io_store.get_task_output(
@@ -203,7 +230,7 @@ def make_task_arguments(
         else:
             raise ValueError(f'Invalid or missing input for {input_name}')
     # handle artifacts
-    for input_name, input_spec in task_inputs_spec.inputs.artifacts.items():
+    for input_name, input_spec in task_inputs_spec.artifacts.items():
         if input_spec.HasField('task_output_artifact'):
             task_arguments[input_name] = io_store.get_task_output(
                 input_spec.task_output_artifact.producer_task,
@@ -304,3 +331,12 @@ def get_dag_outputs(
         io_store=io_store,
     )
     return {**output_params, **output_artifacts}
+
+
+def validate_task_spec_not_loop_or_condition(task_spec) -> None:
+    if task_spec.trigger_policy.condition:
+        raise ValueError(
+            'dsl.Condition is not supported by local pipeline execution.')
+    elif task_spec.WhichOneof('iterator'):
+        raise ValueError(
+            'dsl.ParallelFor is not supported by local pipeline execution.')

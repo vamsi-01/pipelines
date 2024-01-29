@@ -363,7 +363,7 @@ class TestRunPipelineSubprocessRunner(
         # importer doesn't have an output directory
         self.assertLen(contents_of_pipeline_dir, 3)
 
-    def test_pipeline_in_pipeline_not_supported(self):
+    def test_pipeline_in_pipeline_simple(self):
         local.init(local.SubprocessRunner())
 
         @dsl.component
@@ -371,20 +371,55 @@ class TestRunPipelineSubprocessRunner(
             return string
 
         @dsl.pipeline
-        def inner_pipeline():
-            identity(string='foo')
+        def inner_pipeline() -> str:
+            return identity(string='foo').output
 
         @dsl.pipeline
-        def my_pipeline():
-            inner_pipeline()
+        def my_pipeline() -> str:
+            return inner_pipeline().output
 
-        with self.assertRaisesRegex(
-                ValueError,
-                r'Control flow features and pipelines in pipelines are are not yet supported in local pipeline execution\.'
-        ):
-            my_pipeline()
+        task = my_pipeline()
+        self.assertEqual(task.output, 'foo')
 
-    def test_control_flow_features_not_supported(self):
+    # TODO: test failure case...
+    def test_pipeline_in_pipeline_complex(self):
+        local.init(local.SubprocessRunner())
+
+        @dsl.component
+        def square(x: float) -> float:
+            return x**2
+
+        @dsl.component
+        def add(x: float, y: float) -> float:
+            return x + y
+
+        @dsl.component
+        def square_root(x: float) -> float:
+            return x**.5
+
+        @dsl.pipeline
+        def square_and_sum(a: float, b: float) -> float:
+            a_sq_task = square(x=a)
+            b_sq_task = square(x=b)
+            return add(x=a_sq_task.output, y=b_sq_task.output).output
+
+        @dsl.pipeline
+        def pythagorean(a: float = 1.2, b: float = 1.2) -> float:
+            sq_and_sum_task = square_and_sum(a=a, b=b)
+            return square_root(x=sq_and_sum_task.output).output
+
+        @dsl.pipeline
+        def pythagorean_then_add(
+            side: float,
+            addend: float = 42.24,
+        ) -> float:
+            t = pythagorean(a=side, b=1.2)
+            return add(x=t.output, y=addend).output
+
+        task = pythagorean_then_add(side=2.2)
+        self.assertAlmostEqual(task.output, 44.745992817228334)
+
+    def test_parallel_for_not_supported(self):
         local.init(local.SubprocessRunner())
 
         @dsl.component
@@ -398,9 +433,27 @@ class TestRunPipelineSubprocessRunner(
 
         with self.assertRaisesRegex(
                 ValueError,
-                r'Control flow features and pipelines in pipelines are are not yet supported in local pipeline execution\.'
+                r'dsl\.ParallelFor is not supported by local pipeline execution\.'
         ):
             my_pipeline()
+
+    def test_condition_not_supported(self):
+        local.init(local.SubprocessRunner())
+
+        @dsl.component
+        def pass_op():
+            pass
+
+        @dsl.pipeline
+        def my_pipeline(x: str):
+            with dsl.Condition(x == 'foo'):
+                pass_op()
+
+        with self.assertRaisesRegex(
+                ValueError,
+                r'dsl\.Condition is not supported by local pipeline execution\.'
+        ):
+            my_pipeline(x='bar')
 
     @mock.patch('sys.stdout', new_callable=stdlib_io.StringIO)
     def test_fails_with_raise_on_error_true(self, mock_stdout):
