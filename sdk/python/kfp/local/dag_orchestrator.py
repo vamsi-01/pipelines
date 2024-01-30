@@ -122,6 +122,8 @@ def run_dag(
                 "Got unknown spec in ExecutorSpec. Only 'dsl.component', 'dsl.container_component', and 'dsl.importer' are supported in local pipeline execution."
             )
         if task_status == status.Status.FAILURE:
+            while sorted_tasks:
+                sorted_tasks.pop()
             exit_tasks = [
                 task_name for task_name in sorted_tasks
                 if is_exit_handler(task_spec=dag_spec.tasks[task_name])
