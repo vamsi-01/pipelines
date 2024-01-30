@@ -13,6 +13,7 @@
 # limitations under the License.
 """Code for locally executing a DAG within a pipeline."""
 import copy
+import functools
 from typing import Any, Dict, Optional, Tuple
 
 from kfp.local import config
@@ -53,6 +54,20 @@ def run_dag(
         If DAG fails, a two-tuple of: (Status.FAILURE, '<task-that-failed>').
     """
     from kfp.local import task_dispatcher
+    run_single_task_closure = functools.partial(
+        task_dispatcher.run_single_task_implementation,
+        pipeline_resource_name=pipeline_resource_name,
+        pipeline_root=pipeline_root,
+        runner=runner,
+        # let the outer pipeline raise the error
+        raise_on_error=False,
+        # components may consume input artifacts when passed from upstream
+        # outputs or parent component inputs
+        block_input_artifact=False,
+        # provide the same unique job id for each task for
+        # consistent placeholder resolution
+        unique_pipeline_id=unique_pipeline_id,
+    )
 
     # prepare IOStore for DAG
     dag_arguments_with_defaults = join_user_inputs_and_defaults(
@@ -96,28 +111,21 @@ def run_dag(
                 unique_pipeline_id=unique_pipeline_id,
             )
         elif executor_spec.WhichOneof('spec') == 'container':
-            outputs, task_status = task_dispatcher.run_single_task_implementation(
-                pipeline_resource_name=pipeline_resource_name,
+            outputs, task_status = run_single_task_closure(
                 component_name=component_name,
                 component_spec=component_spec,
                 executor_spec=executor_spec,
                 arguments=task_arguments,
-                pipeline_root=pipeline_root,
-                runner=runner,
-                # let the outer pipeline raise the error
-                raise_on_error=False,
-                # components may consume input artifacts when passed from upstream
-                # outputs or parent component inputs
-                block_input_artifact=False,
-                # provide the same unique job id for each task for
-                # consistent placeholder resolution
-                unique_pipeline_id=unique_pipeline_id,
             )
         else:
             raise ValueError(
                 "Got unknown spec in ExecutorSpec. Only 'dsl.component', 'dsl.container_component', and 'dsl.importer' are supported in local pipeline execution."
             )
         if task_status == status.Status.FAILURE:
+            exit_tasks = [
+                task_name for task_name in sorted_tasks
+                if is_exit_handler(task_spec=dag_spec.tasks[task_name])
+            ]
             return status.Status.FAILURE, task_name
         elif task_status == status.Status.SUCCESS:
             # update IO store when a task succeeds
@@ -309,3 +317,7 @@ def get_dag_outputs(
         io_store=io_store,
     )
     return {**output_params, **output_artifacts}
+
+
+def is_exit_handler(task_spec: pipeline_spec_pb2.PipelineTaskSpec) -> bool:
+    return task_spec.trigger_policy == 2
