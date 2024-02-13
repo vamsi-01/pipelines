@@ -1610,6 +1610,32 @@ class ExecutorTest(parameterized.TestCase):
 
         self.assertDictEqual(output_metadata, {})
 
+    def test_inputpath_annotation(self):
+        executor_input = json.dumps({
+            "inputs": {
+                "parameterValues": {
+                    "text": "Hello, World!"
+                },
+                "parameters": {
+                    "text": {
+                        "stringValue": "Hello, World!"
+                    }
+                }
+            },
+            "outputs": {
+                "outputFile": "%(test_dir)s/executor_output.json"
+            }
+        })
+
+        def test_func(text: dsl.InputPath(str)) -> str:
+            self.assertEqual(text, 'Hello, World!')
+            return text * 2
+
+        output_metadata = self.execute_and_load_output_metadata(
+            test_func, executor_input)
+
+        self.assertDictEqual(output_metadata, {})
+
 
 class TestDictToArtifact(parameterized.TestCase):
 
