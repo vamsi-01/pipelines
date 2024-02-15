@@ -21,6 +21,7 @@ import itertools
 import re
 from typing import Any, Dict, List, Mapping, Optional, Union
 import warnings
+import kfp
 
 from kfp.dsl import constants
 from kfp.dsl import pipeline_channel
@@ -102,6 +103,7 @@ class PipelineTask:
         """Initilizes a PipelineTask instance."""
         # import within __init__ to avoid circular import
         from kfp.dsl.tasks_group import TasksGroup
+
         self.state = TaskState.FUTURE
         self.parent_task_group: Union[None, TasksGroup] = None
         args = args or {}
@@ -182,6 +184,15 @@ class PipelineTask:
 
         if execute_locally:
             self._execute_locally(args=args)
+
+    def __getattr__(self, name: str) -> Any:
+        import kfp
+        if name in kfp._REGISTERED_PLATFORMS:
+            platform = kfp._REGISTERED_PLATFORMS[name]
+            return kfp.DynamicPlatformMethods(
+                self,
+                task_methods=platform.task_methods,
+            )
 
     def _execute_locally(self, args: Dict[str, Any]) -> None:
         """Execute the pipeline task locally.

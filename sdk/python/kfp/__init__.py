@@ -18,7 +18,9 @@ __path__ = __import__('pkgutil').extend_path(__path__, __name__)
 
 __version__ = '2.7.0'
 
+import functools
 import sys
+from typing import Callable, Dict, List
 import warnings
 
 if sys.version_info < (3, 8):
@@ -40,3 +42,43 @@ if os.environ.get('_KFP_RUNTIME', 'false') != 'true':
     from kfp import components  # noqa: keep unused import
     from kfp import dsl  # noqa: keep unused import
     from kfp.client import Client  # noqa: keep unused import
+
+import abc
+
+
+class PlatformInterface(abc.ABC):
+
+    @property
+    @abc.abstractclassmethod
+    def task_methods(self) -> str:
+        pass
+
+    @property
+    @abc.abstractclassmethod
+    def provider_name(self) -> str:
+        pass
+
+
+class DynamicPlatformMethods:
+
+    def __init__(
+        self,
+        task: 'PipelineTask',
+        task_methods: List[Callable],
+    ) -> None:
+        self.task = task
+        self.task_methods = {m.__name__: m for m in task_methods}
+
+    def __getattr__(self, method_name: str) -> Callable:
+        if method_name in self.task_methods:
+            return functools.partial(self.task_methods[method_name], task=self)
+        else:
+            return getattr(self.task, method_name)
+
+
+_REGISTERED_PLATFORMS: Dict[str, PlatformInterface] = {}
+
+
+def register_platform(platform_task_interface: PlatformInterface) -> None:
+    _REGISTERED_PLATFORMS[
+        platform_task_interface.provider_name] = platform_task_interface
